@@ -2,17 +2,16 @@
 {
     public struct Register
     {
-        public byte A { get; set; }
-
-        public byte F { get; set; }
-        public byte B { get; set; }
-        public byte C { get; set; }
-        public byte D { get; set; }
-        public byte E { get; set; }
-        public byte H { get; set; }
-        public byte L { get; set; }
-        public ushort SP { get; set; }
-        public ushort PC { get; set; }
+        public byte A;
+        public byte F;
+        public byte B;
+        public byte C;
+        public byte D;
+        public byte E;
+        public byte H;
+        public byte L;
+        public ushort SP;
+        public ushort PC;
 
         public ushort AF
         {
@@ -77,13 +76,24 @@
                 F &= (byte)(~flag);
             }
         }
+
+        public bool GetFlag(Flag flag)
+        {
+            return (F & (byte)flag) != 0;
+        }
     }
 
     public enum Flag
     {
         Zero = 0b10000000,
         Subt = 0b01000000,
+        /// <summary>
+        /// Byte Carry
+        /// </summary>
         Half = 0b00100000,
+        /// <summary>
+        /// Short Carry
+        /// </summary>
         Full = 0b00010000
     }
 }

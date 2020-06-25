@@ -31,5 +31,31 @@ namespace Utility
             }
             return "0b_" + Convert.ToString(data, 2).ToUpper();
         }
+
+        /// <summary>
+        /// Returns the higher byte
+        /// </summary>
+        public static byte High(this ushort data)
+        {
+            return (byte)(data >> 8);
+        }
+
+        /// <summary>
+        /// Returns the lower byte
+        /// </summary>
+        public static byte Low(this ushort data)
+        {
+            return (byte)(data & 0xFF);
+        }
+
+        /// <summary>
+        /// Combines the bytes into a ushort
+        /// </summary>
+        /// <param name="high">The higher byte to combine</param>
+        /// <returns></returns>
+        public static ushort ToShort(this byte low, byte high)
+        {
+            return (ushort)((high << 8) | low);
+        }
     }
 }

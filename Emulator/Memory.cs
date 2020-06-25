@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Utility;
 
 namespace Monoboy.Emulator
 {
@@ -156,6 +157,12 @@ namespace Monoboy.Emulator
             {
                 throw new Exception("Should not be here");
             }
+        }
+
+        public void Write(ushort address, ushort data)
+        {
+            Write(address, data.Low());
+            Write((ushort)(address + 1), data.High());
         }
     }
 }

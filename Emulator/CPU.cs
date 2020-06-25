@@ -240,7 +240,35 @@ namespace Monoboy.Emulator
                 case 0xAE: XOR(memory.Read(register.HL)); return 8;
                 case 0xEE: XOR(NextByte()); return 8;
 
-                //page 86
+                case 0xBF: CP(register.A); return 4;
+                case 0xB8: CP(register.B); return 4;
+                case 0xB9: CP(register.C); return 4;
+                case 0xBA: CP(register.D); return 4;
+                case 0xBB: CP(register.E); return 4;
+                case 0xBC: CP(register.H); return 4;
+                case 0xBD: CP(register.L); return 4;
+                case 0xBE: CP(memory.Read(register.HL)); return 8;
+                case 0xFE: CP(NextByte()); return 8;
+
+                case 0x3C: INC(ref register.A); return 4;
+                case 0x04: INC(ref register.B); return 4;
+                case 0x0C: INC(ref register.C); return 4;
+                case 0x14: INC(ref register.D); return 4;
+                case 0x1C: INC(ref register.E); return 4;
+                case 0x24: INC(ref register.H); return 4;
+                case 0x2C: INC(ref register.L); return 4;
+                case 0x34: byte n1 = memory.Read(register.HL); INC(ref n1); memory.Write(register.HL, n1); return 12;
+
+                case 0x3D: DEC(ref register.A); return 4;
+                case 0x05: DEC(ref register.B); return 4;
+                case 0x0D: DEC(ref register.C); return 4;
+                case 0x15: DEC(ref register.D); return 4;
+                case 0x1D: DEC(ref register.E); return 4;
+                case 0x25: DEC(ref register.H); return 4;
+                case 0x2D: DEC(ref register.L); return 4;
+                case 0x35: byte n2 = memory.Read(register.HL); DEC(ref n2); memory.Write(register.HL, n2); return 12;
+
+
 
                 #endregion
 
@@ -250,8 +278,6 @@ namespace Monoboy.Emulator
                     return 4;
             }
         }
-
-
 
         #region Commands
 
@@ -275,8 +301,8 @@ namespace Monoboy.Emulator
 
             register.SetFlag(Flag.Zero, result == 0);
             register.SetFlag(Flag.Subt, false);
-            register.SetFlag(Flag.Half, (register.A & 0b1111) - (n & 0b1111) - carry > 0b1111);
-            register.SetFlag(Flag.Full, (register.A - n - carry) > 0b11111111);
+            register.SetFlag(Flag.Half, (register.A & 0b1111) - (n & 0b1111) - carry < 0);
+            register.SetFlag(Flag.Full, (register.A - n - carry) < 0);
 
             register.A = result;
         }
@@ -317,6 +343,29 @@ namespace Monoboy.Emulator
             register.A = result;
         }
 
+        void CP(byte n)
+        {
+            byte result = register.A;
+            SUB(n);
+            register.A = result;
+        }
+
+        void INC(ref byte n)
+        {
+            n++;
+            register.SetFlag(Flag.Zero, n == 0);
+            register.SetFlag(Flag.Subt, false);
+            register.SetFlag(Flag.Half, (n & 0b1111) + 1 > 0b1111);
+        }
+
+        void DEC(ref byte n)
+        {
+            n--;
+            register.SetFlag(Flag.Zero, n == 0);
+            register.SetFlag(Flag.Subt, false);
+            register.SetFlag(Flag.Half, (n & 0b1111) - 1 < 0);
+        }
+
         void LDHL()
         {
             register.HL = (ushort)(register.SP + ((sbyte)NextByte()));
@@ -339,19 +388,6 @@ namespace Monoboy.Emulator
             register.SP += 2;
             return result;
         }
-
-        #endregion
-
-        #region Helper
-
-        /* SetFlags
-        
-        register.SetFlag(Flag.Zero, false);
-        register.SetFlag(Flag.Subt, false);
-        register.SetFlag(Flag.Half, false);
-        register.SetFlag(Flag.Full, false);
-
-        */
 
         byte NextByte()
         {

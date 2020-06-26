@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Utility;
+using Monoboy.Emulator.Utility;
 
 namespace Monoboy.Emulator
 {
@@ -155,7 +155,8 @@ namespace Monoboy.Emulator
             }
             else
             {
-                throw new Exception("Should not be here");
+                Console.WriteLine("");
+                Console.Write("Index of array out of bounds : " + address.ToHex());
             }
         }
 

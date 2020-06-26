@@ -85,15 +85,15 @@
 
     public enum Flag
     {
-        Zero = 0b10000000,
-        Subt = 0b01000000,
+        Z = 0b10000000,
+        N = 0b01000000,
         /// <summary>
         /// Byte Carry
         /// </summary>
-        Half = 0b00100000,
+        H = 0b00100000,
         /// <summary>
         /// Short Carry
         /// </summary>
-        Full = 0b00010000
+        C = 0b00010000
     }
 }

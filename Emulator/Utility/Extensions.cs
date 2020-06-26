@@ -1,9 +1,11 @@
 ﻿using System;
 
-namespace Utility
+namespace Monoboy.Emulator.Utility
 {
     public static class Extensions
     {
+        #region Debugging
+
         public static string ToHex(this byte data)
         {
             return "0x" + data.ToString("X2").ToUpper();
@@ -32,6 +34,8 @@ namespace Utility
             return "0b_" + Convert.ToString(data, 2).ToUpper();
         }
 
+        #endregion
+
         /// <summary>
         /// Returns the higher byte
         /// </summary>
@@ -46,6 +50,14 @@ namespace Utility
         public static byte Low(this ushort data)
         {
             return (byte)(data & 0xFF);
+        }
+
+        /// <summary>
+        /// Returns the swapped byte
+        /// </summary>
+        public static byte Swap(this byte data)
+        {
+            return (byte)((data & 0x0F) << 4 | (data & 0xF0) >> 4);
         }
 
         /// <summary>

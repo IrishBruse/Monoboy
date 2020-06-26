@@ -63,7 +63,7 @@
   <ItemGroup>
     <Compile Include="App.cs" />
     <Compile Include="Emulator\CPU.cs" />
-    <Compile Include="Extensions.cs" />
+    <Compile Include="Emulator\Utility\Extensions.cs" />
     <Compile Include="Emulator\Monoboy.cs" />
     <Compile Include="Emulator\Memory.cs" />
     <Compile Include="Emulator\Register.cs" />

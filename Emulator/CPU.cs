@@ -1,6 +1,5 @@
 ﻿using System;
-
-using Utility;
+using Monoboy.Emulator.Utility;
 
 namespace Monoboy.Emulator
 {
@@ -36,7 +35,7 @@ namespace Monoboy.Emulator
             // TODO Handle interupts
             byte opcode = NextByte();
 
-            Log(opcode.ToHex(), ConsoleColor.Blue);
+            LogHex(opcode, ConsoleColor.Blue);
 
             switch (opcode)
             {
@@ -54,11 +53,11 @@ namespace Monoboy.Emulator
                 case 0x7E: register.A = memory.Read(register.HL); return 8;
                 case 0x0A: register.A = memory.Read(register.BC); return 8;
                 case 0x1A: register.A = memory.Read(register.DE); return 8;
-                case 0xFA: register.A = memory.Read(NextShort()); return 16;
+                case 0xFA: register.A = memory.Read(NextWord()); return 16;
                 case 0x3E: register.A = NextByte(); return 8;
                 case 0x3A: register.A = memory.Read(register.HL--); return 8;
                 case 0x2A: register.A = memory.Read(register.HL++); return 8;
-                case 0xF0: register.A = memory.Read((ushort)(0xFF00 + NextShort())); return 12;
+                case 0xF0: register.A = memory.Read((ushort)(0xFF00 + NextWord())); return 12;
 
                 // Load into Register B
                 case 0x47: register.B = register.A; return 4;
@@ -141,21 +140,21 @@ namespace Monoboy.Emulator
 
                 case 0x02: memory.Write(register.BC, register.A); return 8;
                 case 0x12: memory.Write(register.DE, register.A); return 8;
-                case 0xEA: memory.Write(NextShort(), register.A); return 16;
+                case 0xEA: memory.Write(NextWord(), register.A); return 16;
                 case 0xE0: memory.Write((ushort)(0xFF00 + NextByte()), register.A); return 12;
 
                 #endregion
 
                 #region 16-Bit Loads
 
-                case 0x01: register.BC = NextShort(); return 12;
-                case 0x11: register.DE = NextShort(); return 12;
-                case 0x21: register.HL = NextShort(); return 12;
-                case 0x31: register.SP = NextShort(); return 12;
+                case 0x01: register.BC = NextWord(); return 12;
+                case 0x11: register.DE = NextWord(); return 12;
+                case 0x21: register.HL = NextWord(); return 12;
+                case 0x31: register.SP = NextWord(); return 12;
 
                 case 0xF9: register.SP = register.HL; return 8;
-                case 0xF8: LDHL(); return 12;
-                case 0x08: memory.Write(NextShort(), register.SP); return 20;
+                case 0xF8: LD_HL(); return 12;
+                case 0x08: memory.Write(NextWord(), register.SP); return 20;
                 case 0xF5: Push(register.AF); return 16;
                 case 0xC5: Push(register.BC); return 16;
                 case 0xD5: Push(register.DE); return 16;
@@ -268,12 +267,51 @@ namespace Monoboy.Emulator
                 case 0x2D: DEC(ref register.L); return 4;
                 case 0x35: byte n2 = memory.Read(register.HL); DEC(ref n2); memory.Write(register.HL, n2); return 12;
 
+                #endregion
+
+                #region 16-Bit Arithmetic
+                case 0x09: ADD_HL(register.BC); return 8;
+                case 0x19: ADD_HL(register.DE); return 8;
+                case 0x29: ADD_HL(register.HL); return 8;
+                case 0x39: ADD_HL(register.SP); return 8;
+
+                case 0xE8: ADD_SP(NextByte()); return 16;
+
+                case 0x03: register.BC++; return 8;
+                case 0x13: register.DE++; return 8;
+                case 0x23: register.HL++; return 8;
+                case 0x33: register.SP++; return 8;
+
+                case 0x0B: register.BC--; return 8;
+                case 0x1B: register.DE--; return 8;
+                case 0x2B: register.HL--; return 8;
+                case 0x3B: register.SP--; return 8;
+
+                case 0xCB: return SubOpcodeTable();
+
+                case 0x27: DAA(); return 4;
+
+                case 0x2F: register.A = (byte)~register.A; register.SetFlag(Flag.N, true); register.SetFlag(Flag.H, true); return 4;
+                case 0x3F: register.SetFlag(Flag.N, false); register.SetFlag(Flag.H, false); register.SetFlag(Flag.C, !register.GetFlag(Flag.C)); return 4;
+                case 0x37: register.SetFlag(Flag.N, false); register.SetFlag(Flag.H, false); register.SetFlag(Flag.C, true); return 4;
+
+                case 0x00: return 4;
+
+                case 0x76: return 4;// TODO: Halt
+                case 0x10: return 4;// TODO: Stop
+                case 0xF3: return 4;// TODO: DI interupt in one instruction
+                case 0xFB: return 4;// TODO: EI interupt in one instruction
+
+                case 0x07: register.A = RotateLeft(register.A, false, false); return 4;
+                case 0x17: register.A = RotateLeft(register.A, true, false); return 4;
+                case 0x0F: register.A = RotateRight(register.A, false, false); return 4;
+                case 0x1F: register.A = RotateRight(register.A, true, false); return 4;
+
 
 
                 #endregion
 
                 default:
-
                     Log(" : Not Implemented! ", ConsoleColor.Red);
                     return 4;
             }
@@ -281,28 +319,30 @@ namespace Monoboy.Emulator
 
         #region Commands
 
+        #region 8-Bit
+
         void ADD(byte n, bool addCarry = false)
         {
-            byte carry = (byte)(addCarry && register.GetFlag(Flag.Full) ? 0xff : 0x00);
+            byte carry = (byte)(addCarry && register.GetFlag(Flag.C) ? 0xff : 0x00);
             byte result = (byte)(register.A + n + carry);
 
-            register.SetFlag(Flag.Zero, result == 0);
-            register.SetFlag(Flag.Subt, false);
-            register.SetFlag(Flag.Half, (register.A & 0b1111) + (n & 0b1111) + carry > 0b1111);
-            register.SetFlag(Flag.Full, (register.A + n + carry) > 0b11111111);
+            register.SetFlag(Flag.Z, result == 0);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, (register.A & 0b1111) + (n & 0b1111) + carry > 0b1111);
+            register.SetFlag(Flag.C, (register.A + n + carry) > 0b11111111);
 
             register.A = result;
         }
 
         void SUB(byte n, bool subCarry = false)
         {
-            byte carry = (byte)(subCarry && register.GetFlag(Flag.Full) ? 0xff : 0x00);
+            byte carry = (byte)(subCarry && register.GetFlag(Flag.C) ? 0xff : 0x00);
             byte result = (byte)(register.A - n - carry);
 
-            register.SetFlag(Flag.Zero, result == 0);
-            register.SetFlag(Flag.Subt, false);
-            register.SetFlag(Flag.Half, (register.A & 0b1111) - (n & 0b1111) - carry < 0);
-            register.SetFlag(Flag.Full, (register.A - n - carry) < 0);
+            register.SetFlag(Flag.Z, result == 0);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, (register.A & 0b1111) - (n & 0b1111) - carry < 0);
+            register.SetFlag(Flag.C, (register.A - n - carry) < 0);
 
             register.A = result;
         }
@@ -311,10 +351,10 @@ namespace Monoboy.Emulator
         {
             byte result = (byte)(register.A & n);
 
-            register.SetFlag(Flag.Zero, result == 0);
-            register.SetFlag(Flag.Subt, false);
-            register.SetFlag(Flag.Half, true);
-            register.SetFlag(Flag.Full, false);
+            register.SetFlag(Flag.Z, result == 0);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, true);
+            register.SetFlag(Flag.C, false);
 
             register.A = result;
         }
@@ -323,10 +363,10 @@ namespace Monoboy.Emulator
         {
             byte result = (byte)(register.A | n);
 
-            register.SetFlag(Flag.Zero, result == 0);
-            register.SetFlag(Flag.Subt, false);
-            register.SetFlag(Flag.Half, false);
-            register.SetFlag(Flag.Full, false);
+            register.SetFlag(Flag.Z, result == 0);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, false);
+            register.SetFlag(Flag.C, false);
 
             register.A = result;
         }
@@ -335,10 +375,10 @@ namespace Monoboy.Emulator
         {
             byte result = (byte)(register.A ^ n);
 
-            register.SetFlag(Flag.Zero, result == 0);
-            register.SetFlag(Flag.Subt, false);
-            register.SetFlag(Flag.Half, false);
-            register.SetFlag(Flag.Full, false);
+            register.SetFlag(Flag.Z, result == 0);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, false);
+            register.SetFlag(Flag.C, false);
 
             register.A = result;
         }
@@ -353,32 +393,59 @@ namespace Monoboy.Emulator
         void INC(ref byte n)
         {
             n++;
-            register.SetFlag(Flag.Zero, n == 0);
-            register.SetFlag(Flag.Subt, false);
-            register.SetFlag(Flag.Half, (n & 0b1111) + 1 > 0b1111);
+            register.SetFlag(Flag.Z, n == 0);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, (n & 0b1111) + 1 > 0b1111);
         }
 
         void DEC(ref byte n)
         {
             n--;
-            register.SetFlag(Flag.Zero, n == 0);
-            register.SetFlag(Flag.Subt, false);
-            register.SetFlag(Flag.Half, (n & 0b1111) - 1 < 0);
+            register.SetFlag(Flag.Z, n == 0);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, (n & 0b1111) - 1 < 0);
         }
 
-        void LDHL()
+        #endregion
+
+        #region 16-Bit
+
+        void LD_HL()
         {
             register.HL = (ushort)(register.SP + ((sbyte)NextByte()));
 
-            register.SetFlag(Flag.Zero, false);
-            register.SetFlag(Flag.Subt, false);
-            register.SetFlag(Flag.Half, (register.HL & 0xF) < (register.SP & 0xF));
-            register.SetFlag(Flag.Full, (register.HL & 0xFF) < (register.SP & 0xFF));
+            register.SetFlag(Flag.Z, false);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, (register.HL & 0xF) < (register.SP & 0xF));
+            register.SetFlag(Flag.C, (register.HL & 0xFF) < (register.SP & 0xFF));
         }
 
-        private void Push(ushort pair)
+        void ADD_HL(ushort n)
         {
-            memory.Write(register.SP, pair);
+            ushort result = (ushort)(register.HL + n);
+
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, (((register.HL & 0xFFF) + (n & 0xFFF)) & 0x1000) != 0);
+            register.SetFlag(Flag.C, register.HL > 0xFFFF - n);
+
+            register.HL = result;
+        }
+
+        void ADD_SP(byte n)
+        {
+            ushort result = (ushort)(register.SP + ((sbyte)n));
+
+            register.SetFlag(Flag.Z, false);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, (result & 0xF) < (register.SP & 0xF));
+            register.SetFlag(Flag.C, (result & 0xFF) < (register.SP & 0xFF));
+
+            register.SP = result;
+        }
+
+        private void Push(ushort word)
+        {
+            memory.Write(register.SP, word);
             register.SP -= 2;
         }
 
@@ -389,6 +456,148 @@ namespace Monoboy.Emulator
             return result;
         }
 
+        #endregion
+
+        #region Sub Operation Table
+
+        byte SubOpcodeTable()
+        {
+            byte opcode = NextByte();
+            Log(" : ");
+            LogHex(opcode, ConsoleColor.Green);
+
+            switch (opcode)
+            {
+                case 0x37: SWAP(ref register.A); return 8;
+                case 0x30: SWAP(ref register.B); return 8;
+                case 0x31: SWAP(ref register.C); return 8;
+                case 0x32: SWAP(ref register.D); return 8;
+                case 0x33: SWAP(ref register.E); return 8;
+                case 0x34: SWAP(ref register.H); return 8;
+                case 0x35: SWAP(ref register.L); return 8;
+
+                case 0x36: byte n1 = memory.Read(register.HL); SWAP(ref n1); memory.Write(register.HL, n1); ; return 16;
+
+                case 0x07: register.A = RotateLeft(register.A, false, false); return 8;
+                case 0x00: register.B = RotateLeft(register.B, false, false); return 8;
+                case 0x01: register.C = RotateLeft(register.C, false, false); return 8;
+                case 0x02: register.D = RotateLeft(register.D, false, false); return 8;
+                case 0x03: register.E = RotateLeft(register.E, false, false); return 8;
+                case 0x04: register.H = RotateLeft(register.H, false, false); return 8;
+                case 0x05: register.L = RotateLeft(register.L, false, false); return 8;
+                case 0x06: memory.Write(register.HL, RotateLeft(memory.Read(register.HL), false, false)); return 16;
+
+                case 0x17: register.A = RotateLeft(register.A, true, false); return 8;
+                case 0x10: register.B = RotateLeft(register.B, true, false); return 8;
+                case 0x11: register.C = RotateLeft(register.C, true, false); return 8;
+                case 0x12: register.D = RotateLeft(register.D, true, false); return 8;
+                case 0x13: register.E = RotateLeft(register.E, true, false); return 8;
+                case 0x14: register.H = RotateLeft(register.H, true, false); return 8;
+                case 0x15: register.L = RotateLeft(register.L, true, false); return 8;
+                case 0x16: memory.Write(register.HL, RotateLeft(memory.Read(register.HL), true, false)); return 16;
+
+                case 0x0F: register.A = RotateRight(register.A, false, false); return 8;
+                case 0x08: register.B = RotateRight(register.B, false, false); return 8;
+                case 0x09: register.C = RotateRight(register.C, false, false); return 8;
+                case 0x0A: register.D = RotateRight(register.D, false, false); return 8;
+                case 0x0B: register.E = RotateRight(register.E, false, false); return 8;
+                case 0x0C: register.H = RotateRight(register.H, false, false); return 8;
+                case 0x0D: register.L = RotateRight(register.L, false, false); return 8;
+                case 0x0E: memory.Write(register.HL, RotateRight(memory.Read(register.HL), false, false)); return 16;
+
+                case 0x1F: register.A = RotateRight(register.A, true, false); return 8;
+                case 0x18: register.B = RotateRight(register.B, true, false); return 8;
+                case 0x19: register.C = RotateRight(register.C, true, false); return 8;
+                case 0x1A: register.D = RotateRight(register.D, true, false); return 8;
+                case 0x1B: register.E = RotateRight(register.E, true, false); return 8;
+                case 0x1C: register.H = RotateRight(register.H, true, false); return 8;
+                case 0x1D: register.L = RotateRight(register.L, true, false); return 8;
+                case 0x1E: memory.Write(register.HL, RotateRight(memory.Read(register.HL), true, false)); return 16;
+
+                case 0x27: register.A = ShiftLeft(register.A); return 8;
+                case 0x20: register.B = ShiftLeft(register.B); return 8;
+                case 0x21: register.C = ShiftLeft(register.C); return 8;
+                case 0x22: register.D = ShiftLeft(register.D); return 8;
+                case 0x23: register.E = ShiftLeft(register.E); return 8;
+                case 0x24: register.H = ShiftLeft(register.H); return 8;
+                case 0x25: register.L = ShiftLeft(register.L); return 8;
+                case 0x26: memory.Write(register.HL, ShiftLeft(memory.Read(register.HL))); return 16;
+
+                case 0x2F: register.A = ShiftRight(register.A, true); return 8;
+                case 0x28: register.B = ShiftRight(register.B, true); return 8;
+                case 0x29: register.C = ShiftRight(register.C, true); return 8;
+                case 0x2A: register.D = ShiftRight(register.D, true); return 8;
+                case 0x2B: register.E = ShiftRight(register.E, true); return 8;
+                case 0x2C: register.H = ShiftRight(register.H, true); return 8;
+                case 0x2D: register.L = ShiftRight(register.L, true); return 8;
+                case 0x2E: memory.Write(register.HL, ShiftRight(memory.Read(register.HL), false)); return 16;
+
+                default:
+                    Log(" : Not Implemented! ", ConsoleColor.Red);
+                    return 4;
+            }
+        }
+
+        void SWAP(ref byte n)
+        {
+            register.SetFlag(Flag.Z, n.Swap() == 0);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.H, false);
+            register.SetFlag(Flag.C, false);
+
+            n = n.Swap();
+        }
+
+        #endregion
+
+
+        #region Rotate Shift
+
+        byte RotateLeft(byte n, bool includeCarry = false, bool updateZero = false)
+        {
+            byte bit7 = (byte)(n >> 7);
+            byte result = (byte)(includeCarry ? (n << 1) | (register.GetFlag(Flag.C) ? 0xff : 0x00) : (n << 1) | (n >> (32 - 1)));
+            register.SetFlag(Flag.C, (bit7 == 1));
+            register.SetFlag(Flag.H, false);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.Z, (result == 0 && updateZero));
+            return result;
+        }
+
+        byte RotateRight(byte n, bool includeCarry = false, bool updateZero = false)
+        {
+            byte bit7 = (byte)(n >> 7);
+            byte result = (byte)(includeCarry ? (n << 1) | (register.GetFlag(Flag.C) ? 0xff : 0x00) : (n >> 1) | (n >> (32 - 1)));
+            register.SetFlag(Flag.C, (bit7 == 1));
+            register.SetFlag(Flag.H, false);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.Z, (result == 0 && updateZero));
+            return result;
+        }
+
+        byte ShiftLeft(byte n)
+        {
+            byte result = (byte)(n << 1);
+            byte bit7 = (byte)(n >> 7);
+            register.SetFlag(Flag.C, bit7 == 1);
+            register.SetFlag(Flag.H, false);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.Z, result == 0);
+            return result;
+        }
+
+        byte ShiftRight(byte n, bool keepBit7)
+        {
+            byte result = (byte)(keepBit7 ? (n >> 1) | (n & 0x80) : n >> 1);
+            register.SetFlag(Flag.C, (n & 1) == 1);
+            register.SetFlag(Flag.H, false);
+            register.SetFlag(Flag.N, false);
+            register.SetFlag(Flag.Z, result == 0);
+            return result;
+        }
+
+        #endregion
+
         byte NextByte()
         {
             byte result = memory.Read(register.PC);
@@ -396,11 +605,46 @@ namespace Monoboy.Emulator
             return result;
         }
 
-        ushort NextShort()
+        ushort NextWord()
         {
             byte low = NextByte();
             byte high = NextByte();
             return low.ToShort(high);
+        }
+
+        void DAA()
+        {
+            byte a = register.A;
+            byte adjust = (byte)(register.GetFlag(Flag.C) ? 0x60 : 0x00);
+
+            if (register.GetFlag(Flag.C))
+            {
+                adjust |= 0x06;
+            }
+
+            if (!register.GetFlag(Flag.N))
+            {
+                if ((a & 0x0F) > 0x09)
+                {
+                    adjust |= 0x06;
+                }
+
+                if (a > 0x99)
+                {
+                    adjust |= 0x60;
+                }
+
+                a += adjust;
+            }
+            else
+            {
+                a -= adjust;
+            }
+
+            register.SetFlag(Flag.C, adjust >= 0x60);
+            register.SetFlag(Flag.H, false);
+            register.SetFlag(Flag.Z, a == 0);
+            register.A = a;
         }
 
         #endregion
@@ -413,9 +657,9 @@ namespace Monoboy.Emulator
             Console.ResetColor();
         }
 
-        public void LogHex(byte hex)
+        public void LogHex(byte hex, ConsoleColor color = ConsoleColor.White)
         {
-            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.ForegroundColor = color;
             Console.Write("0x" + hex.ToString("X2"));
             Console.ResetColor();
         }

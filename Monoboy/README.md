@@ -1,5 +1,2 @@
 # Monoboy
-Monogame Gameboy Emulator
-
-Alternate title:
-GameGame
+This is the Emulator along with the window rendering

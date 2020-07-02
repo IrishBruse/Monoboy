@@ -2,7 +2,7 @@
 
 namespace Monoboy.Emulator
 {
-    public struct Register
+    public class Register
     {
         public byte A;
         public byte F;
@@ -75,7 +75,7 @@ namespace Monoboy.Emulator
             }
             else
             {
-                F &= (byte)(~flag);
+                F &= (byte)~flag;
             }
         }
 
@@ -83,13 +83,5 @@ namespace Monoboy.Emulator
         {
             return (F & (byte)flag) != 0;
         }
-    }
-
-    public enum Flag
-    {
-        Zero = 0b10000000,
-        Negative = 0b01000000,
-        HalfCarry = 0b00100000,
-        FullCarry = 0b00010000
     }
 }

@@ -19,7 +19,7 @@ namespace Monoboy.Emulator.Utility
             if(enabled == true)
             {
                 Console.ForegroundColor = color;
-                Console.WriteLine(log);
+                System.Diagnostics.Debug.WriteLine(log);
                 Console.ResetColor();
             }
         }

@@ -1,0 +1,1002 @@
+{
+  "version": 3,
+  "targets": {
+    ".NETFramework,Version=v4.7.2": {
+      "Costura.Fody/4.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Fody": "6.0.0"
+        },
+        "compile": {
+          "lib/net40/Costura.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Costura.dll": {}
+        },
+        "build": {
+          "build/_._": {}
+        }
+      },
+      "info.lundin.math.dll/1.2.6": {
+        "type": "package",
+        "compile": {
+          "lib/net40/info.lundin.math.dll": {}
+        },
+        "runtime": {
+          "lib/net40/info.lundin.math.dll": {}
+        }
+      },
+      "MonoGame.Framework.DesktopGL/3.7.1.189": {
+        "type": "package",
+        "compile": {
+          "lib/net45/MonoGame.Framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/MonoGame.Framework.dll": {}
+        },
+        "build": {
+          "build/_._": {}
+        }
+      },
+      "Myra/1.0.0.204": {
+        "type": "package",
+        "dependencies": {
+          "XNAssets": "0.5.0.6",
+          "info.lundin.math.dll": "1.2.6"
+        },
+        "compile": {
+          "lib/net45/Myra.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Myra.dll": {}
+        }
+      },
+      "XNAssets/0.5.0.6": {
+        "type": "package",
+        "compile": {
+          "lib/net45/XNAssets.dll": {}
+        },
+        "runtime": {
+          "lib/net45/XNAssets.dll": {}
+        }
+      },
+      "xunit/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.analyzers": "0.10.0",
+          "xunit.assert": "[2.4.1]",
+          "xunit.core": "[2.4.1]"
+        }
+      },
+      "xunit.abstractions/2.0.3": {
+        "type": "package",
+        "compile": {
+          "lib/net35/xunit.abstractions.dll": {}
+        },
+        "runtime": {
+          "lib/net35/xunit.abstractions.dll": {}
+        }
+      },
+      "xunit.analyzers/0.10.0": {
+        "type": "package"
+      },
+      "xunit.assert/2.4.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard1.1/xunit.assert.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.1/xunit.assert.dll": {}
+        }
+      },
+      "xunit.core/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.4.1]",
+          "xunit.extensibility.execution": "[2.4.1]"
+        },
+        "build": {
+          "build/xunit.core.props": {},
+          "build/xunit.core.targets": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/xunit.core.props": {},
+          "buildMultiTargeting/xunit.core.targets": {}
+        }
+      },
+      "xunit.extensibility.core/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.abstractions": "2.0.3"
+        },
+        "compile": {
+          "lib/net452/xunit.core.dll": {}
+        },
+        "runtime": {
+          "lib/net452/xunit.core.dll": {}
+        }
+      },
+      "xunit.extensibility.execution/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.4.1]"
+        },
+        "compile": {
+          "lib/net452/xunit.execution.desktop.dll": {}
+        },
+        "runtime": {
+          "lib/net452/xunit.execution.desktop.dll": {}
+        }
+      },
+      "xunit.runner.console/2.4.1": {
+        "type": "package",
+        "build": {
+          "build/xunit.runner.console.props": {}
+        }
+      },
+      "xunit.runner.visualstudio/2.4.2": {
+        "type": "package",
+        "build": {
+          "build/net452/xunit.runner.visualstudio.props": {}
+        }
+      },
+      "Monoboy/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.7.2",
+        "dependencies": {
+          "Costura.Fody": "4.1.0",
+          "MonoGame.Framework.DesktopGL": "3.7.1.189",
+          "Myra": "1.0.0.204"
+        },
+        "compile": {
+          "bin/placeholder/Monoboy.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Monoboy.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7.2/win": {
+      "Costura.Fody/4.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Fody": "6.0.0"
+        },
+        "compile": {
+          "lib/net40/Costura.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Costura.dll": {}
+        },
+        "build": {
+          "build/_._": {}
+        }
+      },
+      "info.lundin.math.dll/1.2.6": {
+        "type": "package",
+        "compile": {
+          "lib/net40/info.lundin.math.dll": {}
+        },
+        "runtime": {
+          "lib/net40/info.lundin.math.dll": {}
+        }
+      },
+      "MonoGame.Framework.DesktopGL/3.7.1.189": {
+        "type": "package",
+        "compile": {
+          "lib/net45/MonoGame.Framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/MonoGame.Framework.dll": {}
+        },
+        "build": {
+          "build/_._": {}
+        }
+      },
+      "Myra/1.0.0.204": {
+        "type": "package",
+        "dependencies": {
+          "XNAssets": "0.5.0.6",
+          "info.lundin.math.dll": "1.2.6"
+        },
+        "compile": {
+          "lib/net45/Myra.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Myra.dll": {}
+        }
+      },
+      "XNAssets/0.5.0.6": {
+        "type": "package",
+        "compile": {
+          "lib/net45/XNAssets.dll": {}
+        },
+        "runtime": {
+          "lib/net45/XNAssets.dll": {}
+        }
+      },
+      "xunit/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.analyzers": "0.10.0",
+          "xunit.assert": "[2.4.1]",
+          "xunit.core": "[2.4.1]"
+        }
+      },
+      "xunit.abstractions/2.0.3": {
+        "type": "package",
+        "compile": {
+          "lib/net35/xunit.abstractions.dll": {}
+        },
+        "runtime": {
+          "lib/net35/xunit.abstractions.dll": {}
+        }
+      },
+      "xunit.analyzers/0.10.0": {
+        "type": "package"
+      },
+      "xunit.assert/2.4.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard1.1/xunit.assert.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.1/xunit.assert.dll": {}
+        }
+      },
+      "xunit.core/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.4.1]",
+          "xunit.extensibility.execution": "[2.4.1]"
+        },
+        "build": {
+          "build/xunit.core.props": {},
+          "build/xunit.core.targets": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/xunit.core.props": {},
+          "buildMultiTargeting/xunit.core.targets": {}
+        }
+      },
+      "xunit.extensibility.core/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.abstractions": "2.0.3"
+        },
+        "compile": {
+          "lib/net452/xunit.core.dll": {}
+        },
+        "runtime": {
+          "lib/net452/xunit.core.dll": {}
+        }
+      },
+      "xunit.extensibility.execution/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.4.1]"
+        },
+        "compile": {
+          "lib/net452/xunit.execution.desktop.dll": {}
+        },
+        "runtime": {
+          "lib/net452/xunit.execution.desktop.dll": {}
+        }
+      },
+      "xunit.runner.console/2.4.1": {
+        "type": "package",
+        "build": {
+          "build/xunit.runner.console.props": {}
+        }
+      },
+      "xunit.runner.visualstudio/2.4.2": {
+        "type": "package",
+        "build": {
+          "build/net452/xunit.runner.visualstudio.props": {}
+        }
+      },
+      "Monoboy/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.7.2",
+        "dependencies": {
+          "Costura.Fody": "4.1.0",
+          "MonoGame.Framework.DesktopGL": "3.7.1.189",
+          "Myra": "1.0.0.204"
+        },
+        "compile": {
+          "bin/placeholder/Monoboy.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Monoboy.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7.2/win-x64": {
+      "Costura.Fody/4.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Fody": "6.0.0"
+        },
+        "compile": {
+          "lib/net40/Costura.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Costura.dll": {}
+        },
+        "build": {
+          "build/_._": {}
+        }
+      },
+      "info.lundin.math.dll/1.2.6": {
+        "type": "package",
+        "compile": {
+          "lib/net40/info.lundin.math.dll": {}
+        },
+        "runtime": {
+          "lib/net40/info.lundin.math.dll": {}
+        }
+      },
+      "MonoGame.Framework.DesktopGL/3.7.1.189": {
+        "type": "package",
+        "compile": {
+          "lib/net45/MonoGame.Framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/MonoGame.Framework.dll": {}
+        },
+        "build": {
+          "build/_._": {}
+        }
+      },
+      "Myra/1.0.0.204": {
+        "type": "package",
+        "dependencies": {
+          "XNAssets": "0.5.0.6",
+          "info.lundin.math.dll": "1.2.6"
+        },
+        "compile": {
+          "lib/net45/Myra.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Myra.dll": {}
+        }
+      },
+      "XNAssets/0.5.0.6": {
+        "type": "package",
+        "compile": {
+          "lib/net45/XNAssets.dll": {}
+        },
+        "runtime": {
+          "lib/net45/XNAssets.dll": {}
+        }
+      },
+      "xunit/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.analyzers": "0.10.0",
+          "xunit.assert": "[2.4.1]",
+          "xunit.core": "[2.4.1]"
+        }
+      },
+      "xunit.abstractions/2.0.3": {
+        "type": "package",
+        "compile": {
+          "lib/net35/xunit.abstractions.dll": {}
+        },
+        "runtime": {
+          "lib/net35/xunit.abstractions.dll": {}
+        }
+      },
+      "xunit.analyzers/0.10.0": {
+        "type": "package"
+      },
+      "xunit.assert/2.4.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard1.1/xunit.assert.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.1/xunit.assert.dll": {}
+        }
+      },
+      "xunit.core/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.4.1]",
+          "xunit.extensibility.execution": "[2.4.1]"
+        },
+        "build": {
+          "build/xunit.core.props": {},
+          "build/xunit.core.targets": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/xunit.core.props": {},
+          "buildMultiTargeting/xunit.core.targets": {}
+        }
+      },
+      "xunit.extensibility.core/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.abstractions": "2.0.3"
+        },
+        "compile": {
+          "lib/net452/xunit.core.dll": {}
+        },
+        "runtime": {
+          "lib/net452/xunit.core.dll": {}
+        }
+      },
+      "xunit.extensibility.execution/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.4.1]"
+        },
+        "compile": {
+          "lib/net452/xunit.execution.desktop.dll": {}
+        },
+        "runtime": {
+          "lib/net452/xunit.execution.desktop.dll": {}
+        }
+      },
+      "xunit.runner.console/2.4.1": {
+        "type": "package",
+        "build": {
+          "build/xunit.runner.console.props": {}
+        }
+      },
+      "xunit.runner.visualstudio/2.4.2": {
+        "type": "package",
+        "build": {
+          "build/net452/xunit.runner.visualstudio.props": {}
+        }
+      },
+      "Monoboy/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.7.2",
+        "dependencies": {
+          "Costura.Fody": "4.1.0",
+          "MonoGame.Framework.DesktopGL": "3.7.1.189",
+          "Myra": "1.0.0.204"
+        },
+        "compile": {
+          "bin/placeholder/Monoboy.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Monoboy.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7.2/win-x86": {
+      "Costura.Fody/4.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Fody": "6.0.0"
+        },
+        "compile": {
+          "lib/net40/Costura.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Costura.dll": {}
+        },
+        "build": {
+          "build/_._": {}
+        }
+      },
+      "info.lundin.math.dll/1.2.6": {
+        "type": "package",
+        "compile": {
+          "lib/net40/info.lundin.math.dll": {}
+        },
+        "runtime": {
+          "lib/net40/info.lundin.math.dll": {}
+        }
+      },
+      "MonoGame.Framework.DesktopGL/3.7.1.189": {
+        "type": "package",
+        "compile": {
+          "lib/net45/MonoGame.Framework.dll": {}
+        },
+        "runtime": {
+          "lib/net45/MonoGame.Framework.dll": {}
+        },
+        "build": {
+          "build/_._": {}
+        }
+      },
+      "Myra/1.0.0.204": {
+        "type": "package",
+        "dependencies": {
+          "XNAssets": "0.5.0.6",
+          "info.lundin.math.dll": "1.2.6"
+        },
+        "compile": {
+          "lib/net45/Myra.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Myra.dll": {}
+        }
+      },
+      "XNAssets/0.5.0.6": {
+        "type": "package",
+        "compile": {
+          "lib/net45/XNAssets.dll": {}
+        },
+        "runtime": {
+          "lib/net45/XNAssets.dll": {}
+        }
+      },
+      "xunit/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.analyzers": "0.10.0",
+          "xunit.assert": "[2.4.1]",
+          "xunit.core": "[2.4.1]"
+        }
+      },
+      "xunit.abstractions/2.0.3": {
+        "type": "package",
+        "compile": {
+          "lib/net35/xunit.abstractions.dll": {}
+        },
+        "runtime": {
+          "lib/net35/xunit.abstractions.dll": {}
+        }
+      },
+      "xunit.analyzers/0.10.0": {
+        "type": "package"
+      },
+      "xunit.assert/2.4.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard1.1/xunit.assert.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.1/xunit.assert.dll": {}
+        }
+      },
+      "xunit.core/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.4.1]",
+          "xunit.extensibility.execution": "[2.4.1]"
+        },
+        "build": {
+          "build/xunit.core.props": {},
+          "build/xunit.core.targets": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/xunit.core.props": {},
+          "buildMultiTargeting/xunit.core.targets": {}
+        }
+      },
+      "xunit.extensibility.core/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.abstractions": "2.0.3"
+        },
+        "compile": {
+          "lib/net452/xunit.core.dll": {}
+        },
+        "runtime": {
+          "lib/net452/xunit.core.dll": {}
+        }
+      },
+      "xunit.extensibility.execution/2.4.1": {
+        "type": "package",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.4.1]"
+        },
+        "compile": {
+          "lib/net452/xunit.execution.desktop.dll": {}
+        },
+        "runtime": {
+          "lib/net452/xunit.execution.desktop.dll": {}
+        }
+      },
+      "xunit.runner.console/2.4.1": {
+        "type": "package",
+        "build": {
+          "build/xunit.runner.console.props": {}
+        }
+      },
+      "xunit.runner.visualstudio/2.4.2": {
+        "type": "package",
+        "build": {
+          "build/net452/xunit.runner.visualstudio.props": {}
+        }
+      },
+      "Monoboy/1.0.0": {
+        "type": "project",
+        "framework": ".NETFramework,Version=v4.7.2",
+        "dependencies": {
+          "Costura.Fody": "4.1.0",
+          "MonoGame.Framework.DesktopGL": "3.7.1.189",
+          "Myra": "1.0.0.204"
+        },
+        "compile": {
+          "bin/placeholder/Monoboy.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Monoboy.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Costura.Fody/4.1.0": {
+      "sha512": "MkW5aqhqNvuP6MiaaD5Yx8efXv+5ucsumRx+Nsn5b+PA4RnaxJLtXhGkm1N+Hi7sjkSlL8kl1klSS/7v2DxZHw==",
+      "type": "package",
+      "path": "costura.fody/4.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/Costura.Fody.props",
+        "costura.fody.4.1.0.nupkg.sha512",
+        "costura.fody.nuspec",
+        "lib/net40/Costura.dll",
+        "lib/net40/Costura.xml",
+        "weaver/Costura.Fody.dll",
+        "weaver/Costura.Fody.xcf"
+      ]
+    },
+    "info.lundin.math.dll/1.2.6": {
+      "sha512": "rCSUXUISKOmFkpEPd9wZJP9bHsyozEwvid3zO4gByG1QQX9IMAUZ8R9OZmpKp20JWrBMGBMTgoXAuLCSoK6VAQ==",
+      "type": "package",
+      "path": "info.lundin.math.dll/1.2.6",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "info.lundin.math.dll.1.2.6.nupkg.sha512",
+        "info.lundin.math.dll.nuspec",
+        "lib/net40/info.lundin.math.dll",
+        "lib/netstandard2.0/info.lundin.math.dll"
+      ]
+    },
+    "MonoGame.Framework.DesktopGL/3.7.1.189": {
+      "sha512": "7e6CvCZAAglBIPDA+lTwdaRTv0EARPl4s7Ai8gkn7ximiFyRODrpyciSxENUgCowap4y5d5B3Then7k/6UbHGw==",
+      "type": "package",
+      "path": "monogame.framework.desktopgl/3.7.1.189",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/MonoGame.Framework.DesktopGL.targets",
+        "build/native/MonoGame.Framework.dll.config",
+        "build/native/libSDL2-2.0.0.dylib",
+        "build/native/libopenal.1.dylib",
+        "build/native/x64/SDL2.dll",
+        "build/native/x64/libSDL2-2.0.so.0",
+        "build/native/x64/libopenal.so.1",
+        "build/native/x64/soft_oal.dll",
+        "build/native/x86/SDL2.dll",
+        "build/native/x86/libSDL2-2.0.so.0",
+        "build/native/x86/libopenal.so.1",
+        "build/native/x86/soft_oal.dll",
+        "lib/net45/MonoGame.Framework.dll",
+        "lib/net45/MonoGame.Framework.xml",
+        "monogame.framework.desktopgl.3.7.1.189.nupkg.sha512",
+        "monogame.framework.desktopgl.nuspec"
+      ]
+    },
+    "Myra/1.0.0.204": {
+      "sha512": "85uOE9haDUKsRIBM96stWTO8NLYWCQVuPNLqEDLZomTA5iBNcUDxcHM75MLgZ1bUs10Ms0PmRVlSuSCUYHHtAw==",
+      "type": "package",
+      "path": "myra/1.0.0.204",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net45/Myra.dll",
+        "lib/netstandard2.0/Myra.dll",
+        "myra.1.0.0.204.nupkg.sha512",
+        "myra.nuspec"
+      ]
+    },
+    "XNAssets/0.5.0.6": {
+      "sha512": "12naqYOdQ3MLaIBWx6jj+XQQMnkwuMRjb304elYvP3tjBgsN6p90VWWuBRMF88IlHNLTBp7w0h+XIci24XqZfA==",
+      "type": "package",
+      "path": "xnassets/0.5.0.6",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net45/XNAssets.dll",
+        "lib/netstandard2.0/XNAssets.dll",
+        "xnassets.0.5.0.6.nupkg.sha512",
+        "xnassets.nuspec"
+      ]
+    },
+    "xunit/2.4.1": {
+      "sha512": "XNR3Yz9QTtec16O0aKcO6+baVNpXmOnPUxDkCY97J+8krUYxPvXT1szYYEUdKk4sB8GOI2YbAjRIOm8ZnXRfzQ==",
+      "type": "package",
+      "path": "xunit/2.4.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "xunit.2.4.1.nupkg.sha512",
+        "xunit.nuspec"
+      ]
+    },
+    "xunit.abstractions/2.0.3": {
+      "sha512": "pot1I4YOxlWjIb5jmwvvQNbTrZ3lJQ+jUGkGjWE3hEFM0l5gOnBWS+H3qsex68s5cO52g+44vpGzhAt+42vwKg==",
+      "type": "package",
+      "path": "xunit.abstractions/2.0.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net35/xunit.abstractions.dll",
+        "lib/net35/xunit.abstractions.xml",
+        "lib/netstandard1.0/xunit.abstractions.dll",
+        "lib/netstandard1.0/xunit.abstractions.xml",
+        "lib/netstandard2.0/xunit.abstractions.dll",
+        "lib/netstandard2.0/xunit.abstractions.xml",
+        "xunit.abstractions.2.0.3.nupkg.sha512",
+        "xunit.abstractions.nuspec"
+      ]
+    },
+    "xunit.analyzers/0.10.0": {
+      "sha512": "4/IDFCJfIeg6bix9apmUtIMwvOsiwqdEexeO/R2D4GReIGPLIRODTpId/l4LRSrAJk9lEO3Zx1H0Zx6uohJDNg==",
+      "type": "package",
+      "path": "xunit.analyzers/0.10.0",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/dotnet/cs/xunit.analyzers.dll",
+        "tools/install.ps1",
+        "tools/uninstall.ps1",
+        "xunit.analyzers.0.10.0.nupkg.sha512",
+        "xunit.analyzers.nuspec"
+      ]
+    },
+    "xunit.assert/2.4.1": {
+      "sha512": "O/Oe0BS5RmSsM+LQOb041TzuPo5MdH2Rov+qXGS37X+KFG1Hxz7kopYklM5+1Y+tRGeXrOx5+Xne1RuqLFQoyQ==",
+      "type": "package",
+      "path": "xunit.assert/2.4.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/netstandard1.1/xunit.assert.dll",
+        "lib/netstandard1.1/xunit.assert.xml",
+        "xunit.assert.2.4.1.nupkg.sha512",
+        "xunit.assert.nuspec"
+      ]
+    },
+    "xunit.core/2.4.1": {
+      "sha512": "Zsj5OMU6JasNGERXZy8s72+pcheG6Q15atS5XpZXqAtULuyQiQ6XNnUsp1gyfC6WgqScqMvySiEHmHcOG6Eg0Q==",
+      "type": "package",
+      "path": "xunit.core/2.4.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/xunit.core.props",
+        "build/xunit.core.targets",
+        "buildMultiTargeting/xunit.core.props",
+        "buildMultiTargeting/xunit.core.targets",
+        "xunit.core.2.4.1.nupkg.sha512",
+        "xunit.core.nuspec"
+      ]
+    },
+    "xunit.extensibility.core/2.4.1": {
+      "sha512": "yKZKm/8QNZnBnGZFD9SewkllHBiK0DThybQD/G4PiAmQjKtEZyHi6ET70QPU9KtSMJGRYS6Syk7EyR2EVDU4Kg==",
+      "type": "package",
+      "path": "xunit.extensibility.core/2.4.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net452/xunit.core.dll",
+        "lib/net452/xunit.core.dll.tdnet",
+        "lib/net452/xunit.core.xml",
+        "lib/net452/xunit.runner.tdnet.dll",
+        "lib/net452/xunit.runner.utility.net452.dll",
+        "lib/netstandard1.1/xunit.core.dll",
+        "lib/netstandard1.1/xunit.core.xml",
+        "xunit.extensibility.core.2.4.1.nupkg.sha512",
+        "xunit.extensibility.core.nuspec"
+      ]
+    },
+    "xunit.extensibility.execution/2.4.1": {
+      "sha512": "7e/1jqBpcb7frLkB6XDrHCGXAbKN4Rtdb88epYxCSRQuZDRW8UtTfdTEVpdTl8s4T56e07hOBVd4G0OdCxIY2A==",
+      "type": "package",
+      "path": "xunit.extensibility.execution/2.4.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net452/xunit.execution.desktop.dll",
+        "lib/net452/xunit.execution.desktop.xml",
+        "lib/netstandard1.1/xunit.execution.dotnet.dll",
+        "lib/netstandard1.1/xunit.execution.dotnet.xml",
+        "xunit.extensibility.execution.2.4.1.nupkg.sha512",
+        "xunit.extensibility.execution.nuspec"
+      ]
+    },
+    "xunit.runner.console/2.4.1": {
+      "sha512": "6yGe+Vx250m1zG/nV8FH1XlftJFoidCThpRdWEIwIFE/rc/lYSuL0M+D1gMDNmZgERAR/sHR18Q/etqd6lxaNA==",
+      "type": "package",
+      "path": "xunit.runner.console/2.4.1",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/xunit.runner.console.props",
+        "tools/net452/xunit.abstractions.dll",
+        "tools/net452/xunit.console.exe",
+        "tools/net452/xunit.console.exe.config",
+        "tools/net452/xunit.console.x86.exe",
+        "tools/net452/xunit.console.x86.exe.config",
+        "tools/net452/xunit.runner.reporters.net452.dll",
+        "tools/net452/xunit.runner.utility.net452.dll",
+        "tools/net46/xunit.abstractions.dll",
+        "tools/net46/xunit.console.exe",
+        "tools/net46/xunit.console.exe.config",
+        "tools/net46/xunit.console.x86.exe",
+        "tools/net46/xunit.console.x86.exe.config",
+        "tools/net46/xunit.runner.reporters.net452.dll",
+        "tools/net46/xunit.runner.utility.net452.dll",
+        "tools/net461/xunit.abstractions.dll",
+        "tools/net461/xunit.console.exe",
+        "tools/net461/xunit.console.exe.config",
+        "tools/net461/xunit.console.x86.exe",
+        "tools/net461/xunit.console.x86.exe.config",
+        "tools/net461/xunit.runner.reporters.net452.dll",
+        "tools/net461/xunit.runner.utility.net452.dll",
+        "tools/net462/xunit.abstractions.dll",
+        "tools/net462/xunit.console.exe",
+        "tools/net462/xunit.console.exe.config",
+        "tools/net462/xunit.console.x86.exe",
+        "tools/net462/xunit.console.x86.exe.config",
+        "tools/net462/xunit.runner.reporters.net452.dll",
+        "tools/net462/xunit.runner.utility.net452.dll",
+        "tools/net47/xunit.abstractions.dll",
+        "tools/net47/xunit.console.exe",
+        "tools/net47/xunit.console.exe.config",
+        "tools/net47/xunit.console.x86.exe",
+        "tools/net47/xunit.console.x86.exe.config",
+        "tools/net47/xunit.runner.reporters.net452.dll",
+        "tools/net47/xunit.runner.utility.net452.dll",
+        "tools/net471/xunit.abstractions.dll",
+        "tools/net471/xunit.console.exe",
+        "tools/net471/xunit.console.exe.config",
+        "tools/net471/xunit.console.x86.exe",
+        "tools/net471/xunit.console.x86.exe.config",
+        "tools/net471/xunit.runner.reporters.net452.dll",
+        "tools/net471/xunit.runner.utility.net452.dll",
+        "tools/net472/xunit.abstractions.dll",
+        "tools/net472/xunit.console.exe",
+        "tools/net472/xunit.console.exe.config",
+        "tools/net472/xunit.console.x86.exe",
+        "tools/net472/xunit.console.x86.exe.config",
+        "tools/net472/xunit.runner.reporters.net452.dll",
+        "tools/net472/xunit.runner.utility.net452.dll",
+        "tools/netcoreapp1.0/xunit.abstractions.dll",
+        "tools/netcoreapp1.0/xunit.console.deps.json",
+        "tools/netcoreapp1.0/xunit.console.dll",
+        "tools/netcoreapp1.0/xunit.console.dll.config",
+        "tools/netcoreapp1.0/xunit.console.runtimeconfig.json",
+        "tools/netcoreapp1.0/xunit.runner.reporters.netcoreapp10.dll",
+        "tools/netcoreapp1.0/xunit.runner.utility.netcoreapp10.dll",
+        "tools/netcoreapp1.0/xunit.runner.utility.netcoreapp10.xml",
+        "tools/netcoreapp2.0/xunit.abstractions.dll",
+        "tools/netcoreapp2.0/xunit.console.deps.json",
+        "tools/netcoreapp2.0/xunit.console.dll",
+        "tools/netcoreapp2.0/xunit.console.dll.config",
+        "tools/netcoreapp2.0/xunit.console.runtimeconfig.json",
+        "tools/netcoreapp2.0/xunit.runner.reporters.netcoreapp10.dll",
+        "tools/netcoreapp2.0/xunit.runner.utility.netcoreapp10.dll",
+        "tools/netcoreapp2.0/xunit.runner.utility.netcoreapp10.xml",
+        "xunit.runner.console.2.4.1.nupkg.sha512",
+        "xunit.runner.console.nuspec"
+      ]
+    },
+    "xunit.runner.visualstudio/2.4.2": {
+      "sha512": "Trt9multph2KE3U0p9oBt0k4Fq6lUv4btUcONaQEeuFnMCak2k/b7PAArbLtMFW7HO1jxlBHUgIPKEqci3Y1dg==",
+      "type": "package",
+      "path": "xunit.runner.visualstudio/2.4.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "License.txt",
+        "build/net452/xunit.abstractions.dll",
+        "build/net452/xunit.runner.reporters.net452.dll",
+        "build/net452/xunit.runner.utility.net452.dll",
+        "build/net452/xunit.runner.visualstudio.props",
+        "build/net452/xunit.runner.visualstudio.testadapter.dll",
+        "build/netcoreapp2.1/xunit.abstractions.dll",
+        "build/netcoreapp2.1/xunit.runner.reporters.netcoreapp10.dll",
+        "build/netcoreapp2.1/xunit.runner.utility.netcoreapp10.dll",
+        "build/netcoreapp2.1/xunit.runner.visualstudio.dotnetcore.testadapter.dll",
+        "build/netcoreapp2.1/xunit.runner.visualstudio.props",
+        "build/uap10.0.16299/xunit.runner.reporters.netstandard15.dll",
+        "build/uap10.0.16299/xunit.runner.utility.netstandard15.dll",
+        "build/uap10.0.16299/xunit.runner.utility.uwp10.dll",
+        "build/uap10.0.16299/xunit.runner.utility.uwp10.pri",
+        "build/uap10.0.16299/xunit.runner.visualstudio.props",
+        "build/uap10.0.16299/xunit.runner.visualstudio.targets",
+        "build/uap10.0.16299/xunit.runner.visualstudio.uwp.testadapter.dll",
+        "build/uap10.0.16299/xunit.runner.visualstudio.uwp.testadapter.pri",
+        "logo-512-transparent.png",
+        "xunit.runner.visualstudio.2.4.2.nupkg.sha512",
+        "xunit.runner.visualstudio.nuspec"
+      ]
+    },
+    "Monoboy/1.0.0": {
+      "type": "project",
+      "path": "../Monoboy/Monoboy.csproj",
+      "msbuildProject": "../Monoboy/Monoboy.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    ".NETFramework,Version=v4.7.2": [
+      "Monoboy >= 1.0.0",
+      "xunit >= 2.4.1",
+      "xunit.runner.console >= 2.4.1",
+      "xunit.runner.visualstudio >= 2.4.2"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\Econn\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "E:\\Projects\\C#\\Monoboy\\Monoboy.Tests\\Monoboy.Tests.csproj",
+      "projectName": "Monoboy.Tests",
+      "projectPath": "E:\\Projects\\C#\\Monoboy\\Monoboy.Tests\\Monoboy.Tests.csproj",
+      "packagesPath": "C:\\Users\\Econn\\.nuget\\packages\\",
+      "outputPath": "E:\\Projects\\C#\\Monoboy\\Monoboy.Tests\\obj\\",
+      "projectStyle": "PackageReference",
+      "skipContentFileWrite": true,
+      "configFilePaths": [
+        "C:\\Users\\Econn\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\DevExpress 19.2.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net472"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net472": {
+          "projectReferences": {
+            "E:\\Projects\\C#\\Monoboy\\Monoboy\\Monoboy.csproj": {
+              "projectPath": "E:\\Projects\\C#\\Monoboy\\Monoboy\\Monoboy.csproj"
+            }
+          }
+        }
+      }
+    },
+    "frameworks": {
+      "net472": {
+        "dependencies": {
+          "xunit": {
+            "target": "Package",
+            "version": "[2.4.1, )"
+          },
+          "xunit.runner.console": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[2.4.1, )"
+          },
+          "xunit.runner.visualstudio": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[2.4.2, )"
+          }
+        }
+      }
+    },
+    "runtimes": {
+      "win": {
+        "#import": []
+      },
+      "win-x64": {
+        "#import": []
+      },
+      "win-x86": {
+        "#import": []
+      }
+    }
+  }
+}

@@ -18,12 +18,12 @@ namespace Monoboy.Emulator.Utility
 
         public static string ToBin(this byte data)
         {
-            return "0b" + Convert.ToString(data, 2).PadLeft(8, '0');
+            return "(byte)(byte)0b" + Convert.ToString(data, 2).PadLeft(8, '0');
         }
 
         public static string ToBin(this ushort data)
         {
-            return "0b" + Convert.ToString(data, 2).PadLeft(16, '0');
+            return "(byte)(byte)0b" + Convert.ToString(data, 2).PadLeft(16, '0');
         }
 
         #endregion
@@ -60,7 +60,34 @@ namespace Monoboy.Emulator.Utility
         public static ushort ToShort(this byte low, byte high)
         {
 
-            return (ushort)((((ushort)high) << 8) | (ushort)low);
+            return (ushort)((high << 8) | low);
+        }
+
+        /// <summary>
+        /// Set bit
+        /// </summary>
+        /// <param name="bit">The bit to set</param>
+        /// <returns></returns>
+        public static byte SetBit(this byte data, Bit bit, bool condition)
+        {
+            if(condition == true)
+            {
+                return (byte)(data | (byte)bit);
+            }
+            else
+            {
+                return (byte)(data & (byte)~bit);
+            }
+        }
+
+        /// <summary>
+        /// Set bit
+        /// </summary>
+        /// <param name="bit">The bit returned</param>
+        /// <returns></returns>
+        public static bool GetBit(this byte data, Bit bit)
+        {
+            return (data & (byte)bit) != 0;
         }
     }
 }

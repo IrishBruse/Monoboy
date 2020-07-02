@@ -1,34 +1,57 @@
-﻿namespace Monoboy.Emulator
+﻿using Microsoft.Xna.Framework.Graphics;
+using Monoboy.Emulator.Utility;
+
+namespace Monoboy.Emulator
 {
     public class MonoboyEmulator
     {
         public int steps;
-        public string CurrentOpcode { get => cpu.currentOpcode; }
+        public string CurrentOpcode { get => memory.Read(register.PC).ToHex(); }
+        public ushort CurrentAddress { get => register.PC; }
 
+        Interrupt interrupt;
+        Memory memory;
+       public Register register;
+        CPU cpu;
+        GPU gpu;
 
-        public Register register;
-        readonly Memory memory;
-        readonly CPU cpu;
-        readonly GPU gpu;
-
+        int cycles;
 
         public MonoboyEmulator()
         {
-            register = new Register();
+            interrupt = new Interrupt();
             memory = new Memory();
-            cpu = new CPU(memory, register);
-            gpu = new GPU(memory);
-            gpu.Call();
+            register = new Register();
+
+            cpu = new CPU
+            {
+                memory = memory,
+                register = register,
+                interrupt = interrupt
+            };
+
+            gpu = new GPU
+            {
+                memory = memory,
+                interrupt = interrupt
+            };
         }
 
         public void Step()
         {
             steps++;
-            cpu.Step();
+            cycles = cpu.Step();
+            gpu.Step(cycles);
         }
 
-        public void Boot()
+        public void LinkTexture(Texture2D texture)
         {
+            gpu.screen = texture;
+        }
+
+        public void SkipBootRom()
+        {
+            memory.booted = true;
             register.AF = 0x01B0;
             register.BC = 0x0013;
             register.DE = 0x00D8;
@@ -55,8 +78,7 @@
             memory.Write(0xFF23, 0xBF);
             memory.Write(0xFF24, 0x77);
             memory.Write(0xFF25, 0xF3);
-            memory.Write(0xFF26, 0xF1);//GB
-            //memory.Write(0xFF26, 0xF0);// SGB
+            memory.Write(0xFF26, 0xF1);
             memory.Write(0xFF40, 0x91);
             memory.Write(0xFF42, 0x00);
             memory.Write(0xFF43, 0x00);
@@ -77,6 +99,31 @@
         public void Dump()
         {
             memory.Dump();
+        }
+
+        public void DumpAsImage(GraphicsDevice graphics)
+        {
+            memory.DumpAsImage(graphics);
+        }
+
+        public string[] DebugInfo()
+        {
+            return new string[]
+            {
+                "F : " + (cpu.register.GetFlag(Flag.Zero) ? "Z" : "-") +
+                        (cpu.register.GetFlag(Flag.Negative) ? "N" : "-").ToString() +
+                        (cpu.register.GetFlag(Flag.HalfCarry) ? "H" : "-").ToString() +
+                        (cpu.register.GetFlag(Flag.FullCarry) ? "F" : "-").ToString(),
+                "AF: " + cpu.register.AF.ToHex(),
+                "BC: " + cpu.register.BC.ToHex(),
+                "DE: " + cpu.register.DE.ToHex(),
+                "HL: " + cpu.register.HL.ToHex(),
+                "SP: " + cpu.register.SP.ToHex(),
+                "PC: " + cpu.register.PC.ToHex() + " = " + CurrentOpcode,
+                "Step: " + steps,
+                "",
+                "Gpu clock:" + gpu.clock
+            };
         }
     }
 }

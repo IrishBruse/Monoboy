@@ -1,25 +1,64 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Monoboy.Emulator.Utility;
 
 namespace Monoboy.Emulator
 {
     public class Memory
     {
-        bool booted = true;
+        public bool booted = false;
 
-        byte[] boot;
-        byte[] cartBank0;
-        byte[] cartBankN;
-        byte[] videoRAM;
-        byte[] cartRAM;
-        byte[] workRAM;
-        byte[] spriteRAM;
-        byte[] io;
-        byte[] zp;
+        public string testOutput;
+
+        byte[] boot;            //  0x0000-0x00FF
+
+        byte[] cartBank0;       //  0x0000-0x3FFF
+        byte[] cartBankN;       //  0x4000-0x7FFF
+        public byte[] videoRAM; //  0x8000-0x9FFF
+        byte[] cartRAM;         //  0xA000-0xBFFF
+        byte[] workRAM;         //  0xC000-0xFDFF
+        byte[] spriteRAM;       //  0xFE00-0xFE9F
+                                //  0xFEA0-0xFEFF
+        byte[] io;              //  0xFF00-0xFF7F
+        byte[] zp;              //  0xFF80-0xFFFF
+
+        byte[] all
+        {
+            get
+            {
+                List<byte> bytes = new List<byte>(65536);
+                bytes.AddRange(new byte[8192 * 2]);
+                bytes.AddRange(new byte[8192 * 2]);
+                bytes.AddRange(videoRAM);
+                bytes.AddRange(cartRAM);
+                bytes.AddRange(workRAM);// 57344
+                bytes.AddRange(new byte[7680]);
+                bytes.AddRange(spriteRAM);//160
+                bytes.AddRange(new byte[96]);//96
+                bytes.AddRange(io);
+                bytes.AddRange(zp);
+                return bytes.ToArray();
+            }
+        }
+
+        public byte GpuControl { get => io[0x0040]; set => io[0x0040] = value; }
+        public byte Stat { get => io[0x0041]; set => io[0x0041] = value; }
+        public byte ScrollY { get => io[0x0042]; set => io[0x0042] = value; }
+        public byte ScrollX { get => io[0x0043]; set => io[0x0043] = value; }
+        public byte Scanline { get => io[0x0044]; set => io[0x0044] = value; }
+        public byte BackgroundPallet { get => io[0x0047]; set => io[0x0047] = value; }
+
+
+        public string location;
 
         public Memory()
         {
-            boot = File.ReadAllBytes("Roms/Boot.bin");
+            cartBank0 = new byte[16384];
+            cartBankN = new byte[16384];
             videoRAM = new byte[8192];
             cartRAM = new byte[8192];
             workRAM = new byte[8192];
@@ -27,14 +66,18 @@ namespace Monoboy.Emulator
             io = new byte[128];
             zp = new byte[128];
 
-            LoadRom(@"Roms\cpu test.gb");
+            if(File.Exists("Roms/Boot.bin") == true)
+            {
+                boot = File.ReadAllBytes("Roms/Boot.bin");
+            }
+            else
+            {
+                // TODO: run skip boot
+            }
         }
 
         public void LoadRom(string path)
         {
-            cartBank0 = new byte[16384];
-            cartBankN = new byte[16384];
-
             using(BinaryReader reader = new BinaryReader(File.Open(path, FileMode.Open)))
             {
                 for(int i = 0; i < 16384; i++)
@@ -51,23 +94,104 @@ namespace Monoboy.Emulator
 
         public void Dump()
         {
-            Debug.Disable();
-            string dumpFile = @"C:\Users\Econn\Desktop\Dump.bin";
+            List<string> lines = new List<string>();
 
-            using(BinaryWriter writer = new BinaryWriter(File.Create(dumpFile)))
+            byte[] cache = all;
+
+            for(int i = 0; i < 4096; i++)//line
             {
-                for(int i = 0; i <= 65535; i++)
+                string offset = (i * 16).ToString("X6") + ":";
+                string hexs = " ";
+                string texts = " ";
+                for(int hex = 0; hex < 16; hex++)
                 {
-                    writer.Write(Read((ushort)i));
+                    byte val = cache[(i * 16) + hex];
+
+                    hexs += val.ToString("X2") + " ";
+                    if(val >= 32 && val <= 126)
+                    {
+                        texts += (char)val;
+                    }
+                    else
+                    {
+                        texts += "_";
+                    }
                 }
+
+                lines.Add(offset + hexs + texts);
             }
-            Debug.Enable();
+
+            string dump = "Dump.bin";
+
+            if(File.Exists(dump) == true)
+                File.Delete(dump);
+
+            File.WriteAllLines(dump, lines.ToArray());
+        }
+
+        public void DumpAsImage(GraphicsDevice graphics)
+        {
+            System.Diagnostics.Debug.WriteLine(all.Length);
+
+            Thread thread = new Thread(() =>
+            {
+                using(Texture2D dump = new Texture2D(graphics, 256, 98))
+                {
+                    byte[] cache = all;
+
+                    Color[] pixels = new Color[25088];
+                    for(int i = 32768; i < 57856; i++)
+                    {
+                        if(i < 32768 + 8192 + 8192 + 8192)
+                        {
+                            if(cache[i] == 0)
+                            {
+                                if(i < 32768 + 8192)// Vram
+                                {
+                                    pixels[i - 32768] = new Color(128, 255, 128);
+                                }
+                                else if(i < 32768 + 8192 + 8192)// Cart
+                                {
+                                    pixels[i - 32768] = new Color(255, 128, 128);
+                                }
+                                else if(i < 32768 + 8192 + 8192 + 8192)// Work
+                                {
+                                    pixels[i - 32768] = new Color(255, 255, 128);
+                                }
+                            }
+                            else
+                            {
+                                pixels[i - 32768] = new Color(cache[i], cache[i], cache[i]);
+                            }
+                        }
+                        else
+                        {
+                            if(cache[i + 7680] == 0)
+                            {
+                                pixels[i - 32768] = new Color(128, 128, 255);
+                            }
+                            else
+                            {
+                                pixels[i - 32768] = new Color(cache[i + 7680], cache[i + 7680], cache[i + 7680]);
+                            }
+                        }
+                    }
+
+                    dump.SetData(0, new Rectangle(0, 0, 256, 98), pixels, 0, 25088);
+
+                    using(Stream s = File.Create("Dump.png"))
+                    {
+                        dump.SaveAsPng(s, dump.Width, dump.Height);
+                    }
+                }
+            });
+
+            thread.Start();
         }
 
         public byte Read(ushort address)
         {
             byte data;
-            string location;
             if(address >= 0x0000 && address <= 0x3FFF)// 16KB ROM Bank 00     (in cartridge, fixed at bank 00)
             {
 
@@ -138,15 +262,13 @@ namespace Monoboy.Emulator
                 location = "Error";
             }
 
-            Debug.Log("R " + address.ToHex() + "=" + data.ToHex() + " " + location);
+            //Debug.Log("R " + address.ToHex() + "=" + data.ToHex() + " " + location);
 
             return data;
         }
 
         public void Write(ushort address, byte data)
         {
-            string location = "";
-
             // cant write to rom skipped
             if(address >= 0x8000 && address <= 0x9FFF)// 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
             {
@@ -187,7 +309,7 @@ namespace Monoboy.Emulator
             {
                 if(address == 0xFF02 && data == 0x81)
                 {
-                    Debug.Log((char)Read(0xFF01));
+                    testOutput += (char)Read(0xFF01);
                 }
                 io[address - 0xFF00] = data;
                 location = "io";
@@ -199,7 +321,12 @@ namespace Monoboy.Emulator
                 location = "zp";
             }
 
-            Debug.Log("W " + address.ToHex() + "=" + data.ToHex() + " " + location);
+            //Debug.Log("W " + address.ToHex() + "=" + data.ToHex() + " " + location);
+        }
+
+        public void WriteBit(ushort address, Bit bit)
+        {
+            Write(address, (byte)(Read(address) | (byte)bit));
         }
     }
 }

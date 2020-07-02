@@ -1,0 +1,18 @@
+<Project>
+	<Project.ExportOptions Namespace="Monogame.UI" Class="GUI" OutputPath="E:\Projects\C#\Monoboy\Monoboy\App" />
+	<VerticalStackPanel AcceptsKeyboardFocus="False">
+		<VerticalStackPanel.Proportions>
+			<Proportion Type="Auto" />
+		</VerticalStackPanel.Proportions>
+		<HorizontalMenu VerticalAlignment="Stretch" Id="_mainMenu">
+			<MenuItem Text="File" Id="FileDropdown">
+				<MenuItem Text="Open ROM..." ShortcutText="Ctrl+O" Id="FileOpen" />
+				<MenuItem Text="Quit" ShortcutText="Alt+F4" Id="FileQuit" />
+			</MenuItem>
+			<MenuItem Text="View" Id="ViewDropdown">
+				<MenuItem Text="Toggle toolbar" Toggleable="True" ShortcutText="Ctrl+T" Id="ViewToolbarToggle" />
+			</MenuItem>
+		</HorizontalMenu>
+		<Label Text="test" Id="registers "></Label>
+	</VerticalStackPanel>
+</Project>

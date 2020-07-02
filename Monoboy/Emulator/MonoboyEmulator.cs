@@ -1,5 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
-using Monoboy.Emulator.Utility;
+using Monoboy.Utility;
 
 namespace Monoboy.Emulator
 {
@@ -11,7 +11,7 @@ namespace Monoboy.Emulator
 
         Interrupt interrupt;
         Memory memory;
-       public Register register;
+        public Register register;
         CPU cpu;
         GPU gpu;
 

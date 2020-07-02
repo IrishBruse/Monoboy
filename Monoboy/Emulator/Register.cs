@@ -1,4 +1,4 @@
-﻿using Monoboy.Emulator.Utility;
+﻿using Monoboy.Utility;
 
 namespace Monoboy.Emulator
 {

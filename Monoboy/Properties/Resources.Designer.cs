@@ -71,18 +71,16 @@ namespace Monoboy.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
-        ///&lt;Project&gt;
-        ///	&lt;VerticalStackPanel&gt;
+        ///   Looks up a localized string similar to &lt;Project&gt;
+        ///	&lt;Project.ExportOptions Namespace=&quot;Monogame.UI&quot; Class=&quot;GUI&quot; OutputPath=&quot;E:\Projects\C#\Monoboy\Monoboy\App&quot; /&gt;
+        ///	&lt;VerticalStackPanel AcceptsKeyboardFocus=&quot;False&quot;&gt;
         ///		&lt;VerticalStackPanel.Proportions&gt;
         ///			&lt;Proportion Type=&quot;Auto&quot; /&gt;
-        ///			&lt;Proportion Type=&quot;Auto&quot; /&gt;
         ///		&lt;/VerticalStackPanel.Proportions&gt;
-        ///		&lt;HorizontalMenu VerticalAlignment=&quot;Stretch&quot; Id=&quot;mainMenu&quot;&gt;
-        ///			&lt;MenuItem Text=&quot;&amp;amp;File&quot; Id=&quot;menuItemFile&quot;&gt;
-        ///				&lt;MenuItem Text=&quot;&amp;amp;New&quot; ShortcutText=&quot;Ctrl+N&quot; Id=&quot;menuItemNew&quot; /&gt;
-        ///				&lt;MenuItem Text=&quot;&amp;#818;Open...&quot; ShortcutText=&quot;Ctrl+O&quot; Id=&quot;menuItemOpen&quot; /&gt;
-        ///				&lt;MenuItem Text=&quot;ave&quot; ShortcutText=&quot;Ctrl+S&quot; Id= [rest of string was truncated]&quot;;.
+        ///		&lt;HorizontalMenu VerticalAlignment=&quot;Stretch&quot; Id=&quot;_mainMenu&quot;&gt;
+        ///			&lt;MenuItem Text=&quot;File&quot; Id=&quot;FileDropdown&quot;&gt;
+        ///				&lt;MenuItem Text=&quot;Open ROM...&quot; ShortcutText=&quot;Ctrl+O&quot; Id=&quot;FileOpen&quot; /&gt;
+        ///				&lt;MenuItem Text=&quot;Quit&quot; ShortcutText=&quot;Alt+F4&quot; Id=&quot;FileQuit&quot; [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string UI {
             get {

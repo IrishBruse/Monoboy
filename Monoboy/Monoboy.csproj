@@ -39,7 +39,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE;WINDOWS</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;WINDOWS x86</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -50,15 +50,15 @@
     <DebugType>None</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE;WINDOWS</DefineConstants>
+    <DefineConstants>TRACE;WINDOWS x86</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>App\Icon.ico</ApplicationIcon>
+    <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationManifest>App\app.manifest</ApplicationManifest>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>Monoboy.Program</StartupObject>
@@ -69,7 +69,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>..\bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;WINDOWS x64</DefineConstants>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -80,8 +80,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>
-    </DefineConstants>
+    <DefineConstants>WINDOWS x64</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -93,13 +92,14 @@
   <ItemGroup>
     <Compile Include="App\GUI.cs" />
     <Compile Include="App\GUI.Generated.cs" />
+    <Compile Include="App\TinyFileDialog.cs" />
     <Compile Include="Emulator\Enums.cs" />
     <Compile Include="Emulator\Interrupt.cs" />
     <Compile Include="App\App.cs" />
     <Compile Include="Emulator\CPU.cs" />
     <Compile Include="Emulator\GPU.cs" />
-    <Compile Include="Emulator\Utility\Debug.cs" />
-    <Compile Include="Emulator\Utility\Extensions.cs" />
+    <Compile Include="Utility\Debug.cs" />
+    <Compile Include="Utility\Extensions.cs" />
     <Compile Include="Emulator\MonoboyEmulator.cs" />
     <Compile Include="Emulator\Memory.cs" />
     <Compile Include="Emulator\Register.cs" />
@@ -117,18 +117,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="App\FodyWeavers.xml" />
-    <Content Include="App\Icon.ico" />
-    <EmbeddedResource Include="Resources\UI.xml" />
+    <None Include="tinyfiledialogsx64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="FodyWeavers.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <Content Include="Icon.ico" />
+    <None Include="tinyfiledialogsx86.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <EmbeddedResource Include="UI.xml" />
   </ItemGroup>
   <ItemGroup>
     <MonoGameContentReference Include="Content\Content.mgcb" />
-    <None Include="App\app.manifest" />
-    <None Include="App\FodyWeavers.xsd">
+    <None Include="app.manifest" />
+    <None Include="FodyWeavers.xsd">
       <SubType>Designer</SubType>
     </None>
     <None Include="Content\bin\Fonts\Font.xnb" />
-    <None Include="Roms\Boot.bin" />
+    <None Include="Roms\Boot.gb" />
     <None Include="Roms\Dr. Mario.gb" />
     <None Include="Roms\Mario.gb" />
     <None Include="Roms\Tetris.gb" />
@@ -166,10 +174,10 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />
   <PropertyGroup>
-    <PostBuildEvent>XCOPY "$(ProjectDir)Roms" "$(TargetDir)Roms\" /E /Y
+    <PostBuildEvent>Robocopy "$(ProjectDir)Roms" "$(TargetDir)Roms" *.gb /E
+Robocopy "$(ProjectDir)" "$(TargetDir)" tinyfiledialogs$(PlatformName).dll /E
 cd "$(TargetDir)"
-del *.xml
-del *.dll</PostBuildEvent>
+del *.xml</PostBuildEvent>
   </PropertyGroup>
   <!-- Below is the clean-up - removing the input dll files-->
 </Project>

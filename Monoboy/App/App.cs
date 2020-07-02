@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Monoboy.Utility;
 using Monoboy.Emulator;
 using Monoboy.Properties;
 using Monogame.UI;
@@ -11,6 +12,10 @@ using Myra.Graphics2D.UI;
 using Myra.Graphics2D.UI.File;
 using Myra.Graphics2D.UI.Styles;
 using XNAssets;
+using System.Reflection;
+using System.Collections.Generic;
+using System.IO;
+using System;
 
 namespace Monoboy
 {
@@ -31,7 +36,7 @@ namespace Monoboy
         SpriteFont font;
         Desktop desktop;
         GUI gui;
-        bool guiOn = true;
+        bool guiOn = false;
 
         Texture2D screen;
 
@@ -49,7 +54,7 @@ namespace Monoboy
             graphics.PreferredBackBufferHeight = (scale * 144) + 14;
             graphics.ApplyChanges();
 
-            emulator = new Emulator.MonoboyEmulator();
+            emulator = new MonoboyEmulator();
             //emulator.SkipBootRom();
             emulator.LoadRom("Roms/Tetris.gb");
 
@@ -82,6 +87,13 @@ namespace Monoboy
 
             gui = new GUI();
 
+            List<Assembly> assemblies = new List<Assembly>();
+            string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            foreach(var path in Directory.GetFiles(assemblyFolder, "*.dll"))
+            {
+                System.Diagnostics.Debug.WriteLine(path);
+            }
+
             gui.FileOpen.Selected += (a, b) => OpenRom();
             gui.FileQuit.Selected += (a, b) => Exit();
             gui.ViewToolbarToggle.Selected += (a, b) => ToggleGUI();
@@ -101,11 +113,10 @@ namespace Monoboy
 
         private void OpenRom()
         {
-            FileDialog fileDialog = new FileDialog(FileDialogMode.OpenFile);
-            //fileDialog.Height = ;
-            //fileDialog.Width = desktop.Width;
-            gui.AddChild(fileDialog);
-            Debug.WriteLine(fileDialog.FilePath);
+            IntPtr ptr = TinyFileDialog.tinyfd_openFileDialog("Open Rom...", Environment.CurrentDirectory, 2, new string[] { "*.gb", "*.gba" }, "Gameboy Roms", 0);
+            string path = TinyFileDialog.StringFromAnsi(ptr);
+
+            System.Diagnostics.Debug.WriteLine(path);
         }
 
         protected override void UnloadContent()

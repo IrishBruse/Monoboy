@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Monoboy.Emulator.Utility;
+using Monoboy.Utility;
 
 namespace Monoboy.Emulator
 {
@@ -66,9 +66,9 @@ namespace Monoboy.Emulator
             io = new byte[128];
             zp = new byte[128];
 
-            if(File.Exists("Roms/Boot.bin") == true)
+            if(File.Exists("Roms/Boot.gb") == true)
             {
-                boot = File.ReadAllBytes("Roms/Boot.bin");
+                boot = File.ReadAllBytes("Roms/Boot.gb");
             }
             else
             {

@@ -26,8 +26,18 @@
           "lib/net40/info.lundin.math.dll": {}
         }
       },
-      "MonoGame.Framework.DesktopGL/3.7.1.189": {
+      "MonoGame.Framework.WindowsDX/3.7.1.189": {
         "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1",
+          "SharpDX.Direct2D1": "4.0.1",
+          "SharpDX.Direct3D11": "4.0.1",
+          "SharpDX.Direct3D9": "4.0.1",
+          "SharpDX.MediaFoundation": "4.0.1",
+          "SharpDX.XAudio2": "4.0.1",
+          "SharpDX.XInput": "4.0.1"
+        },
         "compile": {
           "lib/net45/MonoGame.Framework.dll": {}
         },
@@ -49,6 +59,116 @@
         },
         "runtime": {
           "lib/net45/Myra.dll": {}
+        }
+      },
+      "SharpDX/4.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/SharpDX.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.dll": {}
+        }
+      },
+      "SharpDX.Direct2D1/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct2D1.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct2D1.dll": {}
+        }
+      },
+      "SharpDX.Direct3D11/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct3D11.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct3D11.dll": {}
+        }
+      },
+      "SharpDX.Direct3D9/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct3D9.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct3D9.dll": {}
+        }
+      },
+      "SharpDX.DXGI/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.DXGI.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.DXGI.dll": {}
+        }
+      },
+      "SharpDX.Mathematics/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Mathematics.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Mathematics.dll": {}
+        }
+      },
+      "SharpDX.MediaFoundation/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1",
+          "SharpDX.Direct3D9": "4.0.1",
+          "SharpDX.Mathematics": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.MediaFoundation.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.MediaFoundation.dll": {}
+        }
+      },
+      "SharpDX.XAudio2/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.XAudio2.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.XAudio2.dll": {}
+        }
+      },
+      "SharpDX.XInput/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.XInput.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.XInput.dll": {}
         }
       },
       "XNAssets/0.5.0.6": {
@@ -145,7 +265,7 @@
         "framework": ".NETFramework,Version=v4.7.2",
         "dependencies": {
           "Costura.Fody": "4.1.0",
-          "MonoGame.Framework.DesktopGL": "3.7.1.189",
+          "MonoGame.Framework.WindowsDX": "3.7.1.189",
           "Myra": "1.0.0.204"
         },
         "compile": {
@@ -181,8 +301,18 @@
           "lib/net40/info.lundin.math.dll": {}
         }
       },
-      "MonoGame.Framework.DesktopGL/3.7.1.189": {
+      "MonoGame.Framework.WindowsDX/3.7.1.189": {
         "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1",
+          "SharpDX.Direct2D1": "4.0.1",
+          "SharpDX.Direct3D11": "4.0.1",
+          "SharpDX.Direct3D9": "4.0.1",
+          "SharpDX.MediaFoundation": "4.0.1",
+          "SharpDX.XAudio2": "4.0.1",
+          "SharpDX.XInput": "4.0.1"
+        },
         "compile": {
           "lib/net45/MonoGame.Framework.dll": {}
         },
@@ -204,6 +334,116 @@
         },
         "runtime": {
           "lib/net45/Myra.dll": {}
+        }
+      },
+      "SharpDX/4.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/SharpDX.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.dll": {}
+        }
+      },
+      "SharpDX.Direct2D1/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct2D1.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct2D1.dll": {}
+        }
+      },
+      "SharpDX.Direct3D11/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct3D11.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct3D11.dll": {}
+        }
+      },
+      "SharpDX.Direct3D9/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct3D9.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct3D9.dll": {}
+        }
+      },
+      "SharpDX.DXGI/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.DXGI.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.DXGI.dll": {}
+        }
+      },
+      "SharpDX.Mathematics/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Mathematics.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Mathematics.dll": {}
+        }
+      },
+      "SharpDX.MediaFoundation/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1",
+          "SharpDX.Direct3D9": "4.0.1",
+          "SharpDX.Mathematics": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.MediaFoundation.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.MediaFoundation.dll": {}
+        }
+      },
+      "SharpDX.XAudio2/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.XAudio2.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.XAudio2.dll": {}
+        }
+      },
+      "SharpDX.XInput/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.XInput.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.XInput.dll": {}
         }
       },
       "XNAssets/0.5.0.6": {
@@ -300,7 +540,7 @@
         "framework": ".NETFramework,Version=v4.7.2",
         "dependencies": {
           "Costura.Fody": "4.1.0",
-          "MonoGame.Framework.DesktopGL": "3.7.1.189",
+          "MonoGame.Framework.WindowsDX": "3.7.1.189",
           "Myra": "1.0.0.204"
         },
         "compile": {
@@ -336,8 +576,18 @@
           "lib/net40/info.lundin.math.dll": {}
         }
       },
-      "MonoGame.Framework.DesktopGL/3.7.1.189": {
+      "MonoGame.Framework.WindowsDX/3.7.1.189": {
         "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1",
+          "SharpDX.Direct2D1": "4.0.1",
+          "SharpDX.Direct3D11": "4.0.1",
+          "SharpDX.Direct3D9": "4.0.1",
+          "SharpDX.MediaFoundation": "4.0.1",
+          "SharpDX.XAudio2": "4.0.1",
+          "SharpDX.XInput": "4.0.1"
+        },
         "compile": {
           "lib/net45/MonoGame.Framework.dll": {}
         },
@@ -359,6 +609,116 @@
         },
         "runtime": {
           "lib/net45/Myra.dll": {}
+        }
+      },
+      "SharpDX/4.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/SharpDX.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.dll": {}
+        }
+      },
+      "SharpDX.Direct2D1/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct2D1.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct2D1.dll": {}
+        }
+      },
+      "SharpDX.Direct3D11/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct3D11.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct3D11.dll": {}
+        }
+      },
+      "SharpDX.Direct3D9/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct3D9.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct3D9.dll": {}
+        }
+      },
+      "SharpDX.DXGI/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.DXGI.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.DXGI.dll": {}
+        }
+      },
+      "SharpDX.Mathematics/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Mathematics.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Mathematics.dll": {}
+        }
+      },
+      "SharpDX.MediaFoundation/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1",
+          "SharpDX.Direct3D9": "4.0.1",
+          "SharpDX.Mathematics": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.MediaFoundation.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.MediaFoundation.dll": {}
+        }
+      },
+      "SharpDX.XAudio2/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.XAudio2.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.XAudio2.dll": {}
+        }
+      },
+      "SharpDX.XInput/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.XInput.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.XInput.dll": {}
         }
       },
       "XNAssets/0.5.0.6": {
@@ -455,7 +815,7 @@
         "framework": ".NETFramework,Version=v4.7.2",
         "dependencies": {
           "Costura.Fody": "4.1.0",
-          "MonoGame.Framework.DesktopGL": "3.7.1.189",
+          "MonoGame.Framework.WindowsDX": "3.7.1.189",
           "Myra": "1.0.0.204"
         },
         "compile": {
@@ -491,8 +851,18 @@
           "lib/net40/info.lundin.math.dll": {}
         }
       },
-      "MonoGame.Framework.DesktopGL/3.7.1.189": {
+      "MonoGame.Framework.WindowsDX/3.7.1.189": {
         "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1",
+          "SharpDX.Direct2D1": "4.0.1",
+          "SharpDX.Direct3D11": "4.0.1",
+          "SharpDX.Direct3D9": "4.0.1",
+          "SharpDX.MediaFoundation": "4.0.1",
+          "SharpDX.XAudio2": "4.0.1",
+          "SharpDX.XInput": "4.0.1"
+        },
         "compile": {
           "lib/net45/MonoGame.Framework.dll": {}
         },
@@ -514,6 +884,116 @@
         },
         "runtime": {
           "lib/net45/Myra.dll": {}
+        }
+      },
+      "SharpDX/4.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net45/SharpDX.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.dll": {}
+        }
+      },
+      "SharpDX.Direct2D1/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct2D1.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct2D1.dll": {}
+        }
+      },
+      "SharpDX.Direct3D11/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct3D11.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct3D11.dll": {}
+        }
+      },
+      "SharpDX.Direct3D9/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Direct3D9.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Direct3D9.dll": {}
+        }
+      },
+      "SharpDX.DXGI/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.DXGI.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.DXGI.dll": {}
+        }
+      },
+      "SharpDX.Mathematics/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.Mathematics.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.Mathematics.dll": {}
+        }
+      },
+      "SharpDX.MediaFoundation/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1",
+          "SharpDX.DXGI": "4.0.1",
+          "SharpDX.Direct3D9": "4.0.1",
+          "SharpDX.Mathematics": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.MediaFoundation.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.MediaFoundation.dll": {}
+        }
+      },
+      "SharpDX.XAudio2/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.XAudio2.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.XAudio2.dll": {}
+        }
+      },
+      "SharpDX.XInput/4.0.1": {
+        "type": "package",
+        "dependencies": {
+          "SharpDX": "4.0.1"
+        },
+        "compile": {
+          "lib/net45/SharpDX.XInput.dll": {}
+        },
+        "runtime": {
+          "lib/net45/SharpDX.XInput.dll": {}
         }
       },
       "XNAssets/0.5.0.6": {
@@ -610,7 +1090,7 @@
         "framework": ".NETFramework,Version=v4.7.2",
         "dependencies": {
           "Costura.Fody": "4.1.0",
-          "MonoGame.Framework.DesktopGL": "3.7.1.189",
+          "MonoGame.Framework.WindowsDX": "3.7.1.189",
           "Myra": "1.0.0.204"
         },
         "compile": {
@@ -652,29 +1132,18 @@
         "lib/netstandard2.0/info.lundin.math.dll"
       ]
     },
-    "MonoGame.Framework.DesktopGL/3.7.1.189": {
-      "sha512": "7e6CvCZAAglBIPDA+lTwdaRTv0EARPl4s7Ai8gkn7ximiFyRODrpyciSxENUgCowap4y5d5B3Then7k/6UbHGw==",
+    "MonoGame.Framework.WindowsDX/3.7.1.189": {
+      "sha512": "gu0zcsmlFPyHgJA/Qpu7wrC/aDb/AHvdrLP4iEc2VojV0zkcg8XKqn0FfQHa43SexT+N8NmwgosfqZ8LDpkxJA==",
       "type": "package",
-      "path": "monogame.framework.desktopgl/3.7.1.189",
+      "path": "monogame.framework.windowsdx/3.7.1.189",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "build/MonoGame.Framework.DesktopGL.targets",
-        "build/native/MonoGame.Framework.dll.config",
-        "build/native/libSDL2-2.0.0.dylib",
-        "build/native/libopenal.1.dylib",
-        "build/native/x64/SDL2.dll",
-        "build/native/x64/libSDL2-2.0.so.0",
-        "build/native/x64/libopenal.so.1",
-        "build/native/x64/soft_oal.dll",
-        "build/native/x86/SDL2.dll",
-        "build/native/x86/libSDL2-2.0.so.0",
-        "build/native/x86/libopenal.so.1",
-        "build/native/x86/soft_oal.dll",
+        "build/MonoGame.Framework.WindowsDX.targets",
         "lib/net45/MonoGame.Framework.dll",
         "lib/net45/MonoGame.Framework.xml",
-        "monogame.framework.desktopgl.3.7.1.189.nupkg.sha512",
-        "monogame.framework.desktopgl.nuspec"
+        "monogame.framework.windowsdx.3.7.1.189.nupkg.sha512",
+        "monogame.framework.windowsdx.nuspec"
       ]
     },
     "Myra/1.0.0.204": {
@@ -688,6 +1157,201 @@
         "lib/netstandard2.0/Myra.dll",
         "myra.1.0.0.204.nupkg.sha512",
         "myra.nuspec"
+      ]
+    },
+    "SharpDX/4.0.1": {
+      "sha512": "8YA1VFg1/K8Emb8FEZDobojcv1BLuppVo7CRJQEgA1V748VIMPBru0i0OnsCjLSThzTn7juOvH85qjFL9Grl1w==",
+      "type": "package",
+      "path": "sharpdx/4.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/SharpDX.dll",
+        "lib/net40/SharpDX.xml",
+        "lib/net45/SharpDX.dll",
+        "lib/net45/SharpDX.xml",
+        "lib/netcoreapp1.0/SharpDX.dll",
+        "lib/netcoreapp1.0/SharpDX.xml",
+        "lib/netstandard1.1/SharpDX.dll",
+        "lib/netstandard1.1/SharpDX.xml",
+        "lib/uap10.0/SharpDX.dll",
+        "lib/uap10.0/SharpDX.pri",
+        "lib/uap10.0/SharpDX.xml",
+        "sharpdx.4.0.1.nupkg.sha512",
+        "sharpdx.nuspec"
+      ]
+    },
+    "SharpDX.Direct2D1/4.0.1": {
+      "sha512": "EDBYa9kAG+gaMB4cCH7WNpxS8WijSCejNz/SERs2P1sWEPZZdUiUIruQMjPCdW3lXxT508aYiH2UXHAaZtk00g==",
+      "type": "package",
+      "path": "sharpdx.direct2d1/4.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/SharpDX.Direct2D1.dll",
+        "lib/net40/SharpDX.Direct2D1.xml",
+        "lib/net45/SharpDX.Direct2D1.dll",
+        "lib/net45/SharpDX.Direct2D1.xml",
+        "lib/netcoreapp1.0/SharpDX.Direct2D1.dll",
+        "lib/netcoreapp1.0/SharpDX.Direct2D1.xml",
+        "lib/netstandard1.1/SharpDX.Direct2D1.dll",
+        "lib/netstandard1.1/SharpDX.Direct2D1.xml",
+        "lib/uap10.0/SharpDX.Direct2D1.dll",
+        "lib/uap10.0/SharpDX.Direct2D1.pri",
+        "lib/uap10.0/SharpDX.Direct2D1.xml",
+        "sharpdx.direct2d1.4.0.1.nupkg.sha512",
+        "sharpdx.direct2d1.nuspec"
+      ]
+    },
+    "SharpDX.Direct3D11/4.0.1": {
+      "sha512": "7xIfeAhxPhbPgSiREfFbOOwIWonUt2GHR7XZN5p2DJMWuqjl0+h1oo2/sF+SH/c6D6APjdbt0J+dYSzoV0PA/w==",
+      "type": "package",
+      "path": "sharpdx.direct3d11/4.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/SharpDX.Direct3D11.dll",
+        "lib/net40/SharpDX.Direct3D11.xml",
+        "lib/net45/SharpDX.Direct3D11.dll",
+        "lib/net45/SharpDX.Direct3D11.xml",
+        "lib/netcoreapp1.0/SharpDX.Direct3D11.dll",
+        "lib/netcoreapp1.0/SharpDX.Direct3D11.xml",
+        "lib/netstandard1.1/SharpDX.Direct3D11.dll",
+        "lib/netstandard1.1/SharpDX.Direct3D11.xml",
+        "lib/uap10.0/SharpDX.Direct3D11.dll",
+        "lib/uap10.0/SharpDX.Direct3D11.pri",
+        "lib/uap10.0/SharpDX.Direct3D11.xml",
+        "sharpdx.direct3d11.4.0.1.nupkg.sha512",
+        "sharpdx.direct3d11.nuspec"
+      ]
+    },
+    "SharpDX.Direct3D9/4.0.1": {
+      "sha512": "xUgVtuy3UGljCjzPe1d0yndNI+htHnpCUcMk1QpmXZHwxudUGtes1iz18JD2Zy5Xx7VzFp2+guOGWkNrJmIgEA==",
+      "type": "package",
+      "path": "sharpdx.direct3d9/4.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/SharpDX.Direct3D9.dll",
+        "lib/net40/SharpDX.Direct3D9.xml",
+        "lib/net45/SharpDX.Direct3D9.dll",
+        "lib/net45/SharpDX.Direct3D9.xml",
+        "lib/netcoreapp1.0/SharpDX.Direct3D9.dll",
+        "lib/netcoreapp1.0/SharpDX.Direct3D9.xml",
+        "lib/netstandard1.3/SharpDX.Direct3D9.dll",
+        "lib/netstandard1.3/SharpDX.Direct3D9.xml",
+        "sharpdx.direct3d9.4.0.1.nupkg.sha512",
+        "sharpdx.direct3d9.nuspec"
+      ]
+    },
+    "SharpDX.DXGI/4.0.1": {
+      "sha512": "Av/kToUkVR1tDtIP9zmDGwCuCtyL04+PP7kes6aABzky1Y9vT03kR7mDeE83gl+E8GUmMMbVXbQ4AG2CVb66sg==",
+      "type": "package",
+      "path": "sharpdx.dxgi/4.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/SharpDX.DXGI.dll",
+        "lib/net40/SharpDX.DXGI.xml",
+        "lib/net45/SharpDX.DXGI.dll",
+        "lib/net45/SharpDX.DXGI.xml",
+        "lib/netcoreapp1.0/SharpDX.DXGI.dll",
+        "lib/netcoreapp1.0/SharpDX.DXGI.xml",
+        "lib/netstandard1.1/SharpDX.DXGI.dll",
+        "lib/netstandard1.1/SharpDX.DXGI.xml",
+        "lib/uap10.0/SharpDX.DXGI.dll",
+        "lib/uap10.0/SharpDX.DXGI.pri",
+        "lib/uap10.0/SharpDX.DXGI.xml",
+        "sharpdx.dxgi.4.0.1.nupkg.sha512",
+        "sharpdx.dxgi.nuspec"
+      ]
+    },
+    "SharpDX.Mathematics/4.0.1": {
+      "sha512": "txMROd5A4mICHRRPf5KHA5MVNEqFUdOg2ZYfqNqjQM1n2jfe+sxDG3Xs+aO5zAShJAZFD6xO5R7yGfn9CzHckQ==",
+      "type": "package",
+      "path": "sharpdx.mathematics/4.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/SharpDX.Mathematics.dll",
+        "lib/net40/SharpDX.Mathematics.xml",
+        "lib/net45/SharpDX.Mathematics.dll",
+        "lib/net45/SharpDX.Mathematics.xml",
+        "lib/netcoreapp1.0/SharpDX.Mathematics.dll",
+        "lib/netcoreapp1.0/SharpDX.Mathematics.xml",
+        "lib/netstandard1.1/SharpDX.Mathematics.dll",
+        "lib/netstandard1.1/SharpDX.Mathematics.xml",
+        "lib/uap10.0/SharpDX.Mathematics.dll",
+        "lib/uap10.0/SharpDX.Mathematics.pri",
+        "lib/uap10.0/SharpDX.Mathematics.xml",
+        "sharpdx.mathematics.4.0.1.nupkg.sha512",
+        "sharpdx.mathematics.nuspec"
+      ]
+    },
+    "SharpDX.MediaFoundation/4.0.1": {
+      "sha512": "/po30bqI6n14db6eHirTLJYEVV8/Wi0DGn2OJGtEnf5/++jUOhMR5Z1Xi84wOldXgf+7WKXOML2BhpqCPWVC2g==",
+      "type": "package",
+      "path": "sharpdx.mediafoundation/4.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/SharpDX.MediaFoundation.dll",
+        "lib/net40/SharpDX.MediaFoundation.xml",
+        "lib/net45/SharpDX.MediaFoundation.dll",
+        "lib/net45/SharpDX.MediaFoundation.xml",
+        "lib/netcoreapp1.0/SharpDX.MediaFoundation.dll",
+        "lib/netcoreapp1.0/SharpDX.MediaFoundation.xml",
+        "lib/netstandard1.1/SharpDX.MediaFoundation.dll",
+        "lib/netstandard1.1/SharpDX.MediaFoundation.xml",
+        "lib/uap10.0/SharpDX.MediaFoundation.dll",
+        "lib/uap10.0/SharpDX.MediaFoundation.pri",
+        "lib/uap10.0/SharpDX.MediaFoundation.xml",
+        "sharpdx.mediafoundation.4.0.1.nupkg.sha512",
+        "sharpdx.mediafoundation.nuspec"
+      ]
+    },
+    "SharpDX.XAudio2/4.0.1": {
+      "sha512": "Kok1XdV2vEKSdr+EcGf0xFNBAd1tcjp/TZeRNBNVgB5YYoUGASoNO2decCBi7vh9qdocN+pmuuOiZCtDOd9DgQ==",
+      "type": "package",
+      "path": "sharpdx.xaudio2/4.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/SharpDX.XAudio2.dll",
+        "lib/net40/SharpDX.XAudio2.xml",
+        "lib/net45/SharpDX.XAudio2.dll",
+        "lib/net45/SharpDX.XAudio2.xml",
+        "lib/netcoreapp1.0/SharpDX.XAudio2.dll",
+        "lib/netcoreapp1.0/SharpDX.XAudio2.xml",
+        "lib/netstandard1.1/SharpDX.XAudio2.dll",
+        "lib/netstandard1.1/SharpDX.XAudio2.xml",
+        "lib/uap10.0/SharpDX.XAudio2.dll",
+        "lib/uap10.0/SharpDX.XAudio2.pri",
+        "lib/uap10.0/SharpDX.XAudio2.xml",
+        "sharpdx.xaudio2.4.0.1.nupkg.sha512",
+        "sharpdx.xaudio2.nuspec"
+      ]
+    },
+    "SharpDX.XInput/4.0.1": {
+      "sha512": "vDnp6CTVC9dKQHwLVF4GLNdCJqGMUuxyZLLlorDjgnVOOO7koPR20/tqt1A53gnNy/Id93Nzq7K2ILLvBQWvGQ==",
+      "type": "package",
+      "path": "sharpdx.xinput/4.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net40/SharpDX.XInput.dll",
+        "lib/net40/SharpDX.XInput.xml",
+        "lib/net45/SharpDX.XInput.dll",
+        "lib/net45/SharpDX.XInput.xml",
+        "lib/netcoreapp1.0/SharpDX.XInput.dll",
+        "lib/netcoreapp1.0/SharpDX.XInput.xml",
+        "lib/netstandard1.1/SharpDX.XInput.dll",
+        "lib/netstandard1.1/SharpDX.XInput.xml",
+        "lib/uap10.0/SharpDX.XInput.dll",
+        "lib/uap10.0/SharpDX.XInput.pri",
+        "lib/uap10.0/SharpDX.XInput.xml",
+        "sharpdx.xinput.4.0.1.nupkg.sha512",
+        "sharpdx.xinput.nuspec"
       ]
     },
     "XNAssets/0.5.0.6": {

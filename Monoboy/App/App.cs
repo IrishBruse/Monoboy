@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -12,7 +11,6 @@ using Myra.Graphics2D.UI;
 using Myra.Graphics2D.UI.File;
 using Myra.Graphics2D.UI.Styles;
 using XNAssets;
-using XNAssets.Utility;
 
 namespace Monoboy
 {

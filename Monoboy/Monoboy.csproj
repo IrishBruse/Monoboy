@@ -149,7 +149,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="MonoGame.Framework.DesktopGL">
+    <PackageReference Include="MonoGame.Framework.WindowsDX">
       <Version>3.7.1.189</Version>
     </PackageReference>
     <PackageReference Include="Myra">

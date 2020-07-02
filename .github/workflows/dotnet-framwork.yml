@@ -15,4 +15,4 @@ jobs:
     - name: Setup MSBuild.exe
       uses: warrenbuckley/Setup-MSBuild@v1
     - name: Build with MSBuild
-      run: msbuild  Monoboy.sln -p:Configuration=Release
+      run: msbuild  Monoboy/Monoboy.csproj -p:Configuration=Release

@@ -13,5 +13,6 @@
 				<MenuItem Text="Toggle toolbar" Toggleable="True" ShortcutText="Ctrl+T" Id="ViewToolbarToggle" />
 			</MenuItem>
 		</HorizontalMenu>
+		<Label Text="test" Id="registers "></Label>
 	</VerticalStackPanel>
 </Project>

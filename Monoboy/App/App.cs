@@ -1,21 +1,19 @@
-﻿using System.Diagnostics;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Monoboy.Utility;
 using Monoboy.Emulator;
-using Monoboy.Properties;
 using Monogame.UI;
 using Myra;
 using Myra.Graphics2D.UI;
-using Myra.Graphics2D.UI.File;
 using Myra.Graphics2D.UI.Styles;
 using XNAssets;
 using System.Reflection;
 using System.Collections.Generic;
 using System.IO;
 using System;
+using Microsoft.Xna.Framework.Content;
+using Monoboy.Properties;
 
 namespace Monoboy
 {
@@ -43,6 +41,7 @@ namespace Monoboy
         public App()
         {
             graphics = new GraphicsDeviceManager(this);
+
             ResourceContentManager resxContent;
             resxContent = new ResourceContentManager(Services, Resources.ResourceManager);
             Content = resxContent;
@@ -76,23 +75,13 @@ namespace Monoboy
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            font = Content.Load<SpriteFont>("Font");
-
             MyraEnvironment.Game = this;
 
-            var assetManager = new AssetManager(GraphicsDevice, new ResourceAssetResolver(typeof(App).Assembly, "Resources"));
+            font = Content.Load<SpriteFont>("Font");
 
             Stylesheet.Current.HorizontalMenuStyle.LabelStyle.Font = font;
-            Stylesheet.Current.HorizontalMenuStyle.SpecialCharColor = Color.SlateGray;
 
             gui = new GUI();
-
-            List<Assembly> assemblies = new List<Assembly>();
-            string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            foreach(var path in Directory.GetFiles(assemblyFolder, "*.dll"))
-            {
-                System.Diagnostics.Debug.WriteLine(path);
-            }
 
             gui.FileOpen.Selected += (a, b) => OpenRom();
             gui.FileQuit.Selected += (a, b) => Exit();
@@ -113,8 +102,7 @@ namespace Monoboy
 
         private void OpenRom()
         {
-            IntPtr ptr = TinyFileDialog.tinyfd_openFileDialog("Open Rom...", Environment.CurrentDirectory, 2, new string[] { "*.gb", "*.gba" }, "Gameboy Roms", 0);
-            string path = TinyFileDialog.StringFromAnsi(ptr);
+            string path = TinyFileDialog.OpenFileDialog("Open Rom...", Environment.CurrentDirectory, 2, new string[] { "*.gb", "*.gba" }, "Gameboy Roms", 0);
 
             System.Diagnostics.Debug.WriteLine(path);
         }

@@ -69,23 +69,5 @@ namespace Monoboy.Properties {
                 return ((byte[])(obj));
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to &lt;Project&gt;
-        ///	&lt;Project.ExportOptions Namespace=&quot;Monogame.UI&quot; Class=&quot;GUI&quot; OutputPath=&quot;E:\Projects\C#\Monoboy\Monoboy\App&quot; /&gt;
-        ///	&lt;VerticalStackPanel AcceptsKeyboardFocus=&quot;False&quot;&gt;
-        ///		&lt;VerticalStackPanel.Proportions&gt;
-        ///			&lt;Proportion Type=&quot;Auto&quot; /&gt;
-        ///		&lt;/VerticalStackPanel.Proportions&gt;
-        ///		&lt;HorizontalMenu VerticalAlignment=&quot;Stretch&quot; Id=&quot;_mainMenu&quot;&gt;
-        ///			&lt;MenuItem Text=&quot;File&quot; Id=&quot;FileDropdown&quot;&gt;
-        ///				&lt;MenuItem Text=&quot;Open ROM...&quot; ShortcutText=&quot;Ctrl+O&quot; Id=&quot;FileOpen&quot; /&gt;
-        ///				&lt;MenuItem Text=&quot;Quit&quot; ShortcutText=&quot;Alt+F4&quot; Id=&quot;FileQuit&quot; [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string UI {
-            get {
-                return ResourceManager.GetString("UI", resourceCulture);
-            }
-        }
     }
 }

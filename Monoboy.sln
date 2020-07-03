@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30204.135
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monoboy", "Monoboy\Monoboy.csproj", "{BFF040CB-D225-4205-8C3B-238F4F7553E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monoboy", "Monoboy\Monoboy.csproj", "{BFF040CB-D225-4205-8C3B-238F4F7553E1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monoboy.Tests", "Monoboy.Tests\Monoboy.Tests.csproj", "{A1193D01-2D1B-4C0A-9373-97E965E7D424}"
 EndProject
@@ -17,16 +17,18 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Debug|x64.ActiveCfg = Debug|x64
 		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Debug|x64.Build.0 = Debug|x64
 		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Debug|x86.ActiveCfg = Debug|x86
 		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Debug|x86.Build.0 = Debug|x86
-		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|Any CPU.ActiveCfg = Release|x86
-		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|x64.ActiveCfg = Release|x64
-		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|x64.Build.0 = Release|x64
-		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|x86.ActiveCfg = Release|x86
-		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|x86.Build.0 = Release|x86
+		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|x64.ActiveCfg = Release|Any CPU
+		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|x64.Build.0 = Release|Any CPU
+		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|x86.ActiveCfg = Release|Any CPU
+		{BFF040CB-D225-4205-8C3B-238F4F7553E1}.Release|x86.Build.0 = Release|Any CPU
 		{A1193D01-2D1B-4C0A-9373-97E965E7D424}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A1193D01-2D1B-4C0A-9373-97E965E7D424}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1193D01-2D1B-4C0A-9373-97E965E7D424}.Debug|x64.ActiveCfg = Debug|Any CPU

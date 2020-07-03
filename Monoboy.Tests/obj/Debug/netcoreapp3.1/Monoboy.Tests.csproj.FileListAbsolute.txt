@@ -1,0 +1,17 @@
+E:\Projects\C#\Monoboy\Monoboy.Tests\obj\Debug\netcoreapp3.1\Monoboy.Tests.csprojAssemblyReference.cache
+E:\Projects\C#\Monoboy\Monoboy.Tests\obj\Debug\netcoreapp3.1\Monoboy.Tests.AssemblyInfoInputs.cache
+E:\Projects\C#\Monoboy\Monoboy.Tests\obj\Debug\netcoreapp3.1\Monoboy.Tests.AssemblyInfo.cs
+E:\Projects\C#\Monoboy\Monoboy.Tests\obj\Debug\netcoreapp3.1\Monoboy.Tests.csproj.CoreCompileInputs.cache
+E:\Projects\C#\Monoboy\Monoboy.Tests\bin\Debug\netcoreapp3.1\Content\Fonts\Font.xnb
+E:\Projects\C#\Monoboy\Monoboy.Tests\bin\Debug\netcoreapp3.1\Monoboy.exe
+E:\Projects\C#\Monoboy\Monoboy.Tests\bin\Debug\netcoreapp3.1\Monoboy.Tests.deps.json
+E:\Projects\C#\Monoboy\Monoboy.Tests\bin\Debug\netcoreapp3.1\Monoboy.Tests.runtimeconfig.json
+E:\Projects\C#\Monoboy\Monoboy.Tests\bin\Debug\netcoreapp3.1\Monoboy.Tests.runtimeconfig.dev.json
+E:\Projects\C#\Monoboy\Monoboy.Tests\bin\Debug\netcoreapp3.1\Monoboy.Tests.dll
+E:\Projects\C#\Monoboy\Monoboy.Tests\bin\Debug\netcoreapp3.1\Monoboy.Tests.pdb
+E:\Projects\C#\Monoboy\Monoboy.Tests\bin\Debug\netcoreapp3.1\Monoboy.dll
+E:\Projects\C#\Monoboy\Monoboy.Tests\bin\Debug\netcoreapp3.1\Monoboy.pdb
+E:\Projects\C#\Monoboy\Monoboy.Tests\obj\Debug\netcoreapp3.1\Monoboy.Tests.csproj.CopyComplete
+E:\Projects\C#\Monoboy\Monoboy.Tests\obj\Debug\netcoreapp3.1\Monoboy.Tests.dll
+E:\Projects\C#\Monoboy\Monoboy.Tests\obj\Debug\netcoreapp3.1\Monoboy.Tests.pdb
+E:\Projects\C#\Monoboy\Monoboy.Tests\obj\Debug\netcoreapp3.1\Monoboy.Tests.genruntimeconfig.cache

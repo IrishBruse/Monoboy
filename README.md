@@ -4,4 +4,4 @@ Monoboy is a Gameboy emulator written in C# with the help  of the Monogame Frame
 
 For more informaion and a write up of the emulator check out:
 
-[My Website](https://irishbruse.github.io/Projects/Monoboy)
+[Monoboy Page](https://irishbruse.github.io/Projects/Monoboy)

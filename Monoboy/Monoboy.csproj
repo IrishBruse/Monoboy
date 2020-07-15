@@ -2,52 +2,12 @@
 	<PropertyGroup>
 		<TargetFramework>netcoreapp3.1</TargetFramework>
 		<OutputType>WinExe</OutputType>
-		<MonoGamePlatform>DesktopGL</MonoGamePlatform>
 		<StartupObject>Monoboy.Program</StartupObject>
-		<ApplicationIcon>Icon.ico</ApplicationIcon>
-		<Version>0.0.1</Version>
-		<Platforms>x64;x86</Platforms>
-		<RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-		<DefineConstants>TRACE;x64</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
-		<DefineConstants>TRACE;x86</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-		<DefineConstants>TRACE;x86</DefineConstants>
-		<GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-		<DefineConstants>TRACE;x64</DefineConstants>
-		<OutputPath></OutputPath>
-		<GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
 	</PropertyGroup>
 	<ItemGroup>
-		<MonoGameContentReference Include="**\*.mgcb" />
-		<PackageReference Include="Costura.Fody" Version="4.1.0" />
-		<PackageReference Include="Fody" Version="6.2.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Myra" Version="1.0.0.204" />
-		<PackageReference Include="MonoGame.Content.Builder" Version="3.7.0.9" />
-		<PackageReference Include="MonoGame.Framework.DesktopGL.Core" Version="3.8.0.1" />
-		<Compile Update="Properties\Resources.Designer.cs">
-			<DesignTime>True</DesignTime>
-			<AutoGen>True</AutoGen>
-			<DependentUpon>Resources.resx</DependentUpon>
-		</Compile>
-		<EmbeddedResource Update="Properties\Resources.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
-			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
-		</EmbeddedResource>
-	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="Content\bin\" />
+	  <ProjectReference Include="..\Monoboy.Frontend\Monoboy.Frontend.csproj" />
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-	  <Exec Command="robocopy $(ProjectDir)Roms\ $(TargetDir)Roms\ /E&#xD;&#xA;copy $(ProjectDir)tinyfiledialogs$(PlatformName).dll $(TargetDir)&#xD;&#xA;RD /S /Q $(TargetDir)Content\&#xD;&#xA;RD /S /Q $(TargetDir)runtimes\" />
+	  <Exec Command="robocopy $(ProjectDir)Roms\ $(TargetDir)Roms\ /E" />
 	</Target>
 </Project>

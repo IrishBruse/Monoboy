@@ -1,22 +1,14 @@
 ﻿using System;
+using Monoboy.Frontend;
 
 namespace Monoboy
 {
-    /// <summary>
-    /// The main class.
-    /// </summary>
     public static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         [STAThread]
-        static void Main()
+        public static void Main()
         {
-            using(App game = new App())
-            {
-                game.Run();
-            }
+            new Application();
         }
     }
 }

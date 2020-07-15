@@ -1,7 +1,7 @@
 ﻿using System;
-using Monoboy.Emulator;
+using Monoboy.Frontend;
 
-namespace Monoboy.Utility
+namespace Monoboy.Core.Utility
 {
     public static class Extensions
     {
@@ -84,11 +84,32 @@ namespace Monoboy.Utility
         /// <summary>
         /// Set bit
         /// </summary>
+        /// <param name="bit">The bit to set</param>
+        /// <returns></returns>
+        public static byte SetBits(this byte data, byte mask, byte value)
+        {
+            byte untouched = (byte)(data & ~mask);
+            return (byte)(untouched | (mask & value));
+        }
+
+        /// <summary>
+        /// Get bit Value as bool
+        /// </summary>
         /// <param name="bit">The bit returned</param>
         /// <returns></returns>
         public static bool GetBit(this byte data, Bit bit)
         {
             return (data & (byte)bit) != 0;
+        }
+
+        /// <summary>
+        /// Get bit Value as bool
+        /// </summary>
+        /// <param name="bit">The bit returned</param>
+        /// <returns></returns>
+        public static byte GetBits(this byte data, byte bits)
+        {
+            return (byte)(data & bits);
         }
     }
 }

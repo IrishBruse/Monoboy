@@ -1,16 +1,15 @@
 ﻿using System;
-using System.Diagnostics;
 using Monoboy.Core.Utility;
 
 namespace Monoboy.Core
 {
     public class CPU
     {
-        readonly Bus bus;
+        Bus bus;
 
-        public byte opcode;
+        public bool halted;
 
-        public byte currentOpcode;
+        byte opcode;
 
         public CPU(Bus bus)
         {
@@ -21,12 +20,18 @@ namespace Monoboy.Core
         public byte Step()
         {
             byte result = StepCPU();
-            currentOpcode = opcode;
             return result;
         }
 
         byte StepCPU()
         {
+            bus.interrupt.HandleInterupts();
+
+            if(halted == true)
+            {
+                return 4;
+            }
+
             // TODO Handle interupts
             opcode = NextByte();
 
@@ -35,7 +40,6 @@ namespace Monoboy.Core
 
             switch(opcode)
             {
-                case 0x7F: return 4;
                 case 0x78: bus.register.A = bus.register.B; return 4;
                 case 0x79: bus.register.A = bus.register.C; return 4;
                 case 0x7A: bus.register.A = bus.register.D; return 4;
@@ -53,7 +57,6 @@ namespace Monoboy.Core
                 case 0xF0: bus.register.A = bus.Read((ushort)(0xFF00 | NextByte())); return 12;
 
                 case 0x47: bus.register.B = bus.register.A; return 4;
-                case 0x40: return 4;
                 case 0x41: bus.register.B = bus.register.C; return 4;
                 case 0x42: bus.register.B = bus.register.D; return 4;
                 case 0x43: bus.register.B = bus.register.E; return 4;
@@ -64,7 +67,6 @@ namespace Monoboy.Core
 
                 case 0x4F: bus.register.C = bus.register.A; return 4;
                 case 0x48: bus.register.C = bus.register.B; return 4;
-                case 0x49: return 4;
                 case 0x4A: bus.register.C = bus.register.D; return 4;
                 case 0x4B: bus.register.C = bus.register.E; return 4;
                 case 0x4C: bus.register.C = bus.register.H; return 4;
@@ -75,7 +77,6 @@ namespace Monoboy.Core
                 case 0x57: bus.register.D = bus.register.A; return 4;
                 case 0x50: bus.register.D = bus.register.B; return 4;
                 case 0x51: bus.register.D = bus.register.C; return 4;
-                case 0x52: return 4;
                 case 0x53: bus.register.D = bus.register.E; return 4;
                 case 0x54: bus.register.D = bus.register.H; return 4;
                 case 0x55: bus.register.D = bus.register.L; return 4;
@@ -86,7 +87,6 @@ namespace Monoboy.Core
                 case 0x58: bus.register.E = bus.register.B; return 4;
                 case 0x59: bus.register.E = bus.register.C; return 4;
                 case 0x5A: bus.register.E = bus.register.D; return 4;
-                case 0x5B: return 4;
                 case 0x5C: bus.register.E = bus.register.H; return 4;
                 case 0x5D: bus.register.E = bus.register.L; return 4;
                 case 0x5E: bus.register.E = bus.Read(bus.register.HL); return 8;
@@ -97,7 +97,6 @@ namespace Monoboy.Core
                 case 0x61: bus.register.H = bus.register.C; return 4;
                 case 0x62: bus.register.H = bus.register.D; return 4;
                 case 0x63: bus.register.H = bus.register.E; return 4;
-                case 0x64: return 4;
                 case 0x65: bus.register.H = bus.register.L; return 4;
                 case 0x66: bus.register.H = bus.Read(bus.register.HL); return 8;
                 case 0x26: bus.register.H = NextByte(); return 8;
@@ -108,7 +107,6 @@ namespace Monoboy.Core
                 case 0x6A: bus.register.L = bus.register.D; return 4;
                 case 0x6B: bus.register.L = bus.register.E; return 4;
                 case 0x6C: bus.register.L = bus.register.H; return 4;
-                case 0x6D: return 4;
                 case 0x6E: bus.register.L = bus.Read(bus.register.HL); return 8;
                 case 0x2E: bus.register.L = NextByte(); return 8;
 
@@ -312,26 +310,26 @@ namespace Monoboy.Core
                 case 0xD0: if(bus.register.GetFlag(Flag.FullCarry) == false) { RET(); return 20; } else { return 8; }
                 case 0xD8: if(bus.register.GetFlag(Flag.FullCarry) == true) { RET(); return 20; } else { return 8; }
 
-                case 0x00: return 4;
+                case 0x7F: case 0x49: case 0x52: case 0x5B: case 0x64: case 0x6D: case 0x40: case 0x00: return 4;
 
-                case 0x76: return 4;// TODO: Halt
+                case 0x76: halted = true; return 4;// TODO: Halt
                 case 0x10: return 4;// TODO: Stop
-                case 0xF3: return 4;// TODO: DI interupt in one instruction
-                case 0xFB: return 4;// TODO: EI interupt in one instruction
+                case 0xF3: bus.interrupt.Disable(); return 4;// TODO: DI interupt in one instruction
+                case 0xFB: bus.interrupt.Enable(); return 4;// TODO: EI interupt in one instruction
 
                 case 0xD9: RET(); return 8; // TODO: enable interupts
 
-                case 0xD3: Debug.WriteLine("Illegal Instruction : 0xD3", ConsoleColor.Red); return 0;
-                case 0xDB: Debug.WriteLine("Illegal Instruction : 0xDB", ConsoleColor.Red); return 0;
-                case 0xDD: Debug.WriteLine("Illegal Instruction : 0xDD", ConsoleColor.Red); return 0;
-                case 0xE3: Debug.WriteLine("Illegal Instruction : 0xE3", ConsoleColor.Red); return 0;
-                case 0xE4: Debug.WriteLine("Illegal Instruction : 0xE4", ConsoleColor.Red); return 0;
-                case 0xEB: Debug.WriteLine("Illegal Instruction : 0xEB", ConsoleColor.Red); return 0;
-                case 0xEC: Debug.WriteLine("Illegal Instruction : 0xEC", ConsoleColor.Red); return 0;
-                case 0xED: Debug.WriteLine("Illegal Instruction : 0xED", ConsoleColor.Red); return 0;
-                case 0xF4: Debug.WriteLine("Illegal Instruction : 0xF4", ConsoleColor.Red); return 0;
-                case 0xFC: Debug.WriteLine("Illegal Instruction : 0xFC", ConsoleColor.Red); return 0;
-                case 0xFD: Debug.WriteLine("Illegal Instruction : 0xFD", ConsoleColor.Red); return 0;
+                case 0xD3: throw new Exception("Illegal Instruction : 0xD3");
+                case 0xDB: throw new Exception("Illegal Instruction : 0xDB");
+                case 0xDD: throw new Exception("Illegal Instruction : 0xDD");
+                case 0xE3: throw new Exception("Illegal Instruction : 0xE3");
+                case 0xE4: throw new Exception("Illegal Instruction : 0xE4");
+                case 0xEB: throw new Exception("Illegal Instruction : 0xEB");
+                case 0xEC: throw new Exception("Illegal Instruction : 0xEC");
+                case 0xED: throw new Exception("Illegal Instruction : 0xED");
+                case 0xF4: throw new Exception("Illegal Instruction : 0xF4");
+                case 0xFC: throw new Exception("Illegal Instruction : 0xFC");
+                case 0xFD: throw new Exception("Illegal Instruction : 0xFD");
 
                 default: return 0;
             }
@@ -846,6 +844,7 @@ namespace Monoboy.Core
 
         #endregion
 
+        #region Misc
         byte NextByte()
         {
             byte result = bus.Read(bus.register.PC);
@@ -916,7 +915,7 @@ namespace Monoboy.Core
             bus.register.PC += (ushort)n;
         }
 
-        void CALL(ushort nn)
+        public void CALL(ushort nn)
         {
             Push(bus.register.PC);
             bus.register.PC = nn;
@@ -931,6 +930,7 @@ namespace Monoboy.Core
         {
             bus.register.PC = Pop();
         }
+        #endregion
 
         #endregion
     }

@@ -12,8 +12,18 @@ namespace Monoboy.Core
         public byte E;
         public byte H;
         public byte L;
-        public ushort SP;
-        public ushort PC;
+
+        public ushort SP
+        {
+            get;
+            set;
+        }
+
+        public ushort PC
+        {
+            get;
+            set;
+        }
 
         public ushort AF
         {

@@ -7,7 +7,12 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\Monoboy.Frontend\Monoboy.Frontend.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <None Update="Data\OpenSans.ttf">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-	  <Exec Command="robocopy $(ProjectDir)Roms\ $(TargetDir)Roms\ /E" />
+	  <Exec Command="robocopy $(ProjectDir)Roms\ $(TargetDir)Roms\ /E&#xD;&#xA;robocopy $(ProjectDir)Tests\ $(TargetDir)Tests\ /E" />
 	</Target>
 </Project>

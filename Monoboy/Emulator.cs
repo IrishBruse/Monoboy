@@ -26,17 +26,7 @@ namespace Monoboy.Core
 
         public void LoadRom(string path)
         {
-            using BinaryReader reader = new BinaryReader(File.Open(path, FileMode.Open));
-
-            for(int i = 0; i < 16384; i++)
-            {
-                bus.cartridge.cartBank0[i] = reader.ReadByte();
-            }
-
-            for(int i = 0; i < 16384; i++)
-            {
-                bus.cartridge.cartBankN[i] = reader.ReadByte();
-            }
+            bus.cartridge.LoadRom(path);
         }
     }
 }

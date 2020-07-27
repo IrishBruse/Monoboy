@@ -8,55 +8,55 @@ namespace Monoboy.Utility
 #pragma warning disable IDE1006 // Naming Styles
 #if x86
         // cross platform UTF8
-        [DllImport("tinyfiledialogsx86.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx86.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void tinyfd_beep();
 
-        [DllImport("tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tinyfd_notifyPopup(string aTitle, string aMessage, string aIconType);
 
-        [DllImport("tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tinyfd_messageBox(string aTitle, string aMessage, string aDialogTyle, string aIconType, int aDefaultButton);
 
-        [DllImport("tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_inputBox(string aTitle, string aMessage, string aDefaultInput);
 
-        [DllImport("tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_saveFileDialog(string aTitle, string aDefaultPathAndFile, int aNumOfFilterPatterns, string[] aFilterPatterns, string aSingleFilterDescription);
 
-        [DllImport("tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_openFileDialog(string aTitle, string aDefaultPathAndFile, int aNumOfFilterPatterns, string[] aFilterPatterns, string aSingleFilterDescription, int aAllowMultipleSelects);
 
-        [DllImport("tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_selectFolderDialog(string aTitle, string aDefaultPathAndFile);
 
-        [DllImport("tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_colorChooser(string aTitle, string aDefaultHexRGB, byte[] aDefaultRGB, byte[] aoResultRGB);
 
         
 #else
         // cross platform UTF8
-        [DllImport("tinyfiledialogsx64.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx64.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void tinyfd_beep();
 
-        [DllImport("tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tinyfd_notifyPopup(string aTitle, string aMessage, string aIconType);
 
-        [DllImport("tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tinyfd_messageBox(string aTitle, string aMessage, string aDialogTyle, string aIconType, int aDefaultButton);
 
-        [DllImport("tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_inputBox(string aTitle, string aMessage, string aDefaultInput);
 
-        [DllImport("tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_saveFileDialog(string aTitle, string aDefaultPathAndFile, int aNumOfFilterPatterns, string[] aFilterPatterns, string aSingleFilterDescription);
 
-        [DllImport("tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_openFileDialog(string aTitle, string aDefaultPathAndFile, int aNumOfFilterPatterns, string[] aFilterPatterns, string aSingleFilterDescription, int aAllowMultipleSelects);
 
-        [DllImport("tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_selectFolderDialog(string aTitle, string aDefaultPathAndFile);
 
-        [DllImport("tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("Data/Libraries/tinyfiledialogsx64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_colorChooser(string aTitle, string aDefaultHexRGB, byte[] aDefaultRGB, byte[] aoResultRGB);
 #endif
 #pragma warning restore IDE1006 // Naming Styles

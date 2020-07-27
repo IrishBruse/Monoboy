@@ -1,4 +1,5 @@
-﻿using Monoboy.Core.Utility;
+﻿using System;
+using Monoboy.Core.Utility;
 using Monoboy.Frontend;
 using SFML.Graphics;
 
@@ -41,7 +42,6 @@ namespace Monoboy.Core
                 {
                     clock = 0;
                     bus.memory.StatMode = Mode.Hblank;
-
                     DrawScanline();
                 }
                 break;
@@ -49,12 +49,16 @@ namespace Monoboy.Core
                 case Mode.Hblank:
                 if(clock >= 204)
                 {
+                    //check if first time here
+                    bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
+
                     clock = 0;
                     bus.memory.Scanline++;
 
                     if(bus.memory.Scanline == 144)
                     {
                         bus.memory.StatMode = Mode.Vblank;
+                        bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.VBlank);
 
                     }
                     else
@@ -82,7 +86,26 @@ namespace Monoboy.Core
 
         void DrawScanline()
         {
+            if(bus.memory.LCDC.GetBit(Bit.Bit0) == true)
+            {
+                DrawBackground();
+            }
+
+            if(bus.memory.LCDC.GetBit(Bit.Bit5) == true)
+            {
+                DrawWindow();
+            }
+
+            if(bus.memory.LCDC.GetBit(Bit.Bit1) == true)
+            {
+                DrawSprites();
+            }
+        }
+
+        void DrawBackground()
+        {
             ushort tilemapAddress = (ushort)(bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundTilemap) ? 0x1C00 : 0x1800);
+            ushort tiledataAddress = (ushort)(bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundWindowData) ? 0x0000 : 0x1000);
             bool unsignTilemapAddress = bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundWindowData);
 
             ushort y = (ushort)(bus.memory.Scanline + bus.memory.ScrollY);
@@ -110,6 +133,16 @@ namespace Monoboy.Core
 
                 Framebuffer.SetPixel(i, bus.memory.Scanline, pallet[color_value]);
             }
+        }
+
+        void DrawWindow()
+        {
+
+        }
+
+        void DrawSprites()
+        {
+
         }
     }
 }

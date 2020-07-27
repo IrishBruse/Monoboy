@@ -8,10 +8,10 @@ namespace Monoboy.Frontend
 {
     public class Window
     {
-        static float FrameTime = 1f / 60f;
-
         public uint Width { get => window.Size.X; }
         public uint Height { get => window.Size.Y; }
+        public Vector2i Position { get => window.Position; set => window.Position = value; }
+        public bool Open { get => window.IsOpen; }
 
         public delegate void UpdateEvent();
         public event UpdateEvent Update;
@@ -24,90 +24,82 @@ namespace Monoboy.Frontend
 
         private readonly RenderWindow window;
 
+        Clock clock;
+        DrawingSurface surface;
+
         public Window(string title, uint width, uint height)
         {
             window = new RenderWindow(new VideoMode(width, height), title);
 
             // Event handling
-            window.Closed += (e, y) => Quit();
-            window.KeyPressed += KeyPressed;
-            window.KeyReleased += KeyReleased;
+            window.Closed += (sender, e) => Quit();
+
             window.Resized += WindowResize;
+
+            clock = new Clock();
+            surface = new DrawingSurface(window);
         }
 
         public void Loop()
         {
-            Clock clock = new Clock();
-            DrawingSurface surface = new DrawingSurface(window);
+            clock.Restart();
 
-            while(window.IsOpen)
+            window.DispatchEvents();
+
+            if(Update != null)
             {
-                clock.Restart();
-
-                window.DispatchEvents();
-
                 Update.Invoke();
-                Draw.Invoke(surface);
-
-                long elapsed = clock.ElapsedTime.AsMicroseconds();
-
-                if(elapsed < 16000)
-                {
-                    long sleepTime = 16000 - elapsed;
-
-                    Thread.Sleep(new TimeSpan(sleepTime));
-                }
-
-                window.Display();
             }
-        }
 
-        #region Events
+            if(Draw != null)
+            {
+                Draw.Invoke(surface);
+            }
 
-        private void KeyPressed(object sender, KeyEventArgs e)
-        {
+            long elapsed = clock.ElapsedTime.AsMicroseconds();
 
-        }
+            if(elapsed < 16000)
+            {
+                long sleepTime = 16000 - elapsed;
 
-        private void KeyReleased(object sender, KeyEventArgs e)
-        {
+                Thread.Sleep(new TimeSpan(sleepTime));
+            }
 
+            window.Display();
         }
 
         private void WindowResize(object sender, SizeEventArgs e)
         {
             Vector2u size = window.Size;
 
-            if(size.X < 160 * 2)
+            int scale = (int)(Height / 144);
+
+            if(size.X < 160 * scale)
             {
-                size.X = 160 * 2;
+                size.X = (uint)(160 * scale);
             }
-            if(size.Y < 144 * 2)
+            if(size.Y < 144)
             {
-                size.Y = 144 * 2;
+                size.Y = 144;
             }
 
             window.Size = size;
 
             window.SetView(new View(new FloatRect(0, 0, e.Width, e.Height)));
-            Resize.Invoke(new Vector2u(e.Width, e.Height));
-        }
-
-        #endregion
-
-        public void Quit()
-        {
-            window.Close();
-        }
-
-        public void SetWindowFPS(uint fps)
-        {
-            FrameTime = 1f / fps;
+            if(Resize != null)
+            {
+                Resize.Invoke(new Vector2u(e.Width, e.Height));
+            }
         }
 
         public void SetTitle(string title)
         {
             window.SetTitle(title);
+        }
+
+        public void Quit()
+        {
+            window.Close();
         }
     }
 }

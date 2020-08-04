@@ -5,14 +5,20 @@
 		<StartupObject>Monoboy.Program</StartupObject>
 	</PropertyGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\Monoboy.Frontend\Monoboy.Frontend.csproj" />
+		<None Include="..\.editorconfig" Link=".editorconfig" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Update="Data\OpenSans.ttf">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Monoboy.Frontend\Monoboy.Frontend.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="Data\Consolas.ttf">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-	  <Exec Command="robocopy $(ProjectDir)Roms\ $(TargetDir)Roms\ /E&#xD;&#xA;robocopy $(ProjectDir)Tests\ $(TargetDir)Tests\ /E" />
+		<Exec Command="robocopy $(ProjectDir)Data $(TargetDir)Data /e&#xD;&#xA;exit 0" />
 	</Target>
 </Project>

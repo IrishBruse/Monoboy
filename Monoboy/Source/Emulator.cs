@@ -12,6 +12,7 @@ namespace Monoboy.Core
 
         public Bus bus;
 
+
         public Emulator()
         {
             bus = new Bus();
@@ -26,7 +27,7 @@ namespace Monoboy.Core
 
         public void LoadRom(string path)
         {
-            bus.cartridge.LoadRom(path);
+            bus.cartridge.LoadRom("Data/Roms/" + path);
         }
     }
 }

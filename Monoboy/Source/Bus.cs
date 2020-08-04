@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using Monoboy.Core.Utility;
 using SFML.Graphics;
 
@@ -13,6 +14,8 @@ namespace Monoboy.Core
         public CPU cpu;
         public GPU gpu;
         public Joypad joypad;
+
+        public bool biosEnabled = true;
 
         public Bus()
         {
@@ -111,9 +114,9 @@ namespace Monoboy.Core
         {
             byte data = 0xFF;
 
-            if(address >= 0x0000 && address <= 0x7FFF)// 16KB ROM Bank 00     (in cartridge, fixed at bank 00)
+            if(address >= 0x0000 && address <= 0x7FFF)// 16KB ROM Bank 00 (in cartridge, fixed at bank 00)
             {
-                if(address >= 0x0000 && address <= 0x00FF && memory.BootRomEnabled != 0x01)
+                if(address >= 0x0000 && address <= 0x00FF && biosEnabled == true)
                 {
                     data = memory.boot[address];
                 }
@@ -126,21 +129,21 @@ namespace Monoboy.Core
             {
                 data = gpu.vRam[address - 0x8000];
             }
-            else if(address >= 0xA000 && address <= 0xBFFF)// 8KB External RAM     (in cartridge, switchable bank, if any)
+            else if(address >= 0xA000 && address <= 0xBFFF)// 8KB External RAM (in cartridge, switchable bank, if any)
             {
-                data = cartridge.cartRam[address - 0xA000];
+                data = cartridge.Read(address);
             }
             else if(address >= 0xC000 && address <= 0xDFFF)// 4KB Work RAM Bank 0 (WRAM)
             {
                 data = memory.workRAM[address - 0xC000];
             }
-            else if(address >= 0xD000 && address <= 0xDFFF)// 4KB Work RAM Bank 1 (WRAM)  (switchable bank 1-7 in CGB Mode)
+            else if(address >= 0xD000 && address <= 0xDFFF)// 4KB Work RAM Bank 1 (WRAM) (switchable bank 1-7 in CGB Mode)
             {
                 data = memory.workRAM[address - 0xC000];
             }
-            else if(address >= 0xE000 && address <= 0xFDFF)// Same as C000-DDFF (ECHO)    (typically not used)
+            else if(address >= 0xE000 && address <= 0xFDFF)// Same as C000-DDFF (ECHO) (typically not used)
             {
-                data = memory.workRAM[address - 0xC000];
+                data = memory.workRAM[address - 0xE000];
             }
             else if(address >= 0xFE00 && address <= 0xFE9F)// Sprite Attribute Table (OAM)
             {
@@ -184,18 +187,17 @@ namespace Monoboy.Core
 
         public void Write(ushort address, byte data)
         {
-            if(address >= 0x0000 && address <= 0x7FFF)// 16KB ROM Bank 00     (in cartridge, fixed at bank 00)
+            if(address >= 0x0000 && address <= 0x7FFF)// 16KB ROM Bank 00 (in cartridge, fixed at bank 00)
             {
                 cartridge.Write(address, data);
             }
-            else
-            if(address >= 0x8000 && address <= 0x9FFF)// 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+            else if(address >= 0x8000 && address <= 0x9FFF)// 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
             {
                 gpu.vRam[address - 0x8000] = data;
             }
             else if(address >= 0xA000 && address <= 0xBFFF)// 8KB External RAM (in cartridge, switchable bank, if any)
             {
-                cartridge.cartRam[address - 0xA000] = data;
+                cartridge.Write(address, data);
             }
             else if(address >= 0xC000 && address <= 0xCFFF)// 4KB Work RAM Bank 0 (WRAM)
             {
@@ -232,6 +234,15 @@ namespace Monoboy.Core
                 {
                     interrupt.IE = data;
                 }
+                else if(address == 0xFF01)
+                {
+                    if(Read(0xFF02) == 0x81)
+                    {
+                        Debug.Write(data);
+                    }
+
+                    memory.zp[address - 0xFF80] = data;
+                }
                 else
                 {
                     memory.zp[address - 0xFF80] = data;
@@ -243,7 +254,7 @@ namespace Monoboy.Core
 
         public void SkipBootRom()
         {
-            memory.BootRomEnabled = 0x01;
+            biosEnabled = false;
             register.AF = 0x01B0;
             register.BC = 0x0013;
             register.DE = 0x00D8;

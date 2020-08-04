@@ -14,7 +14,7 @@ namespace Monoboy.Frontend
         public DrawingSurface(RenderWindow window)
         {
             this.window = window;
-            font = new Font("Data/OpenSans.ttf");
+            font = new Font("Data/Consolas.ttf");
         }
 
         public void Clear(Color color)

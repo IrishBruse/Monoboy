@@ -19,6 +19,15 @@ namespace Monoboy.Core
         // Returns number of cycles to jump
         public byte Step()
         {
+            // Disable the bios in the bus
+            if(bus.biosEnabled == true)
+            {
+                if(bus.register.PC >= 0x100)
+                {
+                    bus.biosEnabled = false;
+                }
+            }
+
             byte result = StepCPU();
             return result;
         }
@@ -312,12 +321,12 @@ namespace Monoboy.Core
 
                 case 0x7F: case 0x49: case 0x52: case 0x5B: case 0x64: case 0x6D: case 0x40: case 0x00: return 4;
 
-                case 0x76: halted = true; return 4;// TODO: Halt
-                case 0x10: return 4;// TODO: Stop
-                case 0xF3: bus.interrupt.Disable(); return 4;// TODO: DI interupt in one instruction
-                case 0xFB: bus.interrupt.Enable(); return 4;// TODO: EI interupt in one instruction
+                case 0x76: halted = true; return 4;
+                case 0x10: return 4;
+                case 0xF3: bus.interrupt.Disable(); return 4;
+                case 0xFB: bus.interrupt.Enable(); return 4;
 
-                case 0xD9: RET(); return 8; // TODO: enable interupts
+                case 0xD9: RET(); bus.interrupt.Enable(); return 8;
 
                 case 0xD3: throw new Exception("Illegal Instruction : 0xD3");
                 case 0xDB: throw new Exception("Illegal Instruction : 0xDB");

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Monoboy.Core.Utility;
 using Monoboy.Frontend;
 using SFML.Graphics;
@@ -49,17 +50,13 @@ namespace Monoboy.Core
                 case Mode.Hblank:
                 if(clock >= 204)
                 {
-                    //check if first time here
-                    bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
-
                     clock = 0;
-                    bus.memory.Scanline++;
+                    bus.memory.LY++;
 
-                    if(bus.memory.Scanline == 144)
+                    if(bus.memory.LY == 144)
                     {
                         bus.memory.StatMode = Mode.Vblank;
                         bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.VBlank);
-
                     }
                     else
                     {
@@ -72,11 +69,11 @@ namespace Monoboy.Core
                 if(clock >= 456)
                 {
                     clock = 0;
-                    bus.memory.Scanline++;
+                    bus.memory.LY++;
 
-                    if(bus.memory.Scanline > 153)
+                    if(bus.memory.LY > 153)
                     {
-                        bus.memory.Scanline = 0;
+                        bus.memory.LY = 0;
                         bus.memory.StatMode = Mode.OAM;
                     }
                 }
@@ -105,33 +102,34 @@ namespace Monoboy.Core
         void DrawBackground()
         {
             ushort tilemapAddress = (ushort)(bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundTilemap) ? 0x1C00 : 0x1800);
-            ushort tiledataAddress = (ushort)(bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundWindowData) ? 0x0000 : 0x1000);
             bool unsignTilemapAddress = bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundWindowData);
 
-            ushort y = (ushort)(bus.memory.Scanline + bus.memory.ScrollY);
+            ushort y = (ushort)(bus.memory.LY + bus.memory.SCY);
             ushort row = (ushort)(y / 8);
 
             for(byte i = 0; i < Emulator.WindowWidth; i++)
             {
-                ushort x = (ushort)(i + bus.memory.ScrollX);
+                byte x = (byte)(i + bus.memory.SCX);
                 ushort colum = (ushort)(x / 8);
+                byte rawTile = bus.gpu.vRam[tilemapAddress + ((row * 32) + colum)];
 
-                ushort raw_tile_num = bus.gpu.vRam[tilemapAddress + (row * 32 + colum)];
+                ushort tileGraphicAddress = rawTile;
 
-                ushort tileGraphicAddress = (ushort)(
-                    (unsignTilemapAddress == true) ?
-                    raw_tile_num * 16 :
-                    0x0800 + (short)raw_tile_num * 16
-                    );
+                if(unsignTilemapAddress == false && rawTile < 128)
+                {
+                    tileGraphicAddress = (ushort)(sbyte)(rawTile + 256);
+                }
 
-                byte line = (byte)((byte)(y % 8) * 2);
+                tileGraphicAddress *= 16;
+
+                byte line = (byte)((y % 8) * 2);
                 byte data1 = bus.gpu.vRam[tileGraphicAddress + line];
                 byte data2 = bus.gpu.vRam[tileGraphicAddress + line + 1];
 
                 Bit bit = (Bit)(0b00000001 << (((x % 8) - 7) * 0xff));
                 byte color_value = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
 
-                Framebuffer.SetPixel(i, bus.memory.Scanline, pallet[color_value]);
+                Framebuffer.SetPixel(i, bus.memory.LY, pallet[color_value]);
             }
         }
 

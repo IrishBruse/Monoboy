@@ -9,12 +9,12 @@ namespace Monoboy.Core.Utility
 
         public static string ToHex(this byte data)
         {
-            return "0x" + data.ToString("X2").PadLeft(2, '0').ToUpper();
+            return "0x" + data.ToString("x");
         }
 
         public static string ToHex(this ushort data)
         {
-            return "0x" + data.ToString("X4").PadLeft(4, '0').ToUpper();
+            return "0x" + data.ToString("x");
         }
 
         public static string ToBin(this byte data)

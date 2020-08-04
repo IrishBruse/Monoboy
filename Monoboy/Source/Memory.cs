@@ -16,11 +16,10 @@ namespace Monoboy.Core
         public byte LCDC { get => io[0x0040]; set => io[0x0040] = value; }
         public byte Stat { get => io[0x0041]; set => io[0x0041] = value; }
         public Mode StatMode { get => (Mode)io[0x0041].GetBits(0b00000011); set => io[0x0041] = io[0x0041].SetBits(0b00000011, (byte)value); }
-        public byte ScrollY { get => io[0x0042]; set => io[0x0042] = value; }
-        public byte ScrollX { get => io[0x0043]; set => io[0x0043] = value; }
-        public byte Scanline { get => io[0x0044]; set => io[0x0044] = value; }
-        public byte BackgroundPallet { get => io[0x0047]; set => io[0x0047] = value; }
-        public byte BootRomEnabled { get => io[0x0050]; set => io[0x0050] = value; }
+        public byte SCY { get => io[0x0042]; set => io[0x0042] = value; }
+        public byte SCX { get => io[0x0043]; set => io[0x0043] = value; }
+        public byte LY { get => io[0x0044]; set => io[0x0044] = value; }
+        public byte BGP { get => io[0x0047]; set => io[0x0047] = value; }
 
         public Memory()
         {

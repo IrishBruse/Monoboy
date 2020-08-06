@@ -27,8 +27,4 @@
     <ProjectReference Include="..\Monoboy\Monoboy.csproj" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="robocopy $(ProjectDir)Tests\ $(TargetDir)Tests\ /E" />
-  </Target>
-
 </Project>

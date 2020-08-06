@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <Reference Include="tgui.net">
-      <HintPath>Libraries\tgui.net.dll</HintPath>
+      <HintPath>..\Monoboy\Data\Libraries\tgui.net.dll</HintPath>
     </Reference>
   </ItemGroup>
 

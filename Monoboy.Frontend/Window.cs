@@ -25,7 +25,7 @@ namespace Monoboy.Frontend
         private readonly RenderWindow window;
 
         Clock clock;
-        DrawingSurface surface;
+        public DrawingSurface surface;
 
         public Window(string title, uint width, uint height)
         {

@@ -52,7 +52,7 @@ namespace Monoboy.Core
     public enum Mode
     {
         OAM = 0b10,
-        Drawing = 0b11,
+        Transfering = 0b11,
         Hblank = 0b00,
         Vblank = 0b01,
     }

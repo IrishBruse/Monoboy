@@ -10,11 +10,17 @@ namespace Monoboy.Frontend
         private readonly RenderWindow window;
 
         Font font;
+        Text text;
 
         public DrawingSurface(RenderWindow window)
         {
             this.window = window;
             font = new Font("Data/Consolas.ttf");
+            text = new Text
+            {
+                FillColor = Color.Black,
+                Font = font
+            };
         }
 
         public void Clear(Color color)
@@ -29,13 +35,9 @@ namespace Monoboy.Frontend
 
         public void DrawString(string text, Vector2f position)
         {
-            Text textDrawing = new Text(text, font)
-            {
-                Position = position + new Vector2f(4, -8),
-                FillColor = Color.Black,
-            };
-
-            window.Draw(textDrawing);
+            this.text.DisplayedString = text;
+            this.text.Position = position + new Vector2f(4, -8);
+            window.Draw(this.text);
         }
 
         public void DrawString(string text)

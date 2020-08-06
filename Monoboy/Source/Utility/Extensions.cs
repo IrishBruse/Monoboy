@@ -19,12 +19,12 @@ namespace Monoboy.Core.Utility
 
         public static string ToBin(this byte data)
         {
-            return "(byte)(byte)0b" + Convert.ToString(data, 2).PadLeft(8, '0');
+            return "0b" + Convert.ToString(data, 2).PadLeft(8, '0');
         }
 
         public static string ToBin(this ushort data)
         {
-            return "(byte)(byte)0b" + Convert.ToString(data, 2).PadLeft(16, '0');
+            return "0b" + Convert.ToString(data, 2).PadLeft(16, '0');
         }
 
         #endregion

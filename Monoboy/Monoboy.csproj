@@ -5,20 +5,13 @@
 		<StartupObject>Monoboy.Program</StartupObject>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Include="..\.editorconfig" Link=".editorconfig" />
-	</ItemGroup>
-	<ItemGroup>
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-	</ItemGroup>
-	<ItemGroup>
 		<ProjectReference Include="..\Monoboy.Frontend\Monoboy.Frontend.csproj" />
+		<None Update="$(ProjectDir)Data\**" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Update="Data\Consolas.ttf">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+	  <None Update="Data\Libraries\tgui.net.dll">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Exec Command="robocopy $(ProjectDir)Data $(TargetDir)Data /e&#xD;&#xA;exit 0" />
-	</Target>
 </Project>

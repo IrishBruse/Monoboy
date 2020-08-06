@@ -13,8 +13,14 @@ namespace Monoboy.Core
 
                 for(int i = 0x134; i < 0x144; i++)
                 {
-                    byte val = memoryBankController.Read((ushort)i);
-                    if(val==0)
+                    byte val = 0;
+                    if(memoryBankController != null)
+                    {
+                        val = memoryBankController.Read((ushort)i);
+                    }
+
+
+                    if(val == 0)
                     {
                         break;
                     }
@@ -33,7 +39,12 @@ namespace Monoboy.Core
 
         public byte Read(ushort address)
         {
-            return memoryBankController.Read(address);
+            if(memoryBankController != null)
+            {
+                return memoryBankController.Read(address);
+            }
+
+            return 0x00;
         }
 
         public void Write(ushort address, byte data)

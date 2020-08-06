@@ -49,8 +49,13 @@ namespace Monoboy.Core
                     {
                         bus.memory.StatMode = Mode.Vblank;
                         VBlankLine = 0;
+
                         bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.VBlank);
                         DrawFrame.Invoke();
+                    }
+                    else
+                    {
+
                     }
                 }
                 break;

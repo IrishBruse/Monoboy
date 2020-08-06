@@ -6,12 +6,15 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-		<ProjectReference Include="..\Monoboy.Frontend\Monoboy.Frontend.csproj" />
+		<PackageReference Include="SFML.Audio" Version="2.5.0" />
+		<PackageReference Include="SFML.Graphics" Version="2.5.0" />
+		<PackageReference Include="SFML.System" Version="2.5.0" />
+		<PackageReference Include="SFML.Window" Version="2.5.0" />
 		<None Update="$(ProjectDir)Data\**" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Update="Data\Libraries\tgui.net.dll">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+		<None Update="Data\Libraries\tgui.net.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 </Project>

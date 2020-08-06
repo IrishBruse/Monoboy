@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monoboy", "Monoboy\Monoboy.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monoboy.Tests", "Monoboy.Tests\Monoboy.Tests.csproj", "{FE49472D-CE2E-4648-BF4F-9CE179BE0878}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Monoboy.Frontend", "Monoboy.Frontend\Monoboy.Frontend.csproj", "{02E65526-435F-4C9A-A273-8D6917E5F4DC}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D2FF5988-1772-429D-A924-77F4185072B8}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -49,18 +47,6 @@ Global
 		{FE49472D-CE2E-4648-BF4F-9CE179BE0878}.Release|x64.Build.0 = Release|Any CPU
 		{FE49472D-CE2E-4648-BF4F-9CE179BE0878}.Release|x86.ActiveCfg = Release|Any CPU
 		{FE49472D-CE2E-4648-BF4F-9CE179BE0878}.Release|x86.Build.0 = Release|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Debug|x64.Build.0 = Debug|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Debug|x86.Build.0 = Debug|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Release|x64.ActiveCfg = Release|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Release|x64.Build.0 = Release|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Release|x86.ActiveCfg = Release|Any CPU
-		{02E65526-435F-4C9A-A273-8D6917E5F4DC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
-using Monoboy.Core.Utility;
-using SFML.Graphics;
 
-namespace Monoboy.Core
+namespace Monoboy
 {
     public class Bus
     {
@@ -164,6 +161,7 @@ namespace Monoboy.Core
                     if(Read(0xFF02) == 0x81)
                     {
                         Debug.Write(data);
+                        Write(0xFF02, 0);
                     }
 
                     memory.zp[address - 0xFF80] = data;

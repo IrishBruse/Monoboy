@@ -1,7 +1,6 @@
 ﻿using System;
-using Monoboy.Frontend;
 
-namespace Monoboy.Core.Utility
+namespace Monoboy.Utility
 {
     public static class Extensions
     {

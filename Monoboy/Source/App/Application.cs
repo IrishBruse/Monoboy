@@ -1,12 +1,8 @@
-﻿using System.Diagnostics;
-using System.IO;
-using Monoboy.Core;
-using Monoboy.Core.Utility;
+﻿using System.IO;
 using Monoboy.Frontend;
 using Newtonsoft.Json.Linq;
 using SFML.Graphics;
 using SFML.System;
-using SFML.Window;
 using Window = Monoboy.Frontend.Window;
 
 namespace Monoboy
@@ -53,9 +49,18 @@ namespace Monoboy
 
             emulator = new Emulator();
             //emulator.LoadRom("Dr. Mario.gb");
-            emulator.LoadRom("Tetris.gb");
+            //emulator.LoadRom("Tetris.gb");
             //emulator.bus.SkipBootRom();
-            //emulator.LoadRom("05-op rp.gb");
+            //emulator.LoadRom("01-special.gb");
+            emulator.LoadRom("02-interrupts.gb");
+            //emulator.LoadRom("01-special.gb");
+            //emulator.LoadRom("01-special.gb");
+            //emulator.LoadRom("01-special.gb");
+            //emulator.LoadRom("01-special.gb");
+            //emulator.LoadRom("01-special.gb");
+            //emulator.LoadRom("01-special.gb");
+            //emulator.LoadRom("01-special.gb");
+            //emulator.LoadRom("01-special.gb");
 
             screen = new Texture(Emulator.WindowWidth, Emulator.WindowHeight);
 
@@ -93,10 +98,10 @@ namespace Monoboy
 
             debugWindow.Draw += DebugDraw;
 
-            while(emulator.bus.register.PC != 0x100)
-            {
-                emulator.Step();
-            }
+            //while(emulator.bus.register.PC != 0x100)
+            //{
+            //    emulator.Step();
+            //}
 
             while(mainWindow.Open && debugWindow.Open)
             {
@@ -192,27 +197,28 @@ namespace Monoboy
             surface.DrawString("HL: 0x" + emulator.bus.register.HL.ToString("X4"), new Vector2f(0, spacing * 3));
             surface.DrawString("SP: 0x" + emulator.bus.register.SP.ToString("X4"), new Vector2f(0, spacing * 4));
 
-            string hexcode = emulator.bus.Read(emulator.bus.register.PC).ToHex();
+            string hexcode = emulator.bus.Read(emulator.bus.register.PC).ToString("x");
 
-            string opcode = "OP: " + (string)opcodes.SelectToken("unprefixed." + hexcode + ".mnemonic");
+            string opcode = "OP: " + (string)opcodes.SelectToken("unprefixed." + "0x" + hexcode + ".mnemonic") + " ";
 
-            byte length = (byte)opcodes.SelectToken("unprefixed." + hexcode + ".length");
+            byte length = (byte)opcodes.SelectToken("unprefixed." + "0x" + hexcode + ".length");
 
             for(int i = 1; i < length; i++)
             {
-                opcode += " " + emulator.bus.Read((ushort)(emulator.bus.register.PC + i)).ToString("X2");
+                opcode += emulator.bus.Read((ushort)(emulator.bus.register.PC + i)).ToString("X2");
             }
 
-            surface.DrawString("PC: " + emulator.bus.register.PC.ToHex() + "(" + hexcode + ") ", new Vector2f(0, spacing * 5));
+            surface.DrawString("PC: " + emulator.bus.register.PC.ToString("X4") + "(" + hexcode + ") ", new Vector2f(0, spacing * 5));
             surface.DrawString(opcode, new Vector2f(0, spacing * 6));
+            surface.DrawString("" + emulator.cyclesRan, new Vector2f(0, spacing * 7));
 
-            surface.DrawString("LY: " + emulator.bus.memory.LY.ToHex(), new Vector2f(260, spacing * 0));
-            surface.DrawString("STAT: " + emulator.bus.memory.Stat.ToBin(), new Vector2f(260, spacing * 1));
-            surface.DrawString("LCDC: " + emulator.bus.memory.LCDC.ToBin(), new Vector2f(260, spacing * 2));
-            surface.DrawString("SCX: " + emulator.bus.memory.SCX.ToHex(), new Vector2f(260, spacing * 3));
-            surface.DrawString("SCY: " + emulator.bus.memory.SCY.ToHex(), new Vector2f(260, spacing * 4));
-            surface.DrawString("WindX: " + emulator.bus.memory.WindowX.ToHex(), new Vector2f(260, spacing * 5));
-            surface.DrawString("WindY: " + emulator.bus.memory.WindowY.ToHex(), new Vector2f(260, spacing * 6));
+            surface.DrawString("LY: " + emulator.bus.memory.LY.ToString("X2"), new Vector2f(260, spacing * 0));
+            surface.DrawString("STAT: " + System.Convert.ToString(emulator.bus.memory.Stat, 2), new Vector2f(260, spacing * 1));
+            surface.DrawString("LCDC: " + System.Convert.ToString(emulator.bus.memory.LCDC, 2), new Vector2f(260, spacing * 2));
+            surface.DrawString("SCX: " + emulator.bus.memory.SCX.ToString("X2"), new Vector2f(260, spacing * 3));
+            surface.DrawString("SCY: " + emulator.bus.memory.SCY.ToString("X2"), new Vector2f(260, spacing * 4));
+            surface.DrawString("WindX: " + emulator.bus.memory.WindowX.ToString("X2"), new Vector2f(260, spacing * 5));
+            surface.DrawString("WindY: " + emulator.bus.memory.WindowY.ToString("X2"), new Vector2f(260, spacing * 6));
         }
 
         private void Resize(Vector2u windowSize)

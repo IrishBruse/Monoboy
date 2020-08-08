@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Monoboy.Core
+﻿namespace Monoboy
 {
     public enum Bit : byte
     {
@@ -52,7 +46,7 @@ namespace Monoboy.Core
     public enum Mode
     {
         OAM = 0b10,
-        Transfering = 0b11,
+        VRAM = 0b11,
         Hblank = 0b00,
         Vblank = 0b01,
     }

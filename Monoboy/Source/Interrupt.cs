@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace Monoboy.Core
+namespace Monoboy
 {
     public class Interrupt
     {
         Bus bus;
 
-        bool IME;// Master interupt enabled
+        bool IME = true;// Master interupt enabled
 
         byte ie;
         public byte IE
@@ -84,6 +84,16 @@ namespace Monoboy.Core
             }
 
             bus.cpu.halted = false;
+        }
+
+        void RST40()
+        {
+            IME = false;
+
+            bus.cpu.Push(bus.register.PC);
+
+            bus.register.PC = 0x0040;
+
         }
 
         public enum InterruptFlag

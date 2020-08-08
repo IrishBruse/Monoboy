@@ -1,9 +1,8 @@
-﻿using System;
-using System.IO;
-using Monoboy.Core.Utility;
+﻿using System.IO;
+using Monoboy.Utility;
 using SFML.Graphics;
 
-namespace Monoboy.Core
+namespace Monoboy
 {
     public class Emulator
     {
@@ -12,6 +11,8 @@ namespace Monoboy.Core
         public const byte WindowHeight = 144;
 
         public Bus bus;
+
+        public long cyclesRan;
 
         public Emulator()
         {
@@ -22,6 +23,7 @@ namespace Monoboy.Core
         {
             byte cycles = bus.cpu.Step();
             bus.gpu.Step(cycles);
+            cyclesRan += cycles;
             return cycles;
         }
 

@@ -1,7 +1,7 @@
-﻿using Monoboy.Core.Utility;
+﻿using Monoboy.Utility;
 using SFML.Graphics;
 
-namespace Monoboy.Core
+namespace Monoboy
 {
     public class GPU
     {
@@ -14,9 +14,6 @@ namespace Monoboy.Core
         public Image Framebuffer { get; }
         public System.Action DrawFrame;
 
-        byte LCDCStatusInterrupt;
-        byte VBlankLine;
-
         public GPU(Bus bus)
         {
             this.bus = bus;
@@ -25,12 +22,6 @@ namespace Monoboy.Core
 
         public void Step(int cycles)
         {
-            if(bus.memory.LCDC.GetBit((Bit)LCDCBit.DisplayToggle) == false)
-            {
-                return;
-            }
-
-            bool requestInterrupt = false;
 
             clock += cycles;
 
@@ -39,23 +30,19 @@ namespace Monoboy.Core
                 case Mode.Hblank:
                 if(clock >= 204)
                 {
+                    DrawScanline();
+
                     bus.memory.LY++;
                     clock -= 204;
-                    bus.memory.StatMode = Mode.OAM;
-
-                    CompareLYToLYC();
 
                     if(bus.memory.LY == 144)
                     {
                         bus.memory.StatMode = Mode.Vblank;
-                        VBlankLine = 0;
-
                         bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.VBlank);
-                        DrawFrame.Invoke();
                     }
                     else
                     {
-
+                        bus.memory.StatMode = Mode.OAM;
                     }
                 }
                 break;
@@ -66,8 +53,9 @@ namespace Monoboy.Core
                     bus.memory.LY++;
                     clock -= 456;
 
-                    if(bus.memory.LY > 153)
+                    if(bus.memory.LY == 154)
                     {
+                        DrawFrame.Invoke();
                         bus.memory.LY = 0;
                         bus.memory.StatMode = Mode.OAM;
                     }
@@ -78,26 +66,36 @@ namespace Monoboy.Core
                 if(clock >= 80)
                 {
                     clock -= 80;
-                    bus.memory.StatMode = Mode.Transfering;
+                    bus.memory.StatMode = Mode.VRAM;
                 }
                 break;
 
-                case Mode.Transfering:
+                case Mode.VRAM:
                 if(clock >= 172)
                 {
                     clock -= 172;
+
+                    if(bus.memory.Stat.GetBit(Bit.Bit3) == true)
+                    {
+                        bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
+                    }
+
+                    bool lycInterrupt = bus.memory.Stat.GetBit(Bit.Bit6);
+                    bool lyc = bus.memory.LYC == bus.memory.LY;
+
+                    if(lycInterrupt && lyc)
+                    {
+                        bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
+                    }
+                    bus.memory.Stat.SetBit(Bit.Bit2, lyc);
+
                     bus.memory.StatMode = Mode.Hblank;
-                    DrawScanline();
                 }
                 break;
             }
-
-            if(requestInterrupt == true)
-            {
-                bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
-            }
         }
 
+        #region Drawing
         void DrawScanline()
         {
             if(bus.memory.LCDC.GetBit(Bit.Bit0) == true)
@@ -116,7 +114,6 @@ namespace Monoboy.Core
             }
         }
 
-        #region Drawing
         void DrawBackground()
         {
             ushort tilemapAddress = (ushort)(bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundTilemap) ? 0x1C00 : 0x1800);
@@ -165,32 +162,5 @@ namespace Monoboy.Core
 
         }
         #endregion
-
-        void CompareLYToLYC()
-        {
-            if(bus.memory.LCDC.GetBit((Bit)LCDCBit.DisplayToggle) == false)
-            {
-                return;
-            }
-
-            if(bus.memory.LYC == clock)
-            {
-                bus.memory.Stat.SetBit(Bit.Bit2, true);
-
-                if(bus.memory.Stat.GetBit(Bit.Bit6) == true)
-                {
-                    if(LCDCStatusInterrupt == 0)
-                    {
-                        bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
-                    }
-                    LCDCStatusInterrupt.SetBit(Bit.Bit3, true);
-                }
-            }
-            else
-            {
-                bus.memory.Stat.SetBit(Bit.Bit2, false);
-                LCDCStatusInterrupt.SetBit(Bit.Bit3, false);
-            }
-        }
     }
 }

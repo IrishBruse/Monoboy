@@ -1,7 +1,7 @@
 ﻿using System;
-using Monoboy.Core.Utility;
+using Monoboy.Utility;
 
-namespace Monoboy.Core
+namespace Monoboy
 {
     public class CPU
     {
@@ -55,15 +55,16 @@ namespace Monoboy.Core
                 case 0x7B: bus.register.A = bus.register.E; return 4;
                 case 0x7C: bus.register.A = bus.register.H; return 4;
                 case 0x7D: bus.register.A = bus.register.L; return 4;
-                case 0xF2: bus.register.A = bus.Read(bus.register.C); return 8;
+                case 0xF2: bus.register.A = bus.Read((ushort)(0xFF00 | bus.register.C)); return 8;
                 case 0x7E: bus.register.A = bus.Read(bus.register.HL); return 8;
                 case 0x0A: bus.register.A = bus.Read(bus.register.BC); return 8;
                 case 0x1A: bus.register.A = bus.Read(bus.register.DE); return 8;
                 case 0xFA: bus.register.A = bus.Read(NextShort()); return 16;
                 case 0x3E: bus.register.A = NextByte(); return 8;
-                case 0x3A: bus.register.A = bus.Read(bus.register.HL--); return 8;
-                case 0x2A: bus.register.A = bus.Read(bus.register.HL++); return 8;
+                case 0x3A: bus.register.A = bus.Read(--bus.register.HL); return 8;
+                case 0x2A: bus.register.A = bus.Read(++bus.register.HL); return 8;
                 case 0xF0: bus.register.A = bus.Read((ushort)(0xFF00 | NextByte())); return 12;
+                //Verified
 
                 case 0x47: bus.register.B = bus.register.A; return 4;
                 case 0x41: bus.register.B = bus.register.C; return 4;
@@ -73,6 +74,7 @@ namespace Monoboy.Core
                 case 0x45: bus.register.B = bus.register.L; return 4;
                 case 0x46: bus.register.B = bus.Read(bus.register.HL); return 8;
                 case 0x06: bus.register.B = NextByte(); return 8;
+                //Verified
 
                 case 0x4F: bus.register.C = bus.register.A; return 4;
                 case 0x48: bus.register.C = bus.register.B; return 4;
@@ -472,7 +474,7 @@ namespace Monoboy.Core
             bus.register.SP = result;
         }
 
-        private void Push(ushort word)
+        public void Push(ushort word)
         {
             bus.register.SP--;
             bus.Write(bus.register.SP, word.High());
@@ -480,7 +482,7 @@ namespace Monoboy.Core
             bus.Write(bus.register.SP, word.Low());
         }
 
-        private ushort Pop()
+        public ushort Pop()
         {
             byte lower = bus.Read(bus.register.SP);
             bus.Write(bus.register.SP, 0);

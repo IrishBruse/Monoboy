@@ -1,6 +1,6 @@
-﻿using Monoboy.Core.Utility;
+﻿using Monoboy.Utility;
 
-namespace Monoboy.Core
+namespace Monoboy
 {
     public class Joypad
     {

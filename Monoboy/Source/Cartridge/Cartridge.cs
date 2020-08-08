@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Monoboy.Core
+namespace Monoboy
 {
     public class Cartridge
     {

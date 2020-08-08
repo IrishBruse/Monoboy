@@ -1,6 +1,3 @@
-using System.Diagnostics;
-using Monoboy.Core;
-using Monoboy.Core.Utility;
 using Xunit;
 
 namespace Monoboy.Tests

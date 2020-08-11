@@ -1,7 +1,6 @@
 # Monoboy
----
 ![example workflow file path](https://github.com/IrishBruse/Monoboy/workflows/Build/badge.svg)
-![example workflow file path](https://github.com/IrishBruse/Monoboy/workflows/Test/badge.svg)
+![example workflow file path](https://github.com/IrishBruse/Monoboy/workflows/Tests/badge.svg)
 
 Monoboy is a Gameboy emulator written in C#
 

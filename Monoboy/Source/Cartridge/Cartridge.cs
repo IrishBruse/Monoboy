@@ -19,7 +19,6 @@ namespace Monoboy
                         val = memoryBankController.Read((ushort)i);
                     }
 
-
                     if(val == 0)
                     {
                         break;
@@ -69,7 +68,6 @@ namespace Monoboy
             {
                 memoryBankController = new MemoryBankController1();
             }
-
 
             memoryBankController = cartridgeType switch
             {

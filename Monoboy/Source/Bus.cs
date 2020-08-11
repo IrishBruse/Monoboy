@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace Monoboy
@@ -26,9 +27,9 @@ namespace Monoboy
             joypad = new Joypad(this);
             interrupt = new Interrupt(this);
 
-            if(File.Exists("Data/Roms/Boot.gb") == true)
+            if(File.Exists("Data/Roms/Boot.bin") == true)
             {
-                memory.boot = File.ReadAllBytes("Data/Roms/Boot.gb");
+                memory.boot = File.ReadAllBytes("Data/Roms/Boot.bin");
             }
         }
 
@@ -141,7 +142,11 @@ namespace Monoboy
             // Not Usable
             else if(address >= 0xFF00 && address <= 0xFF7F)// I/O Ports
             {
-                if(address == 0xFF0F)
+                if(address == 0xFF00)
+                {
+                    joypad.Write(data);
+                }
+                else if(address == 0xFF0F)
                 {
                     interrupt.IF = data;
                 }
@@ -160,8 +165,7 @@ namespace Monoboy
                 {
                     if(Read(0xFF02) == 0x81)
                     {
-                        Debug.Write(data);
-                        Write(0xFF02, 0);
+                        Console.Write(data.ToString("X2"));
                     }
 
                     memory.zp[address - 0xFF80] = data;

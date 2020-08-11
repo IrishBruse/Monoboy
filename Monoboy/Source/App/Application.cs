@@ -1,5 +1,7 @@
 ﻿using System.IO;
+using System.Runtime.InteropServices.ComTypes;
 using Monoboy.Frontend;
+using Monoboy.Utility;
 using Newtonsoft.Json.Linq;
 using SFML.Graphics;
 using SFML.System;
@@ -38,6 +40,10 @@ namespace Monoboy
 
         bool paused = true;
 
+        public static bool Focused = true;
+
+        string[] debug = new string[32];
+
         public Application()
         {
             opcodes = JObject.Parse(File.ReadAllText("Data/opcodes.json"));
@@ -48,11 +54,13 @@ namespace Monoboy
             mainWindow.Position += new Vector2i(-340, 0);
 
             emulator = new Emulator();
+            //emulator.LoadRom("Mario.gb");
             //emulator.LoadRom("Dr. Mario.gb");
             //emulator.LoadRom("Tetris.gb");
             //emulator.bus.SkipBootRom();
-            //emulator.LoadRom("01-special.gb");
-            emulator.LoadRom("02-interrupts.gb");
+            //emulator.LoadRom("cpu_instrs.gb");
+            emulator.LoadRom("01-special.gb");
+            //emulator.LoadRom("02-interrupts.gb");
             //emulator.LoadRom("01-special.gb");
             //emulator.LoadRom("01-special.gb");
             //emulator.LoadRom("01-special.gb");
@@ -98,13 +106,14 @@ namespace Monoboy
 
             debugWindow.Draw += DebugDraw;
 
-            //while(emulator.bus.register.PC != 0x100)
-            //{
-            //    emulator.Step();
-            //}
+            while(emulator.bus.register.PC != 0x0000)
+            {
+                emulator.Step();
+            }
 
             while(mainWindow.Open && debugWindow.Open)
             {
+                Focused = debugWindow.Focused || mainWindow.Focused;
                 mainWindow.Loop();
                 debugWindow.Loop();
             }
@@ -189,36 +198,57 @@ namespace Monoboy
         {
             surface.Clear(Color.White);
 
-            int spacing = 24;
-
-            surface.DrawString("AF: 0x" + emulator.bus.register.AF.ToString("X4"), new Vector2f(0, spacing * 0));
-            surface.DrawString("BC: 0x" + emulator.bus.register.BC.ToString("X4"), new Vector2f(0, spacing * 1));
-            surface.DrawString("DE: 0x" + emulator.bus.register.DE.ToString("X4"), new Vector2f(0, spacing * 2));
-            surface.DrawString("HL: 0x" + emulator.bus.register.HL.ToString("X4"), new Vector2f(0, spacing * 3));
-            surface.DrawString("SP: 0x" + emulator.bus.register.SP.ToString("X4"), new Vector2f(0, spacing * 4));
-
             string hexcode = emulator.bus.Read(emulator.bus.register.PC).ToString("x");
 
-            string opcode = "OP: " + (string)opcodes.SelectToken("unprefixed." + "0x" + hexcode + ".mnemonic") + " ";
+            string opcode = (string)opcodes.SelectToken("unprefixed." + "0x" + hexcode + ".mnemonic");
+            string operand1 = (string)opcodes.SelectToken("unprefixed." + "0x" + hexcode + ".operand1");
+            string operand2 = (string)opcodes.SelectToken("unprefixed." + "0x" + hexcode + ".operand2");
 
-            byte length = (byte)opcodes.SelectToken("unprefixed." + "0x" + hexcode + ".length");
-
-            for(int i = 1; i < length; i++)
+            if(operand2 == "d16")
             {
-                opcode += emulator.bus.Read((ushort)(emulator.bus.register.PC + i)).ToString("X2");
+                operand2 = "0x" + emulator.bus.Read((ushort)(emulator.bus.register.PC + 2)).ToString("X2") +
+                    emulator.bus.Read((ushort)(emulator.bus.register.PC + 1)).ToString("X2");
             }
 
-            surface.DrawString("PC: " + emulator.bus.register.PC.ToString("X4") + "(" + hexcode + ") ", new Vector2f(0, spacing * 5));
-            surface.DrawString(opcode, new Vector2f(0, spacing * 6));
-            surface.DrawString("" + emulator.cyclesRan, new Vector2f(0, spacing * 7));
+            string flags = "(" +
+            (emulator.bus.register.F.GetBit((Bit)Flag.FullCarry) ? "C" : "-") +
+            (emulator.bus.register.F.GetBit((Bit)Flag.HalfCarry) ? "H" : "-") +
+            (emulator.bus.register.F.GetBit((Bit)Flag.Negative) ? "N" : "-") +
+            (emulator.bus.register.F.GetBit((Bit)Flag.Zero) ? "Z" : "-") +
+            ")";
 
-            surface.DrawString("LY: " + emulator.bus.memory.LY.ToString("X2"), new Vector2f(260, spacing * 0));
-            surface.DrawString("STAT: " + System.Convert.ToString(emulator.bus.memory.Stat, 2), new Vector2f(260, spacing * 1));
-            surface.DrawString("LCDC: " + System.Convert.ToString(emulator.bus.memory.LCDC, 2), new Vector2f(260, spacing * 2));
-            surface.DrawString("SCX: " + emulator.bus.memory.SCX.ToString("X2"), new Vector2f(260, spacing * 3));
-            surface.DrawString("SCY: " + emulator.bus.memory.SCY.ToString("X2"), new Vector2f(260, spacing * 4));
-            surface.DrawString("WindX: " + emulator.bus.memory.WindowX.ToString("X2"), new Vector2f(260, spacing * 5));
-            surface.DrawString("WindY: " + emulator.bus.memory.WindowY.ToString("X2"), new Vector2f(260, spacing * 6));
+            debug[00] = "AF: 0x" + emulator.bus.register.AF.ToString("X4") + flags;
+            debug[01] = "BC: 0x" + emulator.bus.register.BC.ToString("X4");
+            debug[02] = "DE: 0x" + emulator.bus.register.DE.ToString("X4");
+            debug[03] = "HL: 0x" + emulator.bus.register.HL.ToString("X4");
+            debug[04] = "SP: 0x" + emulator.bus.register.SP.ToString("X4");
+            debug[05] = "PC: 0x" + emulator.bus.register.PC.ToString("X4") + "(0x" + hexcode + ") " + opcode + " " + operand1 + ", " + operand2;
+            debug[06] = "Ticks: " + emulator.cyclesRan;
+            debug[07] = "LCDC:";
+            debug[08] = " LCD enabled: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.LCDEnabled) ? "On" : "Off");
+            debug[09] = " Background and Window: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundWindowPriority) ? "On" : "Off");
+            debug[10] = " Sprites: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.SpritesEnabled) ? "On" : "Off");
+            debug[11] = " SpriteSize: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.SpritesSize) ? "8x16" : "8x8");
+            debug[12] = " Background tilemap: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.Tilemap) ? "9C00-9FFF" : "9800-9BFF");
+            debug[13] = " Background tileset: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.Tileset) ? "8000-8FFF" : "8800-97FF");
+            debug[14] = " Window: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.WindowEnabled) ? "On" : "Off");
+            debug[15] = " Window tilemap: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.WindowTilemap) ? "9C00-9FFF" : "9800-9BFF");
+            debug[16] = "STAT:";
+            debug[17] = " Mode:     " + emulator.bus.memory.StatMode.ToString();
+            debug[18] = " LYC Flag: " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.CoincidenceFlag) ? "LYC=LY" : "LYC!=LY");
+            debug[19] = " H-Blank:  " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.HBlankInterrupt) ? "1" : "0");
+            debug[20] = " V-Blank:  " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.VBlankInterrupt) ? "1" : "0");
+            debug[21] = " OAM:      " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.OAMInterrupt) ? "1" : "0");
+            debug[22] = " LYC:      " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.CoincidenceInterrupt) ? "1" : "0");
+            debug[23] = "LY: " + emulator.bus.memory.LY;
+            debug[24] = "LYC: " + emulator.bus.memory.LYC;
+            debug[25] = "Window Pos: " + emulator.bus.memory.WindowX + " , " + emulator.bus.memory.WindowY;
+            debug[26] = "Scroll Pos: " + emulator.bus.memory.SCX + " , " + emulator.bus.memory.SCY;
+
+            for(int i = 0; i < debug.Length; i++)
+            {
+                surface.DrawString(debug[i], new Vector2f(0, 10 + (20 * i)));
+            }
         }
 
         private void Resize(Vector2u windowSize)

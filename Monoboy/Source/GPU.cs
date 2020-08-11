@@ -22,7 +22,6 @@ namespace Monoboy
 
         public void Step(int cycles)
         {
-
             clock += cycles;
 
             switch(bus.memory.StatMode)
@@ -75,7 +74,7 @@ namespace Monoboy
                 {
                     clock -= 172;
 
-                    if(bus.memory.Stat.GetBit(Bit.Bit3) == true)
+                    if(bus.memory.LCDC.GetBit(Bit.Bit3) == true)
                     {
                         bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
                     }
@@ -116,8 +115,11 @@ namespace Monoboy
 
         void DrawBackground()
         {
-            ushort tilemapAddress = (ushort)(bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundTilemap) ? 0x1C00 : 0x1800);
-            bool unsignTilemapAddress = bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundWindowData);
+            bool tileset = bus.memory.LCDC.GetBit((Bit)LCDCBit.Tileset);
+            bool tilemap = bus.memory.LCDC.GetBit((Bit)LCDCBit.Tilemap);
+
+            ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x0800);
+            ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
 
             ushort y = (ushort)(bus.memory.LY + bus.memory.SCY);
             ushort row = (ushort)(y / 8);
@@ -128,22 +130,23 @@ namespace Monoboy
                 ushort colum = (ushort)(x / 8);
                 byte rawTile = bus.gpu.VideoRam[tilemapAddress + ((row * 32) + colum)];
 
-                ushort tileGraphicAddress;
+                ushort vramAddress;
 
-                if(unsignTilemapAddress == true)
+                bool useUnsignedAdressing = bus.memory.LCDC.GetBit((Bit)LCDCBit.Tileset);
+
+                if(useUnsignedAdressing == true)
                 {
-                    tileGraphicAddress = rawTile;
+                    vramAddress = (ushort)((rawTile * 16) + tilesetAddress);
                 }
                 else
                 {
-                    tileGraphicAddress = (ushort)(sbyte)(rawTile + 256);
+                    ushort signedAddress = (ushort)((sbyte)rawTile * 16);
+                    vramAddress = (ushort)(((short)tilesetAddress) + signedAddress);
                 }
 
-                tileGraphicAddress *= 16;
-
-                byte line = (byte)((y % 8) * 2);
-                byte data1 = bus.gpu.VideoRam[tileGraphicAddress + line];
-                byte data2 = bus.gpu.VideoRam[tileGraphicAddress + line + 1];
+                byte line = (byte)((byte)(y % 8) * 2);
+                byte data1 = VideoRam[vramAddress + line];
+                byte data2 = VideoRam[vramAddress + line + 1];
 
                 Bit bit = (Bit)(0b00000001 << (((x % 8) - 7) * 0xff));
                 byte color_value = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));

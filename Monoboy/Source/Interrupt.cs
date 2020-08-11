@@ -1,4 +1,5 @@
 ﻿using System;
+using Monoboy.Utility;
 
 namespace Monoboy
 {
@@ -6,9 +7,9 @@ namespace Monoboy
     {
         Bus bus;
 
-        bool IME = true;// Master interupt enabled
+        bool IME = false;// Master interupt enabled
 
-        byte ie;
+        byte _ie;
         public byte IE
         {
             get
@@ -19,19 +20,20 @@ namespace Monoboy
                 }
                 else
                 {
-                    return ie;
+                    return _ie;
                 }
             }
             set
             {
-                ie = value;
+                _ie = value;
             }
         }
 
+        byte _if;
         public byte IF
         {
-            get;
-            set;
+            get { return (byte)(_if | 0b11100000); }
+            set { _if = value; }
         }
 
         public Interrupt(Bus bus)
@@ -51,17 +53,18 @@ namespace Monoboy
 
         public void InterruptRequest(InterruptFlag interrupt)
         {
-            IF |= (byte)interrupt;
+            IF.SetBit((Bit)interrupt, true);
         }
 
         public void HandleInterupts()
         {
+            return;
             if(IME == true)
             {
                 for(int i = 0; i < 5; i++)
                 {
                     byte bit = (byte)(1 << i);
-                    if((ie & bit) > 0)
+                    if((IE & bit) > 0)
                     {
                         if((IF & bit) > 0)
                         {
@@ -84,16 +87,6 @@ namespace Monoboy
             }
 
             bus.cpu.halted = false;
-        }
-
-        void RST40()
-        {
-            IME = false;
-
-            bus.cpu.Push(bus.register.PC);
-
-            bus.register.PC = 0x0040;
-
         }
 
         public enum InterruptFlag

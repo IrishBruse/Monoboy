@@ -16,32 +16,8 @@ namespace Monoboy
             this.bus = bus;
         }
 
-        // Returns number of cycles to jump
         public byte Step()
         {
-            // Disable the bios in the bus
-            if(bus.biosEnabled == true)
-            {
-                if(bus.register.PC >= 0x100)
-                {
-                    bus.biosEnabled = false;
-                }
-            }
-
-            byte result = StepCPU();
-            return result;
-        }
-
-        byte StepCPU()
-        {
-            bus.interrupt.HandleInterupts();
-
-            if(halted == true)
-            {
-                return 4;
-            }
-
-            // TODO Handle interupts
             opcode = NextByte();
 
             byte n;
@@ -61,10 +37,9 @@ namespace Monoboy
                 case 0x1A: bus.register.A = bus.Read(bus.register.DE); return 8;
                 case 0xFA: bus.register.A = bus.Read(NextShort()); return 16;
                 case 0x3E: bus.register.A = NextByte(); return 8;
-                case 0x3A: bus.register.A = bus.Read(--bus.register.HL); return 8;
-                case 0x2A: bus.register.A = bus.Read(++bus.register.HL); return 8;
+                case 0x3A: bus.register.A = bus.Read(bus.register.HL--); return 8;
+                case 0x2A: bus.register.A = bus.Read(bus.register.HL++); return 8;
                 case 0xF0: bus.register.A = bus.Read((ushort)(0xFF00 | NextByte())); return 12;
-                //Verified
 
                 case 0x47: bus.register.B = bus.register.A; return 4;
                 case 0x41: bus.register.B = bus.register.C; return 4;
@@ -74,7 +49,6 @@ namespace Monoboy
                 case 0x45: bus.register.B = bus.register.L; return 4;
                 case 0x46: bus.register.B = bus.Read(bus.register.HL); return 8;
                 case 0x06: bus.register.B = NextByte(); return 8;
-                //Verified
 
                 case 0x4F: bus.register.C = bus.register.A; return 4;
                 case 0x48: bus.register.C = bus.register.B; return 4;
@@ -121,7 +95,7 @@ namespace Monoboy
                 case 0x6E: bus.register.L = bus.Read(bus.register.HL); return 8;
                 case 0x2E: bus.register.L = NextByte(); return 8;
 
-                case 0xE2: bus.Write((ushort)(0xFF00 + bus.register.C), bus.register.A); return 8;
+                case 0xE2: bus.Write((ushort)(0xFF00 | bus.register.C), bus.register.A); return 8;
 
                 case 0x77: bus.Write(bus.register.HL, bus.register.A); return 8;
                 case 0x70: bus.Write(bus.register.HL, bus.register.B); return 8;
@@ -137,7 +111,7 @@ namespace Monoboy
                 case 0x02: bus.Write(bus.register.BC, bus.register.A); return 8;
                 case 0x12: bus.Write(bus.register.DE, bus.register.A); return 8;
                 case 0xEA: bus.Write(NextShort(), bus.register.A); return 16;
-                case 0xE0: bus.Write((ushort)(0xFF00 + NextByte()), bus.register.A); return 12;
+                case 0xE0: bus.Write((ushort)(0xFF00 | NextByte()), bus.register.A); return 12;
 
                 case 0x01: bus.register.BC = NextShort(); return 12;
                 case 0x11: bus.register.DE = NextShort(); return 12;
@@ -152,7 +126,7 @@ namespace Monoboy
                 case 0xD5: Push(bus.register.DE); return 16;
                 case 0xE5: Push(bus.register.HL); return 16;
 
-                case 0xF1: bus.register.AF = Pop(); return 12;
+                case 0xF1: bus.register.AF = (ushort)(Pop() & 0xFFF0); return 12;
                 case 0xC1: bus.register.BC = Pop(); return 12;
                 case 0xD1: bus.register.DE = Pop(); return 12;
                 case 0xE1: bus.register.HL = Pop(); return 12;
@@ -186,6 +160,7 @@ namespace Monoboy
                 case 0x95: SUB(bus.register.L); return 4;
                 case 0x96: SUB(bus.Read(bus.register.HL)); return 8;
                 case 0xD6: SUB(NextByte()); return 8;
+                //Verified
 
                 case 0x9F: SUB(bus.register.A, true); return 4;
                 case 0x98: SUB(bus.register.B, true); return 4;
@@ -246,14 +221,14 @@ namespace Monoboy
                 case 0x2C: bus.register.L = INC(bus.register.L); return 4;
                 case 0x34: bus.Write(bus.register.HL, INC(bus.Read(bus.register.HL))); return 12;
 
-                case 0x3D: DEC(ref bus.register.A); return 4;
-                case 0x05: DEC(ref bus.register.B); return 4;
-                case 0x0D: DEC(ref bus.register.C); return 4;
-                case 0x15: DEC(ref bus.register.D); return 4;
-                case 0x1D: DEC(ref bus.register.E); return 4;
-                case 0x25: DEC(ref bus.register.H); return 4;
-                case 0x2D: DEC(ref bus.register.L); return 4;
-                case 0x35: n = bus.Read(bus.register.HL); DEC(ref n); bus.Write(bus.register.HL, n); return 12;
+                case 0x3D: bus.register.A = DEC(bus.register.A); return 4;
+                case 0x05: bus.register.B = DEC(bus.register.B); return 4;
+                case 0x0D: bus.register.C = DEC(bus.register.C); return 4;
+                case 0x15: bus.register.D = DEC(bus.register.D); return 4;
+                case 0x1D: bus.register.E = DEC(bus.register.E); return 4;
+                case 0x25: bus.register.H = DEC(bus.register.H); return 4;
+                case 0x2D: bus.register.L = DEC(bus.register.L); return 4;
+                case 0x35: n = bus.Read(bus.register.HL); n = DEC(n); bus.Write(bus.register.HL, n); return 12;
 
                 case 0x09: ADD_HL(bus.register.BC); return 8;
                 case 0x19: ADD_HL(bus.register.DE); return 8;
@@ -324,7 +299,7 @@ namespace Monoboy
                 case 0x7F: case 0x49: case 0x52: case 0x5B: case 0x64: case 0x6D: case 0x40: case 0x00: return 4;
 
                 case 0x76: halted = true; return 4;
-                case 0x10: return 4;
+                case 0x10: return 4;//Stop
                 case 0xF3: bus.interrupt.Disable(); return 4;
                 case 0xFB: bus.interrupt.Enable(); return 4;
 
@@ -421,20 +396,23 @@ namespace Monoboy
 
         byte INC(byte n)
         {
-            n++;
-            bus.register.SetFlag(Flag.Zero, n == 0);
+            byte result = (byte)(n + 1);
+            bus.register.SetFlag(Flag.Zero, result == 0);
             bus.register.SetFlag(Flag.Negative, false);
             bus.register.SetFlag(Flag.HalfCarry, (n & 0xF) + 1 > 0xF);
 
-            return n;
+            return result;
         }
 
-        void DEC(ref byte n)
+        byte DEC(byte n)
         {
-            n--;
-            bus.register.SetFlag(Flag.Zero, n == 0);
+            byte result = (byte)(n - 1);
+
+            bus.register.SetFlag(Flag.Zero, result == 0);
             bus.register.SetFlag(Flag.Negative, true);
             bus.register.SetFlag(Flag.HalfCarry, (n & 0xF) - 1 < 0);
+
+            return result;
         }
 
         #endregion
@@ -443,12 +421,13 @@ namespace Monoboy
 
         void LD_HL()
         {
-            bus.register.HL = (ushort)(bus.register.SP + ((sbyte)NextByte()));
+            ushort result = (ushort)(((short)bus.register.SP) + (sbyte)NextByte());
 
             bus.register.SetFlag(Flag.Zero, false);
             bus.register.SetFlag(Flag.Negative, false);
-            bus.register.SetFlag(Flag.HalfCarry, (bus.register.HL & 0xF) < (bus.register.SP & 0xF));
-            bus.register.SetFlag(Flag.FullCarry, (bus.register.HL & 0xFF) < (bus.register.SP & 0xFF));
+            bus.register.SetFlag(Flag.HalfCarry, (result & 0xF) < (bus.register.SP & 0xF));
+            bus.register.SetFlag(Flag.FullCarry, (result & 0xFF) < (bus.register.SP & 0xFF));
+            bus.register.HL = result;
         }
 
         void ADD_HL(ushort n)
@@ -836,9 +815,9 @@ namespace Monoboy
             return result;
         }
 
-        void BIT(byte b, byte r)
+        void BIT(byte bit, byte r)
         {
-            bus.register.SetFlag(Flag.Zero, ((~r) & b) != 0);
+            bus.register.SetFlag(Flag.Zero, (bit & ~r) != 0);
             bus.register.SetFlag(Flag.Negative, false);
             bus.register.SetFlag(Flag.HalfCarry, true);
         }

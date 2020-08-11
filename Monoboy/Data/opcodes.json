@@ -2748,7 +2748,8 @@
                 "0"
             ],
             "addr": "0xaf",
-            "operand1": "A"
+            "operand1": "A",
+            "operand2": "A"
         },
         "0xb0": {
             "mnemonic": "OR",
@@ -2763,7 +2764,8 @@
                 "0"
             ],
             "addr": "0xb0",
-            "operand1": "B"
+            "operand1": "B",
+            "operand2": "B"
         },
         "0xb1": {
             "mnemonic": "OR",
@@ -2778,7 +2780,8 @@
                 "0"
             ],
             "addr": "0xb1",
-            "operand1": "C"
+            "operand1": "C",
+            "operand2": "C"
         },
         "0xb2": {
             "mnemonic": "OR",
@@ -2793,7 +2796,8 @@
                 "0"
             ],
             "addr": "0xb2",
-            "operand1": "D"
+            "operand1": "D",
+            "operand2": "D"
         },
         "0xb3": {
             "mnemonic": "OR",
@@ -2808,7 +2812,8 @@
                 "0"
             ],
             "addr": "0xb3",
-            "operand1": "E"
+            "operand1": "E",
+            "operand2": "E"
         },
         "0xb4": {
             "mnemonic": "OR",
@@ -2823,7 +2828,8 @@
                 "0"
             ],
             "addr": "0xb4",
-            "operand1": "H"
+            "operand1": "H",
+            "operand2": "H"
         },
         "0xb5": {
             "mnemonic": "OR",
@@ -2838,7 +2844,8 @@
                 "0"
             ],
             "addr": "0xb5",
-            "operand1": "L"
+            "operand1": "L",
+            "operand2": "L"
         },
         "0xb6": {
             "mnemonic": "OR",

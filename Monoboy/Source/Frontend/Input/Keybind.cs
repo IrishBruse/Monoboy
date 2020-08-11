@@ -1,4 +1,5 @@
-﻿using SFML.Window;
+﻿using SFML.System;
+using SFML.Window;
 
 namespace Monoboy.Frontend
 {
@@ -16,6 +17,11 @@ namespace Monoboy.Frontend
 
         public bool IsActive()
         {
+            if(Application.Focused == false)
+            {
+                return false;
+            }
+
             for(int i = 0; i < buttons.Length; i++)
             {
                 bool newState = false;

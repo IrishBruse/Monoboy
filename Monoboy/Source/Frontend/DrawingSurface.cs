@@ -19,7 +19,8 @@ namespace Monoboy.Frontend
             text = new Text
             {
                 FillColor = Color.Black,
-                Font = font
+                Font = font,
+                Scale = new Vector2f(0.75f, 0.75f)
             };
         }
 

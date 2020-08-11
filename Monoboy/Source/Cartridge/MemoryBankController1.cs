@@ -31,7 +31,7 @@ namespace Monoboy
                 {
                     return 0xff;
                 }
-                int offset = (0x2000 * romBank) + (address - 0xA000);
+                int offset = (0x2000 * ramBank) + (address - 0xA000);
                 return ram[offset];
             }
             else
@@ -97,7 +97,7 @@ namespace Monoboy
             }
             else
             {
-                throw new IndexOutOfRangeException();
+                throw new Exception();
             }
         }
 

@@ -22,7 +22,9 @@ namespace Monoboy.Frontend
         public delegate void ResizeEvent(Vector2u windowSize);
         public event ResizeEvent Resize;
 
-        private readonly RenderWindow window;
+        public bool Focused = false;
+
+        private RenderWindow window;
 
         Clock clock;
         public DrawingSurface surface;
@@ -35,6 +37,10 @@ namespace Monoboy.Frontend
             window.Closed += (sender, e) => Quit();
 
             window.Resized += WindowResize;
+
+            window.LostFocus += (sender, e) => Focused = false;
+            window.GainedFocus += (sender, e) => Focused = true;
+            window.RequestFocus();
 
             clock = new Clock();
             surface = new DrawingSurface(window);

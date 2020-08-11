@@ -8,7 +8,11 @@ namespace Monoboy
 
         public byte Read(ushort address)
         {
-            return rom[address];
+            if(address <= 0x7FFF)
+            {
+                return rom[address];
+            }
+            return 0x00;
         }
 
         public void Write(ushort address, byte data)

@@ -14,14 +14,14 @@
 
     public enum LCDCBit : byte
     {
-        DisplayToggle = Bit.Bit7,
+        LCDEnabled = Bit.Bit7,
         WindowTilemap = Bit.Bit6,
-        WindowToggle = Bit.Bit5,
-        BackgroundWindowData = Bit.Bit4,
-        BackgroundTilemap = Bit.Bit3,
+        WindowEnabled = Bit.Bit5,
+        Tileset = Bit.Bit4,
+        Tilemap = Bit.Bit3,
         SpritesSize = Bit.Bit2,
-        SpritesToggle = Bit.Bit1,
-        BackgroundToggle = Bit.Bit0,
+        SpritesEnabled = Bit.Bit1,
+        BackgroundWindowPriority = Bit.Bit0,
     }
 
     public enum StatBit : byte

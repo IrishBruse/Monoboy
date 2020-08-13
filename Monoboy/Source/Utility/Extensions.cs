@@ -49,7 +49,9 @@ namespace Monoboy.Utility
         /// </summary>
         public static byte Swap(this byte data)
         {
-            return (byte)((data & 0x0F) << 4 | (data & 0xF0) >> 4);
+            byte high = (byte)(data >> 4);
+            byte low = (byte)(data << 4);
+            return (byte)(low | high);
         }
 
         /// <summary>

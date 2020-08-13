@@ -132,7 +132,7 @@ namespace Monoboy
             }
             else if(address >= 0xE000 && address <= 0xFDFF)// Same as C000-DDFF (ECHO) (typically not used)
             {
-                memory.workram[address - 0xC000 - 0x0200] = data;
+                memory.workram[address - 0xE000] = data;
             }
             else if(address >= 0xFE00 && address <= 0xFE9F)// Sprite Attribute Table (OAM)
             {

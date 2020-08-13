@@ -5,7 +5,7 @@ namespace Monoboy
 {
     public class GPU
     {
-        public int clock;
+        public int cycles;
         readonly Bus bus;
 
         public byte[] VideoRam { get => bus.memory.vram; set => bus.memory.vram = value; }
@@ -20,19 +20,24 @@ namespace Monoboy
             Framebuffer = new Image(Emulator.WindowWidth, Emulator.WindowHeight);
         }
 
-        public void Step(int cycles)
+        public void Step(int ticks)
         {
-            clock += cycles;
+            if(bus.memory.LCDC.GetBit((Bit)LCDCBit.LCDEnabled) == false)
+            {
+                return;
+            }
+
+            cycles += ticks;
 
             switch(bus.memory.StatMode)
             {
                 case Mode.Hblank:
-                if(clock >= 204)
+                if(cycles >= 204)
                 {
-                    DrawScanline();
+
 
                     bus.memory.LY++;
-                    clock -= 204;
+                    cycles -= 204;
 
                     if(bus.memory.LY == 144)
                     {
@@ -47,10 +52,10 @@ namespace Monoboy
                 break;
 
                 case Mode.Vblank:
-                if(clock >= 456)
+                if(cycles >= 456)
                 {
                     bus.memory.LY++;
-                    clock -= 456;
+                    cycles -= 456;
 
                     if(bus.memory.LY == 154)
                     {
@@ -62,33 +67,34 @@ namespace Monoboy
                 break;
 
                 case Mode.OAM:
-                if(clock >= 80)
+                if(cycles >= 80)
                 {
-                    clock -= 80;
+                    cycles -= 80;
                     bus.memory.StatMode = Mode.VRAM;
                 }
                 break;
 
                 case Mode.VRAM:
-                if(clock >= 172)
+                if(cycles >= 172)
                 {
-                    clock -= 172;
+                    cycles -= 172;
 
-                    if(bus.memory.LCDC.GetBit(Bit.Bit3) == true)
+                    if(bus.memory.LCDC.GetBit((Bit)LCDCBit.Tilemap) == true)
                     {
                         bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
                     }
 
-                    bool lycInterrupt = bus.memory.Stat.GetBit(Bit.Bit6);
+                    bool lycInterrupt = bus.memory.Stat.GetBit((Bit)StatBit.CoincidenceInterrupt);
                     bool lyc = bus.memory.LYC == bus.memory.LY;
 
                     if(lycInterrupt && lyc)
                     {
                         bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
                     }
-                    bus.memory.Stat.SetBit(Bit.Bit2, lyc);
+                    bus.memory.Stat.SetBit((Bit)StatBit.CoincidenceFlag, lyc);
 
                     bus.memory.StatMode = Mode.Hblank;
+                    DrawScanline();
                 }
                 break;
             }

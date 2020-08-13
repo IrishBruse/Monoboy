@@ -58,11 +58,11 @@ namespace Monoboy
             //emulator.LoadRom("Dr. Mario.gb");
             //emulator.LoadRom("Tetris.gb");
             //emulator.bus.SkipBootRom();
-            //emulator.LoadRom("cpu_instrs.gb");
-            emulator.LoadRom("01-special.gb");
+            emulator.LoadRom("cpu_instrs.gb");
+            //emulator.LoadRom("01-special.gb");
             //emulator.LoadRom("02-interrupts.gb");
-            //emulator.LoadRom("01-special.gb");
-            //emulator.LoadRom("01-special.gb");
+            //emulator.LoadRom("03-op sp,hl.gb");
+            //emulator.LoadRom("04.gb");
             //emulator.LoadRom("01-special.gb");
             //emulator.LoadRom("01-special.gb");
             //emulator.LoadRom("01-special.gb");
@@ -106,7 +106,7 @@ namespace Monoboy
 
             debugWindow.Draw += DebugDraw;
 
-            while(emulator.bus.register.PC != 0x0000)
+            while(emulator.bus.register.PC != 0x0100)
             {
                 emulator.Step();
             }
@@ -172,13 +172,10 @@ namespace Monoboy
 
             if(paused == false)
             {
-                for(int i = 0; i < overclock; i++)
+                int cycles = 0;
+                while(cycles < CyclesPerFrame * overclock)
                 {
-                    int cycles = 0;
-                    while(cycles < CyclesPerFrame)
-                    {
-                        cycles += emulator.Step();
-                    }
+                    cycles += emulator.Step();
                 }
             }
         }

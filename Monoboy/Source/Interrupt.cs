@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices.ComTypes;
 using Monoboy.Utility;
 
 namespace Monoboy
@@ -9,32 +10,8 @@ namespace Monoboy
 
         bool IME = false;// Master interupt enabled
 
-        byte _ie;
-        public byte IE
-        {
-            get
-            {
-                if(IME == true)
-                {
-                    return 0;
-                }
-                else
-                {
-                    return _ie;
-                }
-            }
-            set
-            {
-                _ie = value;
-            }
-        }
-
-        byte _if;
-        public byte IF
-        {
-            get { return (byte)(_if | 0b11100000); }
-            set { _if = value; }
-        }
+        public byte IE { get; set; }
+        public byte IF { get; set; }
 
         public Interrupt(Bus bus)
         {
@@ -58,35 +35,53 @@ namespace Monoboy
 
         public void HandleInterupts()
         {
-            return;
             if(IME == true)
             {
-                for(int i = 0; i < 5; i++)
+                byte firedInterupts = (byte)(IF & IE);
+
+                if(firedInterupts != 0)
                 {
-                    byte bit = (byte)(1 << i);
-                    if((IE & bit) > 0)
-                    {
-                        if((IF & bit) > 0)
-                        {
-                            IF = (byte)(IF & ~bit);
-
-                            JumpVector jump = bit switch
-                            {
-                                0b00000001 => JumpVector.VBlank,
-                                0b00000010 => JumpVector.LCDStat,
-                                0b00000100 => JumpVector.Timer,
-                                0b00001000 => JumpVector.Serial,
-                                0b00010000 => JumpVector.Joypad,
-                                _ => throw new Exception("Impossible!"),
-                            };
-
-                            bus.cpu.CALL((ushort)jump);
-                        }
-                    }
+                    return;
                 }
+
+                bus.cpu.halted = false;
+                bus.cpu.Push(bus.register.PC);
+
+                if(HandleInterupt(InterruptFlag.VBlank, firedInterupts) == true) return;
+                if(HandleInterupt(InterruptFlag.LCDStat, firedInterupts) == true) return;
+                if(HandleInterupt(InterruptFlag.Timer, firedInterupts) == true) return;
+                if(HandleInterupt(InterruptFlag.Serial, firedInterupts) == true) return;
+                if(HandleInterupt(InterruptFlag.Joypad, firedInterupts) == true) return;
+            }
+        }
+
+        private bool HandleInterupt(InterruptFlag interupt, byte firedInterupts)
+        {
+            if(firedInterupts.GetBit((Bit)interupt) == false) return false;
+
+            IF.SetBit((Bit)interupt, false);
+            bus.register.PC = InterruptToJumpVector(interupt);
+            IME = false;
+            return true;
+        }
+
+        ushort InterruptToJumpVector(InterruptFlag flag)
+        {
+            switch(flag)
+            {
+                case InterruptFlag.VBlank:
+                return 0x0040;
+                case InterruptFlag.LCDStat:
+                return 0x0048;
+                case InterruptFlag.Timer:
+                return 0x0050;
+                case InterruptFlag.Serial:
+                return 0x0058;
+                case InterruptFlag.Joypad:
+                return 0x0060;
             }
 
-            bus.cpu.halted = false;
+            return 0;
         }
 
         public enum InterruptFlag
@@ -96,15 +91,6 @@ namespace Monoboy
             Timer = Bit.Bit2,
             Serial = Bit.Bit3,
             Joypad = Bit.Bit4,
-        }
-
-        public enum JumpVector
-        {
-            VBlank = 0x0040,
-            LCDStat = 0x0048,
-            Timer = 0x0050,
-            Serial = 0x0058,
-            Joypad = 0x0060,
         }
     }
 }

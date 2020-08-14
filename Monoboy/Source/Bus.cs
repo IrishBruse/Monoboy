@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Monoboy
@@ -15,6 +15,7 @@ namespace Monoboy
         public Joypad joypad;
 
         public bool biosEnabled = true;
+        public List<byte> trace = new List<byte>(100000);
 
         public Bus()
         {
@@ -35,6 +36,8 @@ namespace Monoboy
 
         public byte Read(ushort address)
         {
+
+
             byte data = 0xFF;
 
             if(address >= 0x0000 && address <= 0x7FFF)// 16KB ROM Bank 00 (in cartridge, fixed at bank 00)
@@ -161,19 +164,14 @@ namespace Monoboy
                 {
                     interrupt.IE = data;
                 }
-                else if(address == 0xFF01)
+                else if(address == 0xFF02)
                 {
-                    if(Read(0xFF02) == 0x81)
+                    if(data == 0x81)
                     {
-                        Console.Write(data.ToString("X2"));
+                        Console.Write(Read(0xFF01));
                     }
-
-                    memory.zp[address - 0xFF80] = data;
                 }
-                else
-                {
-                    memory.zp[address - 0xFF80] = data;
-                }
+                memory.zp[address - 0xFF80] = data;
             }
 
             //Debug.Log("W " + address.ToHex() + "=" + data.ToHex() + " " + location);

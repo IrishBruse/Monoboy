@@ -166,19 +166,19 @@ namespace Monoboy
 
         public void DumpMemory()
         {
-            string file = "";
+            byte[] file = new byte[0xFFFF];
 
-            for(int i = 0; i < 0xFFFF; i++)
+            for(ushort i = 0; i < 0xFFFF; i++)
             {
-                file += bus.Read((ushort)i).ToString("X2");
-
-                if(i % 0xF == 0xE)
-                {
-                    file += "\n";
-                }
+                file[i] = bus.Read(i);
             }
 
-            File.WriteAllText("C:\\Users\\Econn\\Desktop\\Memory.txt", file);
+            File.WriteAllBytes("C:\\Users\\Econn\\Desktop\\Memory.bin", file);
+        }
+
+        public void DumpTrace()
+        {
+            File.WriteAllBytes("C:\\Users\\Econn\\Desktop\\Trace.bin", bus.trace.ToArray());
         }
 
         #endregion

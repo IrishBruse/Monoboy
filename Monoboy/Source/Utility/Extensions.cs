@@ -61,8 +61,7 @@ namespace Monoboy.Utility
         /// <returns></returns>
         public static ushort ToShort(this byte low, byte high)
         {
-
-            return (ushort)((high << 8) | low);
+            return (ushort)(high << 8 | low);
         }
 
         /// <summary>

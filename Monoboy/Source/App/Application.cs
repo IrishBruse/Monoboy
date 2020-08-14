@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices.ComTypes;
 using Monoboy.Frontend;
 using Monoboy.Utility;
@@ -31,6 +32,7 @@ namespace Monoboy
         Keybind tilemapDumpButton;
         Keybind backgroundDumpButton;
         Keybind memoryDumpButton;
+        Keybind traceDumpButton;
         Keybind pauseButton;
         Keybind stepButton;
         Keybind speedupButton;
@@ -54,19 +56,18 @@ namespace Monoboy
             mainWindow.Position += new Vector2i(-340, 0);
 
             emulator = new Emulator();
+            //emulator.bus.SkipBootRom();
             //emulator.LoadRom("Mario.gb");
             //emulator.LoadRom("Dr. Mario.gb");
             //emulator.LoadRom("Tetris.gb");
-            //emulator.bus.SkipBootRom();
-            emulator.LoadRom("cpu_instrs.gb");
+            //emulator.LoadRom("cpu_instrs.gb");
             //emulator.LoadRom("01-special.gb");
             //emulator.LoadRom("02-interrupts.gb");
             //emulator.LoadRom("03-op sp,hl.gb");
             //emulator.LoadRom("04.gb");
             //emulator.LoadRom("01-special.gb");
             //emulator.LoadRom("01-special.gb");
-            //emulator.LoadRom("01-special.gb");
-            //emulator.LoadRom("01-special.gb");
+            emulator.LoadRom("07-jr,jp,call,ret,rst.gb");
             //emulator.LoadRom("01-special.gb");
             //emulator.LoadRom("01-special.gb");
 
@@ -96,9 +97,10 @@ namespace Monoboy
             rightButton = new Keybind(Action.Held, Button.D, Button.JoystickRight);
 
             // Debug
-            tilemapDumpButton = new Keybind(Action.Pressed, Button.T);
-            backgroundDumpButton = new Keybind(Action.Pressed, Button.Y);
-            memoryDumpButton = new Keybind(Action.Pressed, Button.U);
+            tilemapDumpButton = new Keybind(Action.Pressed, Button.Num1);
+            backgroundDumpButton = new Keybind(Action.Pressed, Button.Num2);
+            memoryDumpButton = new Keybind(Action.Pressed, Button.Num3);
+            traceDumpButton = new Keybind(Action.Pressed, Button.Num4);
             pauseButton = new Keybind(Action.Pressed, Button.P);
             stepButton = new Keybind(Action.Pressed, Button.Enter);
             speedupButton = new Keybind(Action.Held, Button.V);
@@ -106,10 +108,15 @@ namespace Monoboy
 
             debugWindow.Draw += DebugDraw;
 
-            while(emulator.bus.register.PC != 0x0100)
-            {
-                emulator.Step();
-            }
+            //while(emulator.bus.register.PC != 0xc365)// 0xc365
+            //{
+            //    emulator.Step();
+            //}
+
+            //while(emulator.bus.memory.LY == 0)
+            //{
+            //    emulator.Step();
+            //}
 
             while(mainWindow.Open && debugWindow.Open)
             {
@@ -145,6 +152,11 @@ namespace Monoboy
                 emulator.DumpMemory();
             }
 
+            if(traceDumpButton.IsActive() == true)
+            {
+                emulator.DumpTrace();
+            }
+
             if(pauseButton.IsActive() == true)
             {
                 paused = !paused;
@@ -155,12 +167,7 @@ namespace Monoboy
                 emulator.Step();
             }
 
-            int overclock = 1;
-
-            if(speedupButton.IsActive() == true)
-            {
-                overclock = 8;
-            }
+            int overclock = speedupButton.IsActive() ? 8 : 1;
 
             if(runButton.IsActive() == true)
             {
@@ -201,11 +208,20 @@ namespace Monoboy
             string operand1 = (string)opcodes.SelectToken("unprefixed." + "0x" + hexcode + ".operand1");
             string operand2 = (string)opcodes.SelectToken("unprefixed." + "0x" + hexcode + ".operand2");
 
-            if(operand2 == "d16")
-            {
-                operand2 = "0x" + emulator.bus.Read((ushort)(emulator.bus.register.PC + 2)).ToString("X2") +
-                    emulator.bus.Read((ushort)(emulator.bus.register.PC + 1)).ToString("X2");
-            }
+            string firstHex = emulator.bus.Read((ushort)(emulator.bus.register.PC + 1)).ToString("X2");
+            string secondHex = emulator.bus.Read((ushort)(emulator.bus.register.PC + 2)).ToString("X2");
+
+            operand2 = operand2?.Replace("d16", "0x" + secondHex + firstHex);
+            operand2 = operand2?.Replace("a16", "0x" + secondHex + firstHex);
+            operand2 = operand2?.Replace("a8", "0x" + firstHex);
+            operand2 = operand2?.Replace("r8", "0x" + firstHex);
+            operand2 = operand2?.Replace("d8", "0x" + firstHex);
+
+            operand1 = operand1?.Replace("d16", "0x" + secondHex + firstHex);
+            operand1 = operand1?.Replace("a16", "0x" + secondHex + firstHex);
+            operand1 = operand1?.Replace("a8", "0x" + firstHex);
+            operand1 = operand1?.Replace("r8", "0x" + firstHex);
+            operand1 = operand1?.Replace("d8", "0x" + firstHex);
 
             string flags = "(" +
             (emulator.bus.register.F.GetBit((Bit)Flag.FullCarry) ? "C" : "-") +

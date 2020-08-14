@@ -22,7 +22,7 @@ namespace Monoboy
             }
             else if(address >= 0x4000 && address <= 0x7FFF)
             {
-                int offset = (0x4000 * romBank) + (address - 0x4000);
+                int offset = (0x4000 * romBank) + (address & 0x3FFF);
                 return rom[offset];
             }
             else if(address >= 0xA000 && address <= 0xBFFF)

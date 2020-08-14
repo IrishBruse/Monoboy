@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Xml.Serialization;
 using Monoboy.Utility;
@@ -26,6 +27,8 @@ namespace Monoboy
 
             opcode = NextByte();
 
+            bus.trace.Add(opcode);
+
             byte n;
             ushort nn;
 
@@ -37,15 +40,15 @@ namespace Monoboy
                 case 0x7B: bus.register.A = bus.register.E; return 4;
                 case 0x7C: bus.register.A = bus.register.H; return 4;
                 case 0x7D: bus.register.A = bus.register.L; return 4;
-                case 0xF2: bus.register.A = bus.Read((ushort)(0xFF00 | bus.register.C)); return 8;
+                case 0xF2: bus.register.A = bus.Read((ushort)(0xFF00 + bus.register.C)); return 8;
                 case 0x7E: bus.register.A = bus.Read(bus.register.HL); return 8;
                 case 0x0A: bus.register.A = bus.Read(bus.register.BC); return 8;
                 case 0x1A: bus.register.A = bus.Read(bus.register.DE); return 8;
                 case 0xFA: bus.register.A = bus.Read(NextShort()); return 16;
                 case 0x3E: bus.register.A = NextByte(); return 8;
-                case 0x3A: bus.register.A = bus.Read(bus.register.HL--); return 8;
-                case 0x2A: bus.register.A = bus.Read(bus.register.HL++); return 8;
-                case 0xF0: bus.register.A = bus.Read((ushort)(0xFF00 | NextByte())); return 12;
+                case 0x3A: bus.register.A = bus.Read(bus.register.HL); bus.register.HL--; return 8;
+                case 0x2A: bus.register.A = bus.Read(bus.register.HL); bus.register.HL++; return 8;
+                case 0xF0: bus.register.A = bus.Read((ushort)(0xFF00 + NextByte())); return 12;
 
                 case 0x47: bus.register.B = bus.register.A; return 4;
                 case 0x41: bus.register.B = bus.register.C; return 4;
@@ -101,7 +104,7 @@ namespace Monoboy
                 case 0x6E: bus.register.L = bus.Read(bus.register.HL); return 8;
                 case 0x2E: bus.register.L = NextByte(); return 8;
 
-                case 0xE2: bus.Write((ushort)(0xFF00 | bus.register.C), bus.register.A); return 8;
+                case 0xE2: bus.Write((ushort)(0xFF00 + bus.register.C), bus.register.A); return 8;
 
                 case 0x77: bus.Write(bus.register.HL, bus.register.A); return 8;
                 case 0x70: bus.Write(bus.register.HL, bus.register.B); return 8;
@@ -110,14 +113,14 @@ namespace Monoboy
                 case 0x73: bus.Write(bus.register.HL, bus.register.E); return 8;
                 case 0x74: bus.Write(bus.register.HL, bus.register.H); return 8;
                 case 0x75: bus.Write(bus.register.HL, bus.register.L); return 8;
-                case 0x32: bus.Write(bus.register.HL--, bus.register.A); return 8;
-                case 0x22: bus.Write(bus.register.HL++, bus.register.A); return 8;
+                case 0x32: bus.Write(bus.register.HL, bus.register.A); bus.register.HL--; return 8;
+                case 0x22: bus.Write(bus.register.HL, bus.register.A); bus.register.HL++; return 8;
                 case 0x36: bus.Write(bus.register.HL, NextByte()); return 12;
 
                 case 0x02: bus.Write(bus.register.BC, bus.register.A); return 8;
                 case 0x12: bus.Write(bus.register.DE, bus.register.A); return 8;
                 case 0xEA: bus.Write(NextShort(), bus.register.A); return 16;
-                case 0xE0: bus.Write((ushort)(0xFF00 | NextByte()), bus.register.A); return 12;
+                case 0xE0: bus.Write((ushort)(0xFF00 + NextByte()), bus.register.A); return 12;
 
                 case 0x01: bus.register.BC = NextShort(); return 12;
                 case 0x11: bus.register.DE = NextShort(); return 12;
@@ -126,7 +129,7 @@ namespace Monoboy
 
                 case 0xF9: bus.register.SP = bus.register.HL; return 8;
                 case 0xF8: LD_HL(); return 12;
-                case 0x08: nn = NextShort(); bus.Write(nn, bus.register.SP.Low()); bus.Write((ushort)(nn + 1), bus.register.SP.High()); return 20;
+                case 0x08: nn = NextShort(); bus.Write((ushort)(nn + 1), bus.register.SP.High()); bus.Write(nn, bus.register.SP.Low()); return 20;
                 case 0xF5: Push(bus.register.AF); return 16;
                 case 0xC5: Push(bus.register.BC); return 16;
                 case 0xD5: Push(bus.register.DE); return 16;
@@ -325,9 +328,12 @@ namespace Monoboy
             }
         }
 
+
         byte SubOpcodeTable()
         {
             opcode = NextByte();
+
+            bus.trace.Add(opcode);
 
             switch(opcode)
             {
@@ -623,6 +629,7 @@ namespace Monoboy
             }
         }
 
+
         #region Commands
 
         #region 8-Bit
@@ -644,7 +651,6 @@ namespace Monoboy
         {
             byte carry = (byte)(subCarry && bus.register.GetFlag(Flag.FullCarry) ? 1 : 0);
             byte result = (byte)(bus.register.A - n - carry);
-
             bus.register.SetFlag(Flag.Zero, result == 0);
             bus.register.SetFlag(Flag.Negative, true);
             bus.register.SetFlag(Flag.HalfCarry, ((short)(bus.register.A & 0xF)) - ((short)(n & 0xF)) - carry < 0);
@@ -656,7 +662,6 @@ namespace Monoboy
         void AND(byte n)
         {
             byte result = (byte)(bus.register.A & n);
-
             bus.register.SetFlag(Flag.Zero, result == 0);
             bus.register.SetFlag(Flag.Negative, false);
             bus.register.SetFlag(Flag.HalfCarry, true);
@@ -668,7 +673,6 @@ namespace Monoboy
         void OR(byte n)
         {
             byte result = (byte)(bus.register.A | n);
-
             bus.register.SetFlag(Flag.Zero, result == 0);
             bus.register.SetFlag(Flag.Negative, false);
             bus.register.SetFlag(Flag.HalfCarry, false);
@@ -680,7 +684,6 @@ namespace Monoboy
         void XOR(byte n)
         {
             byte result = (byte)(bus.register.A ^ n);
-
             bus.register.SetFlag(Flag.Zero, result == 0);
             bus.register.SetFlag(Flag.Negative, false);
             bus.register.SetFlag(Flag.HalfCarry, false);
@@ -693,6 +696,7 @@ namespace Monoboy
         {
             byte result = bus.register.A;
             SUB(n);
+
             bus.register.A = result;
         }
 
@@ -775,22 +779,20 @@ namespace Monoboy
             bus.register.SP = result;
         }
 
-        public void Push(ushort word)
+        public void Push(ushort data)
         {
-            bus.register.SP--;
-            bus.Write(bus.register.SP, word.High());
-            bus.register.SP--;
-            bus.Write(bus.register.SP, word.Low());
+            bus.register.SP -= 1;
+            bus.Write(bus.register.SP, data.High());
+            bus.register.SP -= 1;
+            bus.Write(bus.register.SP, data.Low());
         }
 
         public ushort Pop()
         {
             byte lower = bus.Read(bus.register.SP);
-            bus.Write(bus.register.SP, 0);
-            bus.register.SP++;
+            bus.register.SP += 1;
             byte high = bus.Read(bus.register.SP);
-            bus.Write(bus.register.SP, 0);
-            bus.register.SP++;
+            bus.register.SP += 1;
             return lower.ToShort(high);
         }
 
@@ -916,7 +918,7 @@ namespace Monoboy
                 adjust |= 0x06;
             }
 
-            if(!bus.register.GetFlag(Flag.Negative))
+            if(bus.register.GetFlag(Flag.Negative) == false)
             {
                 if((a & 0x0F) > 0x09)
                 {
@@ -971,7 +973,7 @@ namespace Monoboy
 
         void RST(byte n)
         {
-            CALL(n);
+            CALL((ushort)n);
         }
 
         void RET()

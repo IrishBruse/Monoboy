@@ -38,12 +38,7 @@ namespace Monoboy
 
         public byte Read(ushort address)
         {
-            if(memoryBankController != null)
-            {
-                return memoryBankController.Read(address);
-            }
-
-            return 0x00;
+            return memoryBankController.Read(address);
         }
 
         public void Write(ushort address, byte data)

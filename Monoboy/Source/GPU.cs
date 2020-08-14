@@ -22,11 +22,6 @@ namespace Monoboy
 
         public void Step(int ticks)
         {
-            if(bus.memory.LCDC.GetBit((Bit)LCDCBit.LCDEnabled) == false)
-            {
-                return;
-            }
-
             cycles += ticks;
 
             switch(bus.memory.StatMode)
@@ -34,10 +29,12 @@ namespace Monoboy
                 case Mode.Hblank:
                 if(cycles >= 204)
                 {
-
+                    DrawScanline();
+                    DrawFrame.Invoke();//TODO Only for debugging
 
                     bus.memory.LY++;
                     cycles -= 204;
+
 
                     if(bus.memory.LY == 144)
                     {
@@ -94,7 +91,6 @@ namespace Monoboy
                     bus.memory.Stat.SetBit((Bit)StatBit.CoincidenceFlag, lyc);
 
                     bus.memory.StatMode = Mode.Hblank;
-                    DrawScanline();
                 }
                 break;
             }
@@ -103,6 +99,11 @@ namespace Monoboy
         #region Drawing
         void DrawScanline()
         {
+            if(bus.memory.LCDC.GetBit((Bit)LCDCBit.LCDEnabled) == false)
+            {
+                return;
+            }
+
             if(bus.memory.LCDC.GetBit(Bit.Bit0) == true)
             {
                 DrawBackground();

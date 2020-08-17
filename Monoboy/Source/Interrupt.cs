@@ -1,14 +1,12 @@
-﻿using System;
-using System.Runtime.InteropServices.ComTypes;
-using Monoboy.Utility;
+﻿using Monoboy.Utility;
 
 namespace Monoboy
 {
     public class Interrupt
     {
-        Bus bus;
-
-        bool IME = false;// Master interupt enabled
+        private Bus bus;
+        private bool IME = false;// Master interupt enabled
+        private bool IMEDelay = false;// Master interupt enabled delay
 
         public byte IE { get; set; }
         public byte IF { get; set; }
@@ -25,72 +23,53 @@ namespace Monoboy
 
         public void Enable()
         {
-            IME = true;
+            IMEDelay = true;
         }
 
-        public void InterruptRequest(InterruptFlag interrupt)
+        public void Halt()
         {
-            IF.SetBit((Bit)interrupt, true);
+            if(IME == false)
+            {
+                if((IE & IF & 0b11111) == 0)
+                {
+                    bus.cpu.halted = true;
+                    bus.register.PC--;
+                }
+                else
+                {
+                    bus.cpu.haltBug = true;
+                }
+            }
+        }
+
+        public void InterruptRequest(byte interrupt)
+        {
+            IF.SetBit(interrupt, true);
         }
 
         public void HandleInterupts()
         {
-            if(IME == true)
+            for(byte i = 0; i < 5; i++)
             {
-                byte firedInterupts = (byte)(IF & IE);
-
-                if(firedInterupts != 0)
+                if((((IE & IF) >> i) & 0b1) == 1)
                 {
-                    return;
+                    if(bus.cpu.halted == true)
+                    {
+                        bus.register.PC++;
+                        bus.cpu.halted = false;
+                    }
+                    if(IME == true)
+                    {
+                        bus.cpu.Push(bus.register.PC);
+                        bus.register.PC = (ushort)(0b10000000 + (8 * i));
+                        IME = false;
+                        IF.SetBit(i, false);
+                    }
                 }
-
-                bus.cpu.halted = false;
-                bus.cpu.Push(bus.register.PC);
-
-                if(HandleInterupt(InterruptFlag.VBlank, firedInterupts) == true) return;
-                if(HandleInterupt(InterruptFlag.LCDStat, firedInterupts) == true) return;
-                if(HandleInterupt(InterruptFlag.Timer, firedInterupts) == true) return;
-                if(HandleInterupt(InterruptFlag.Serial, firedInterupts) == true) return;
-                if(HandleInterupt(InterruptFlag.Joypad, firedInterupts) == true) return;
-            }
-        }
-
-        private bool HandleInterupt(InterruptFlag interupt, byte firedInterupts)
-        {
-            if(firedInterupts.GetBit((Bit)interupt) == false) return false;
-
-            IF.SetBit((Bit)interupt, false);
-            bus.register.PC = InterruptToJumpVector(interupt);
-            IME = false;
-            return true;
-        }
-
-        ushort InterruptToJumpVector(InterruptFlag flag)
-        {
-            switch(flag)
-            {
-                case InterruptFlag.VBlank:
-                return 0x0040;
-                case InterruptFlag.LCDStat:
-                return 0x0048;
-                case InterruptFlag.Timer:
-                return 0x0050;
-                case InterruptFlag.Serial:
-                return 0x0058;
-                case InterruptFlag.Joypad:
-                return 0x0060;
             }
 
-            return 0;
-        }
-
-        public enum InterruptFlag
-        {
-            VBlank = Bit.Bit0,
-            LCDStat = Bit.Bit1,
-            Timer = Bit.Bit2,
-            Serial = Bit.Bit3,
-            Joypad = Bit.Bit4,
+            IME |= IMEDelay;
+            IMEDelay = false;
         }
     }
 }

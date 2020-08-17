@@ -55,29 +55,19 @@ namespace Monoboy.Utility
         }
 
         /// <summary>
-        /// Combines the bytes into a ushort
-        /// </summary>
-        /// <param name="high">The higher byte to combine</param>
-        /// <returns></returns>
-        public static ushort ToShort(this byte low, byte high)
-        {
-            return (ushort)(high << 8 | low);
-        }
-
-        /// <summary>
         /// Set bit
         /// </summary>
         /// <param name="bit">The bit to set</param>
         /// <returns></returns>
-        public static byte SetBit(this byte data, Bit bit, bool condition)
+        public static byte SetBit(this byte data, byte bit, bool condition)
         {
             if(condition == true)
             {
-                return (byte)(data | (byte)bit);
+                return data |= (byte)(1 << bit);
             }
             else
             {
-                return (byte)(data & (byte)~bit);
+                return data &= (byte)~(1 << bit);
             }
         }
 
@@ -97,9 +87,9 @@ namespace Monoboy.Utility
         /// </summary>
         /// <param name="bit">The bit returned</param>
         /// <returns></returns>
-        public static bool GetBit(this byte data, Bit bit)
+        public static bool GetBit(this byte data, byte bit)
         {
-            return (data & (byte)bit) != 0;
+            return (data & bit) != 0;
         }
 
         /// <summary>

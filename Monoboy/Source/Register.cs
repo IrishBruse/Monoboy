@@ -4,14 +4,14 @@ namespace Monoboy
 {
     public class Register
     {
-        public byte A;
-        public byte F;
-        public byte B;
-        public byte C;
-        public byte D;
-        public byte E;
-        public byte H;
-        public byte L;
+        public byte A { get; set; }
+        public byte F { get; set; }
+        public byte B { get; set; }
+        public byte C { get; set; }
+        public byte D { get; set; }
+        public byte E { get; set; }
+        public byte H { get; set; }
+        public byte L { get; set; }
 
         public ushort SP
         {
@@ -77,7 +77,7 @@ namespace Monoboy
             }
         }
 
-        public void SetFlag(Flag flag, bool condition)
+        public void SetFlag(byte flag, bool condition)
         {
             if(condition == true)
             {
@@ -89,7 +89,7 @@ namespace Monoboy
             }
         }
 
-        public bool GetFlag(Flag flag)
+        public bool GetFlag(byte flag)
         {
             return (F & (byte)flag) != 0;
         }

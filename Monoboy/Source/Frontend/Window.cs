@@ -22,7 +22,7 @@ namespace Monoboy.Frontend
         public delegate void ResizeEvent(Vector2u windowSize);
         public event ResizeEvent Resize;
 
-        public bool Focused = false;
+        public bool Focused = true;
 
         private RenderWindow window;
 

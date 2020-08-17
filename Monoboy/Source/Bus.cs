@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 
 namespace Monoboy
 {
@@ -9,9 +9,9 @@ namespace Monoboy
         public Interrupt interrupt;
         public Register register;
         public Memory memory;
-        public Cartridge cartridge;
-        public CPU cpu;
-        public GPU gpu;
+        public IMemoryBankController memoryBankController;
+        public Cpu cpu;
+        public Gpu gpu;
         public Joypad joypad;
 
         public bool biosEnabled = true;
@@ -21,160 +21,116 @@ namespace Monoboy
         {
             register = new Register();
             memory = new Memory();
-            cartridge = new Cartridge();
 
-            cpu = new CPU(this);
-            gpu = new GPU(this);
+            cpu = new Cpu(this);
+            gpu = new Gpu(this);
             joypad = new Joypad(this);
             interrupt = new Interrupt(this);
-
-            if(File.Exists("Data/Roms/Boot.bin") == true)
-            {
-                memory.boot = File.ReadAllBytes("Data/Roms/Boot.bin");
-            }
         }
 
         public byte Read(ushort address)
         {
+            return address switch
+            {
+                ushort _ when(address <= 0x00FF) && biosEnabled == true => memory.boot[address], // Boot rom only enabled while pc has not reached 0x100 yet
+                ushort _ when(address <= 0x3FFF) => memoryBankController.ReadBank00(address),    // 16KB ROM Bank = 00 (in cartridge, fixed at bank 00)
+                ushort _ when(address <= 0x7FFF) => memoryBankController.ReadBankNN(address),    // 16KB ROM Bank > 00 (in cartridge, every other bank)
+                ushort _ when(address <= 0x9FFF) => memory.vram[address - 0x8000],               // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+                ushort _ when(address <= 0xBFFF) => memoryBankController.ReadRam(address),       // 8KB External RAM (in cartridge, switchable bank, if any)
+                ushort _ when(address <= 0xDFFF) => memory.workram[address - 0xC000],            // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
+                ushort _ when(address <= 0xFDFF) => memory.workram[address - 0xE000],            // Same as C000-DDFF (ECHO) (typically not used)
+                ushort _ when(address <= 0xFE9F) => memory.oam[address - 0xFE00],                // Sprite Attribute Table (OAM)
+                ushort _ when(address <= 0xFEFF) => 0x00,                                        // Not Usable
+                ushort _ when(address <= 0xFF7F) => memory.io[address - 0xFF00],                 // I/O Ports
+                ushort _ when(address <= 0xFFFF) => memory.zp[address - 0xFF80],                 // Zero Page RAM
+                _ => 0xFF,
+            };
+        }
 
-
-            byte data = 0xFF;
-
-            if(address >= 0x0000 && address <= 0x7FFF)// 16KB ROM Bank 00 (in cartridge, fixed at bank 00)
-            {
-                if(address >= 0x0000 && address <= 0x00FF && biosEnabled == true)
-                {
-                    data = memory.boot[address];
-                }
-                else
-                {
-                    data = cartridge.Read(address);
-                }
-            }
-            else if(address >= 0x8000 && address <= 0x9FFF)// 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
-            {
-                data = gpu.VideoRam[address - 0x8000];
-            }
-            else if(address >= 0xA000 && address <= 0xBFFF)// 8KB External RAM (in cartridge, switchable bank, if any)
-            {
-                data = cartridge.Read(address);
-            }
-            else if(address >= 0xC000 && address <= 0xDFFF)// 4KB Work RAM Bank 0 (WRAM)
-            {
-                data = memory.workram[address - 0xC000];
-            }
-            else if(address >= 0xD000 && address <= 0xDFFF)// 4KB Work RAM Bank 1 (WRAM) (switchable bank 1-7 in CGB Mode)
-            {
-                data = memory.workram[address - 0xC000];
-            }
-            else if(address >= 0xE000 && address <= 0xFDFF)// Same as C000-DDFF (ECHO) (typically not used)
-            {
-                data = memory.workram[address - 0xE000];
-            }
-            else if(address >= 0xFE00 && address <= 0xFE9F)// Sprite Attribute Table (OAM)
-            {
-                data = memory.spriteram[address - 0xFE00];
-            }
-            else if(address >= 0xFEA0 && address <= 0xFEFF)// Not Usable
-            {
-                data = 0xFF;
-            }
-            else if(address >= 0xFF00 && address <= 0xFF7F)// I/O Ports
-            {
-                if(address == 0xFF00)
-                {
-                    data = joypad.Read();
-                }
-                else if(address == 0xFF0F)
-                {
-                    data = interrupt.IF;
-                }
-                else
-                {
-                    data = memory.io[address - 0xFF00];
-                }
-            }
-            else if(address >= 0xFF80 && address <= 0xFFFF)// Zero Page RAM
-            {
-                if(address == 0xFFFF)
-                {
-                    data = interrupt.IE;
-                }
-                else
-                {
-                    data = memory.zp[address - 0xFF80];
-                }
-            }
-
-            //Debug.Log("R " + address.ToHex() + "=" + data.ToHex() + " " + location);
-
-            return data;
+        public ushort ReadShort(ushort address)
+        {
+            return (ushort)(Read((ushort)(address + 1)) << 8 | Read(address));
         }
 
         public void Write(ushort address, byte data)
         {
-            if(address >= 0x0000 && address <= 0x7FFF)// 16KB ROM Bank 00 (in cartridge, fixed at bank 00)
+            switch(address)
             {
-                cartridge.Write(address, data);
+                case ushort _ when(address <= 0x7FFF): memoryBankController.WriteBank(address, data); break;     // 16KB ROM Bank > 00 (in cartridge, every other bank)
+                case ushort _ when(address <= 0x9FFF): memory.vram[address - 0x8000] = data; break;              // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+                case ushort _ when(address <= 0xBFFF): memoryBankController.WriteRam(address, data); break;      // 8KB External RAM (in cartridge, switchable bank, if any)
+                case ushort _ when(address <= 0xDFFF): memory.workram[address - 0xC000] = data; break;           // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
+                case ushort _ when(address <= 0xFDFF): memory.workram[address - 0xE000] = data; break;           // Same as C000-DDFF (ECHO) (typically not used)
+                case ushort _ when(address <= 0xFE9F): memory.oam[address - 0xFE00] = data; break;               // Sprite Attribute Table (OAM)
+                case ushort _ when(address <= 0xFEFF): break;                                                    // Not Usable
+                case ushort _ when(address <= 0xFF7F): WriteIO(address, data); break;                            // I/O Ports
+                case ushort _ when(address <= 0xFFFF): WriteZP(address, data); break;                            // Zero Page RAM
             }
-            else if(address >= 0x8000 && address <= 0x9FFF)// 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
-            {
-                gpu.VideoRam[address - 0x8000] = data;
-            }
-            else if(address >= 0xA000 && address <= 0xBFFF)// 8KB External RAM (in cartridge, switchable bank, if any)
-            {
-                cartridge.Write(address, data);
-            }
-            else if(address >= 0xC000 && address <= 0xCFFF)// 4KB Work RAM Bank 0 (WRAM)
-            {
-                memory.workram[address - 0xC000] = data;
-            }
-            else if(address >= 0xD000 && address <= 0xDFFF)// 4KB Work RAM Bank 1 (WRAM) (switchable bank 1-7 in CGB Mode)
-            {
-                memory.workram[address - 0xC000] = data;
-            }
-            else if(address >= 0xE000 && address <= 0xFDFF)// Same as C000-DDFF (ECHO) (typically not used)
-            {
-                memory.workram[address - 0xE000] = data;
-            }
-            else if(address >= 0xFE00 && address <= 0xFE9F)// Sprite Attribute Table (OAM)
-            {
-                memory.spriteram[address - 0xFE00] = data;
+        }
 
-            }
-            // Not Usable
-            else if(address >= 0xFF00 && address <= 0xFF7F)// I/O Ports
+        public void WriteWord(ushort address, ushort data)
+        {
+            Write((ushort)(address + 1), (byte)(data >> 8));
+            Write(address, (byte)data);
+        }
+
+        private void WriteIO(ushort address, byte data)
+        {
+            switch(address)
             {
-                if(address == 0xFF00)
+                case 0xFF04:// DIV
                 {
-                    joypad.Write(data);
+                    data = 0;
                 }
-                else if(address == 0xFF0F)
+                break;
+
+                case 0xFF0F:// Mask IF first 3 bits to 1
                 {
-                    interrupt.IF = data;
+                    data |= 0xE0;
                 }
-                else
+                break;
+
+                case 0xFF44:// LY
                 {
-                    memory.io[address - 0xFF00] = data;
+                    data = 0;
                 }
-            }
-            else if(address >= 0xFF80 && address <= 0xFFFF)// Zero Page RAM
-            {
-                if(address == 0xFFFF)
+                break;
+
+                case 0xFF46:
                 {
-                    interrupt.IE = data;
+                    ushort offset = (ushort)(data << 8);
+                    for(byte i = 0; i < memory.oam.Length; i++)
+                    {
+                        memory.oam[i] = Read((ushort)(offset + i));
+                    }
                 }
-                else if(address == 0xFF02)
+                break;
+
+                case 0xFF02:
                 {
                     if(data == 0x81)
                     {
-                        Console.Write(Read(0xFF01));
+                        Debug.Write(Convert.ToChar(Read(0xFF01)));
                     }
                 }
-                memory.zp[address - 0xFF80] = data;
+                break;
             }
 
-            //Debug.Log("W " + address.ToHex() + "=" + data.ToHex() + " " + location);
+            memory.io[address - 0xFF00] = data;
+        }
+
+        private void WriteZP(ushort address, byte data)
+        {
+            switch(address)
+            {
+                case 0xFFFF:// IE
+                {
+                    interrupt.IE = data;
+                }
+                break;
+            }
+
+            memory.zp[address - 0xFF80] = data;
         }
     }
 }

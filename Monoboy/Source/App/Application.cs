@@ -1,84 +1,79 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Runtime.InteropServices.ComTypes;
+﻿using System.IO;
+using Monoboy.Constants;
 using Monoboy.Frontend;
 using Monoboy.Utility;
 using Newtonsoft.Json.Linq;
 using SFML.Graphics;
 using SFML.System;
+using static Monoboy.Constants.Constant;
 using Window = Monoboy.Frontend.Window;
 
 namespace Monoboy
 {
     public class Application
     {
-        Window mainWindow;
-        Window debugWindow;
+        private Window mainWindow;
+        private Window debugWindow;
 
-        const int CyclesPerFrame = 69905;
-        Emulator emulator;
-        Texture screen;
-        Sprite screenSprite;
+        private Emulator emulator;
+        private Texture screen;
+        private Sprite screenSprite;
 
-        Keybind aButton;
-        Keybind bButton;
-        Keybind startButton;
-        Keybind selectButton;
-        Keybind upButton;
-        Keybind downButton;
-        Keybind leftButton;
-        Keybind rightButton;
+        private Keybind aButton;
+        private Keybind bButton;
+        private Keybind startButton;
+        private Keybind selectButton;
+        private Keybind upButton;
+        private Keybind downButton;
+        private Keybind leftButton;
+        private Keybind rightButton;
 
-        Keybind tilemapDumpButton;
-        Keybind backgroundDumpButton;
-        Keybind memoryDumpButton;
-        Keybind traceDumpButton;
-        Keybind pauseButton;
-        Keybind stepButton;
-        Keybind speedupButton;
-        Keybind runButton;
-
-        JObject opcodes;
-
-        bool paused = true;
+        private Keybind tilemapDumpButton;
+        private Keybind backgroundDumpButton;
+        private Keybind memoryDumpButton;
+        private Keybind traceDumpButton;
+        private Keybind pauseButton;
+        private Keybind stepButton;
+        private Keybind speedupButton;
+        private Keybind runButton;
+        private JObject opcodes;
+        private bool paused = true;
 
         public static bool Focused = true;
-
-        string[] debug = new string[32];
+        private string[] debug = new string[32];
 
         public Application()
         {
+            emulator = new Emulator();
+
             opcodes = JObject.Parse(File.ReadAllText("Data/opcodes.json"));
 
-            debugWindow = new Window("Monoboy - Debug", Emulator.WindowWidth * Emulator.WindowScale, Emulator.WindowHeight * Emulator.WindowScale);
+            debugWindow = new Window("Monoboy - Debug", WindowWidth * 4, WindowHeight * 4);
             debugWindow.Position += new Vector2i(340, 0);
-            mainWindow = new Window("Monoboy", Emulator.WindowWidth * Emulator.WindowScale, Emulator.WindowHeight * Emulator.WindowScale);
+            mainWindow = new Window("Monoboy", WindowWidth * 4, WindowHeight * 4);
             mainWindow.Position += new Vector2i(-340, 0);
 
-            emulator = new Emulator();
-            //emulator.bus.SkipBootRom();
-            //emulator.LoadRom("Mario.gb");
-            //emulator.LoadRom("Dr. Mario.gb");
-            //emulator.LoadRom("Tetris.gb");
-            //emulator.LoadRom("cpu_instrs.gb");
-            //emulator.LoadRom("01-special.gb");
-            //emulator.LoadRom("02-interrupts.gb");
-            //emulator.LoadRom("03-op sp,hl.gb");
-            //emulator.LoadRom("04.gb");
-            //emulator.LoadRom("01-special.gb");
-            //emulator.LoadRom("01-special.gb");
-            emulator.LoadRom("07-jr,jp,call,ret,rst.gb");
-            //emulator.LoadRom("01-special.gb");
-            //emulator.LoadRom("01-special.gb");
+            screen = new Texture(WindowWidth, WindowHeight);
 
-            screen = new Texture(Emulator.WindowWidth, Emulator.WindowHeight);
+            string title = "";
 
-            mainWindow.SetTitle("Monoboy - " + emulator.bus.cartridge.Title);
+            for(ushort i = 0x134; i < 0x144; i++)
+            {
+                byte val = emulator.bus.memoryBankController.ReadBank00(i);
+
+                if(val == 0)
+                {
+                    break;
+                }
+                title += (char)val;
+            }
+
+            mainWindow.SetTitle("Monoboy - " + title);
 
             screenSprite = new Sprite(screen)
             {
                 Position = new Vector2f(0, 0),
-                Scale = new Vector2f(Emulator.WindowScale, Emulator.WindowScale)
+                Scale = new Vector2f(4, 4)
             };
 
             mainWindow.Update += Update;
@@ -107,16 +102,6 @@ namespace Monoboy
             runButton = new Keybind(Action.Held, Button.LeftShift);
 
             debugWindow.Draw += DebugDraw;
-
-            //while(emulator.bus.register.PC != 0xc365)// 0xc365
-            //{
-            //    emulator.Step();
-            //}
-
-            //while(emulator.bus.memory.LY == 0)
-            //{
-            //    emulator.Step();
-            //}
 
             while(mainWindow.Open && debugWindow.Open)
             {
@@ -224,10 +209,10 @@ namespace Monoboy
             operand1 = operand1?.Replace("d8", "0x" + firstHex);
 
             string flags = "(" +
-            (emulator.bus.register.F.GetBit((Bit)Flag.FullCarry) ? "C" : "-") +
-            (emulator.bus.register.F.GetBit((Bit)Flag.HalfCarry) ? "H" : "-") +
-            (emulator.bus.register.F.GetBit((Bit)Flag.Negative) ? "N" : "-") +
-            (emulator.bus.register.F.GetBit((Bit)Flag.Zero) ? "Z" : "-") +
+            (emulator.bus.register.F.GetBit(Flag.C) ? "C" : "-") +
+            (emulator.bus.register.F.GetBit(Flag.H) ? "H" : "-") +
+            (emulator.bus.register.F.GetBit(Flag.N) ? "N" : "-") +
+            (emulator.bus.register.F.GetBit(Flag.Z) ? "Z" : "-") +
             ")";
 
             debug[00] = "AF: 0x" + emulator.bus.register.AF.ToString("X4") + flags;
@@ -238,21 +223,21 @@ namespace Monoboy
             debug[05] = "PC: 0x" + emulator.bus.register.PC.ToString("X4") + "(0x" + hexcode + ") " + opcode + " " + operand1 + ", " + operand2;
             debug[06] = "Ticks: " + emulator.cyclesRan;
             debug[07] = "LCDC:";
-            debug[08] = " LCD enabled: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.LCDEnabled) ? "On" : "Off");
-            debug[09] = " Background and Window: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.BackgroundWindowPriority) ? "On" : "Off");
-            debug[10] = " Sprites: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.SpritesEnabled) ? "On" : "Off");
-            debug[11] = " SpriteSize: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.SpritesSize) ? "8x16" : "8x8");
-            debug[12] = " Background tilemap: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.Tilemap) ? "9C00-9FFF" : "9800-9BFF");
-            debug[13] = " Background tileset: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.Tileset) ? "8000-8FFF" : "8800-97FF");
-            debug[14] = " Window: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.WindowEnabled) ? "On" : "Off");
-            debug[15] = " Window tilemap: " + (emulator.bus.memory.LCDC.GetBit((Bit)LCDCBit.WindowTilemap) ? "9C00-9FFF" : "9800-9BFF");
+            debug[08] = " LCD enabled: " + (emulator.bus.memory.LCDC.GetBit(LCDCBit.LCDEnabled) ? "On" : "Off");
+            debug[09] = " Background and Window: " + (emulator.bus.memory.LCDC.GetBit(LCDCBit.BackgroundWindowPriority) ? "On" : "Off");
+            debug[10] = " Sprites: " + (emulator.bus.memory.LCDC.GetBit(LCDCBit.SpritesEnabled) ? "On" : "Off");
+            debug[11] = " SpriteSize: " + (emulator.bus.memory.LCDC.GetBit(LCDCBit.SpritesSize) ? "8x16" : "8x8");
+            debug[12] = " Background tilemap: " + (emulator.bus.memory.LCDC.GetBit(LCDCBit.Tilemap) ? "9C00-9FFF" : "9800-9BFF");
+            debug[13] = " Background tileset: " + (emulator.bus.memory.LCDC.GetBit(LCDCBit.Tileset) ? "8000-8FFF" : "8800-97FF");
+            debug[14] = " Window: " + (emulator.bus.memory.LCDC.GetBit(LCDCBit.WindowEnabled) ? "On" : "Off");
+            debug[15] = " Window tilemap: " + (emulator.bus.memory.LCDC.GetBit(LCDCBit.WindowTilemap) ? "9C00-9FFF" : "9800-9BFF");
             debug[16] = "STAT:";
             debug[17] = " Mode:     " + emulator.bus.memory.StatMode.ToString();
-            debug[18] = " LYC Flag: " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.CoincidenceFlag) ? "LYC=LY" : "LYC!=LY");
-            debug[19] = " H-Blank:  " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.HBlankInterrupt) ? "1" : "0");
-            debug[20] = " V-Blank:  " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.VBlankInterrupt) ? "1" : "0");
-            debug[21] = " OAM:      " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.OAMInterrupt) ? "1" : "0");
-            debug[22] = " LYC:      " + (emulator.bus.memory.Stat.GetBit((Bit)StatBit.CoincidenceInterrupt) ? "1" : "0");
+            debug[18] = " LYC Flag: " + (emulator.bus.memory.Stat.GetBit(StatBit.CoincidenceFlag) ? "LYC=LY" : "LYC!=LY");
+            debug[19] = " H-Blank:  " + (emulator.bus.memory.Stat.GetBit(StatBit.HBlankInterrupt) ? "1" : "0");
+            debug[20] = " V-Blank:  " + (emulator.bus.memory.Stat.GetBit(StatBit.VBlankInterrupt) ? "1" : "0");
+            debug[21] = " OAM:      " + (emulator.bus.memory.Stat.GetBit(StatBit.OAMInterrupt) ? "1" : "0");
+            debug[22] = " LYC:      " + (emulator.bus.memory.Stat.GetBit(StatBit.CoincidenceInterrupt) ? "1" : "0");
             debug[23] = "LY: " + emulator.bus.memory.LY;
             debug[24] = "LYC: " + emulator.bus.memory.LYC;
             debug[25] = "Window Pos: " + emulator.bus.memory.WindowX + " , " + emulator.bus.memory.WindowY;
@@ -266,12 +251,12 @@ namespace Monoboy
 
         private void Resize(Vector2u windowSize)
         {
-            int scale = (int)(mainWindow.Height / Emulator.WindowHeight);
+            int scale = (int)(mainWindow.Height / WindowHeight);
 
             screenSprite.Scale = new Vector2f(scale, scale);
             screenSprite.Position = new Vector2f(
-                (windowSize.X / 2) - ((screenSprite.Scale.X * Emulator.WindowWidth) / 2),
-                (windowSize.Y / 2) - ((screenSprite.Scale.Y * Emulator.WindowHeight) / 2));
+                (windowSize.X / 2) - ((screenSprite.Scale.X * WindowWidth) / 2),
+                (windowSize.Y / 2) - ((screenSprite.Scale.Y * WindowHeight) / 2));
         }
     }
 }

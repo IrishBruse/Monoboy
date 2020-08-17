@@ -1,16 +1,13 @@
-﻿using Monoboy.Utility;
+﻿using Monoboy.Constants;
+using Monoboy.Utility;
 
 namespace Monoboy
 {
     public class Joypad
     {
-        byte JOYP;// P1
-        byte buttonState;
-        byte dPadState;
-
-        bool readButtonsNext = false;
-
-        Bus bus;
+        private byte buttonState = 0xF;
+        private byte padState = 0xF;
+        private Bus bus;
 
         public Joypad(Bus bus)
         {
@@ -27,41 +24,33 @@ namespace Monoboy
             }
             else
             {
-                dPadState |= (byte)(key & (state ? 0x00 : 0xFF));
-            }
-
-            if(state == true)
-            {
-                bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.Joypad);
+                padState |= (byte)(key & (state ? 0x00 : 0xFF));
             }
         }
 
-        public byte Read()
+        public void Step()
         {
-            byte result = (byte)(JOYP & 0b00110000);
-
-            if(readButtonsNext == true)
+            if(bus.memory.JOYP.GetBit(Bit.Bit4) == false)
             {
-                result &= buttonState;
-            }
-            else
-            {
-                result &= dPadState;
+                bus.memory.JOYP = (byte)((bus.memory.JOYP & 0xF0) | padState);
+                if(padState != 0xF)
+                {
+                    bus.interrupt.InterruptRequest(InterruptFlag.Joypad);
+                }
             }
 
-            return result;
-        }
-
-        public void Write(byte data)
-        {
-            JOYP = data;
-            if(data.GetBit(Bit.Bit4) == false)
+            if(bus.memory.JOYP.GetBit(Bit.Bit5) == false)
             {
-                readButtonsNext = false;
+                bus.memory.JOYP = (byte)((bus.memory.JOYP & 0xF0) | buttonState);
+                if(padState != 0xF)
+                {
+                    bus.interrupt.InterruptRequest(InterruptFlag.Joypad);
+                }
             }
-            if(data.GetBit(Bit.Bit5) == false)
+
+            if((bus.memory.JOYP & 0b00110000) == 0b00110000)
             {
-                readButtonsNext = true;
+                bus.memory.JOYP = 0xFF;
             }
         }
 

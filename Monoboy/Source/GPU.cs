@@ -1,23 +1,24 @@
-﻿using Monoboy.Utility;
+﻿using Monoboy.Constants;
+using Monoboy.Utility;
 using SFML.Graphics;
 
 namespace Monoboy
 {
-    public class GPU
+    public class Gpu
     {
         public int cycles;
-        readonly Bus bus;
+        private readonly Bus bus;
 
         public byte[] VideoRam { get => bus.memory.vram; set => bus.memory.vram = value; }
 
-        readonly Color[] pallet = new Color[] { new Color(0x332C50FF), new Color(0x46878FFF), new Color(0x94E344FF), new Color(0xe2F3E4FF) };
+        private readonly Color[] pallet = new Color[] { new Color(0x332C50FF), new Color(0x46878FFF), new Color(0x94E344FF), new Color(0xe2F3E4FF) };
         public Image Framebuffer { get; }
         public System.Action DrawFrame;
 
-        public GPU(Bus bus)
+        public Gpu(Bus bus)
         {
             this.bus = bus;
-            Framebuffer = new Image(Emulator.WindowWidth, Emulator.WindowHeight);
+            Framebuffer = new Image(Constant.WindowWidth, Constant.WindowHeight);
         }
 
         public void Step(int ticks)
@@ -39,7 +40,7 @@ namespace Monoboy
                     if(bus.memory.LY == 144)
                     {
                         bus.memory.StatMode = Mode.Vblank;
-                        bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.VBlank);
+                        bus.interrupt.InterruptRequest(InterruptFlag.VBlank);
                     }
                     else
                     {
@@ -76,19 +77,19 @@ namespace Monoboy
                 {
                     cycles -= 172;
 
-                    if(bus.memory.LCDC.GetBit((Bit)LCDCBit.Tilemap) == true)
+                    if(bus.memory.LCDC.GetBit(LCDCBit.Tilemap) == true)
                     {
-                        bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
+                        bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
                     }
 
-                    bool lycInterrupt = bus.memory.Stat.GetBit((Bit)StatBit.CoincidenceInterrupt);
+                    bool lycInterrupt = bus.memory.Stat.GetBit(StatBit.CoincidenceInterrupt);
                     bool lyc = bus.memory.LYC == bus.memory.LY;
 
                     if(lycInterrupt && lyc)
                     {
-                        bus.interrupt.InterruptRequest(Interrupt.InterruptFlag.LCDStat);
+                        bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
                     }
-                    bus.memory.Stat.SetBit((Bit)StatBit.CoincidenceFlag, lyc);
+                    bus.memory.Stat.SetBit(StatBit.CoincidenceFlag, lyc);
 
                     bus.memory.StatMode = Mode.Hblank;
                 }
@@ -97,9 +98,9 @@ namespace Monoboy
         }
 
         #region Drawing
-        void DrawScanline()
+        private void DrawScanline()
         {
-            if(bus.memory.LCDC.GetBit((Bit)LCDCBit.LCDEnabled) == false)
+            if(bus.memory.LCDC.GetBit(LCDCBit.LCDEnabled) == false)
             {
                 return;
             }
@@ -120,10 +121,10 @@ namespace Monoboy
             }
         }
 
-        void DrawBackground()
+        private void DrawBackground()
         {
-            bool tileset = bus.memory.LCDC.GetBit((Bit)LCDCBit.Tileset);
-            bool tilemap = bus.memory.LCDC.GetBit((Bit)LCDCBit.Tilemap);
+            bool tileset = bus.memory.LCDC.GetBit(LCDCBit.Tileset);
+            bool tilemap = bus.memory.LCDC.GetBit(LCDCBit.Tilemap);
 
             ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x0800);
             ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
@@ -131,7 +132,7 @@ namespace Monoboy
             ushort y = (ushort)(bus.memory.LY + bus.memory.SCY);
             ushort row = (ushort)(y / 8);
 
-            for(byte i = 0; i < Emulator.WindowWidth; i++)
+            for(byte i = 0; i < Constant.WindowWidth; i++)
             {
                 byte x = (byte)(i + bus.memory.SCX);
                 ushort colum = (ushort)(x / 8);
@@ -139,7 +140,7 @@ namespace Monoboy
 
                 ushort vramAddress;
 
-                bool useUnsignedAdressing = bus.memory.LCDC.GetBit((Bit)LCDCBit.Tileset);
+                bool useUnsignedAdressing = bus.memory.LCDC.GetBit(LCDCBit.Tileset);
 
                 if(useUnsignedAdressing == true)
                 {
@@ -155,19 +156,19 @@ namespace Monoboy
                 byte data1 = VideoRam[vramAddress + line];
                 byte data2 = VideoRam[vramAddress + line + 1];
 
-                Bit bit = (Bit)(0b00000001 << (((x % 8) - 7) * 0xff));
+                byte bit = ((byte)(0b00000001 << (((x % 8) - 7) * 0xff)));
                 byte color_value = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
 
                 Framebuffer.SetPixel(i, bus.memory.LY, pallet[color_value]);
             }
         }
 
-        void DrawWindow()
+        private void DrawWindow()
         {
 
         }
 
-        void DrawSprites()
+        private void DrawSprites()
         {
 
         }

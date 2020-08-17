@@ -6,18 +6,29 @@ namespace Monoboy
     {
         public byte[] rom;
 
-        public byte Read(ushort address)
+        public byte ReadBank00(ushort address)
         {
-            if(address <= 0x7FFF)
-            {
-                return rom[address];
-            }
-            return 0x00;
+            return rom[address];
         }
 
-        public void Write(ushort address, byte data)
+        public byte ReadBankNN(ushort address)
         {
-            // Do nothing
+            return rom[address];
+        }
+
+        public byte ReadRam(ushort address)
+        {
+            return 0xFF;
+        }
+
+        public void WriteRam(ushort address, byte data)
+        {
+            // Ignore
+        }
+
+        public void WriteBank(ushort address, byte data)
+        {
+            // Ignore
         }
 
         public void Load(string path)

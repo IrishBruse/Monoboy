@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using Monoboy.Constants;
 using Monoboy.Utility;
 using SFML.Graphics;
 
@@ -6,10 +8,6 @@ namespace Monoboy
 {
     public class Emulator
     {
-        public const byte WindowScale = 4;
-        public const byte WindowWidth = 160;
-        public const byte WindowHeight = 144;
-
         public Bus bus;
 
         public long cyclesRan;
@@ -17,12 +15,48 @@ namespace Monoboy
         public Emulator()
         {
             bus = new Bus();
+
+            if(File.Exists("Data/dmg_boot.bin") == true)
+            {
+                bus.memory.boot = File.ReadAllBytes("Data/dmg_boot.bin");
+            }
+            else
+            {
+                SkipBootRom();
+            }
+
+            //LoadRom("Mario.gb");
+            //LoadRom("Dr. Mario.gb");
+            //LoadRom("Tetris.gb");
+            LoadRom("cpu_instrs.gb");
+            //LoadRom("01-special.gb");
+            //LoadRom("02-interrupts.gb");
+            //LoadRom("03-op sp,hl.gb");
+            //LoadRom("04.gb");
+            //LoadRom("01-special.gb");
+            //LoadRom("01-special.gb");
+            //LoadRom("07-jr,jp,call,ret,rst.gb");
+            //LoadRom("01-special.gb");
+            //LoadRom("01-special.gb");
+
+
+            //while(bus.register.PC != 0xc365)// 0xc365
+            //{
+            //    Step();
+            //}
+
+            //while(bus.memory.LY == 0)
+            //{
+            //    Step();
+            //}
         }
 
         public byte Step()
         {
             byte cycles = bus.cpu.Step();
             bus.gpu.Step(cycles);
+            bus.joypad.Step();
+            bus.interrupt.HandleInterupts();
             cyclesRan += cycles;
 
             // Disable the bios in the bus
@@ -34,13 +68,28 @@ namespace Monoboy
             return cycles;
         }
 
-        public void LoadRom(string path)
+        public void LoadRom(string rom)
         {
-            bus.cartridge.LoadRom("Data/Roms/" + path);
+            string path = "Data/Roms/" + rom;
+
+            byte cartridgeType;
+            using(BinaryReader reader = new BinaryReader(new FileStream(path, FileMode.Open)))
+            {
+                reader.BaseStream.Seek(0x147, SeekOrigin.Begin);
+                cartridgeType = reader.ReadByte();
+            }
+
+            bus.memoryBankController = cartridgeType switch
+            {
+                byte _ when(cartridgeType <= 0) => new MemoryBankController0(),
+                byte _ when(cartridgeType <= 3) => new MemoryBankController1(),
+                _ => throw new NotImplementedException()
+            };
+
+            bus.memoryBankController.Load(path);
         }
 
         #region Debug
-
 
         public void SkipBootRom()
         {
@@ -88,8 +137,8 @@ namespace Monoboy
             Color[] pallet = new Color[] { new Color(0, 0, 0, 255), new Color(76, 76, 76, 255), new Color(107, 107, 107, 255), new Color(255, 255, 255, 255) };
             Color[,] pixels = new Color[256, 256];
 
-            bool tileset = bus.memory.LCDC.GetBit((Bit)LCDCBit.Tileset);
-            bool tilemap = bus.memory.LCDC.GetBit((Bit)LCDCBit.Tilemap);
+            bool tileset = bus.memory.LCDC.GetBit(LCDCBit.Tileset);
+            bool tilemap = bus.memory.LCDC.GetBit(LCDCBit.Tilemap);
 
             ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x0800);
             ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
@@ -106,7 +155,7 @@ namespace Monoboy
 
                     ushort vramAddress;
 
-                    if(bus.memory.LCDC.GetBit((Bit)LCDCBit.Tileset) == true)
+                    if(bus.memory.LCDC.GetBit(LCDCBit.Tileset) == true)
                     {
                         vramAddress = (ushort)((rawTile * 16) + tilesetAddress);
                     }
@@ -120,7 +169,7 @@ namespace Monoboy
                     byte data1 = bus.gpu.VideoRam[vramAddress + line];
                     byte data2 = bus.gpu.VideoRam[vramAddress + line + 1];
 
-                    Bit bit = (Bit)(0b00000001 << (((x % 8) - 7) * 0xff));
+                    byte bit = ((byte)(0b00000001 << (((x % 8) - 7) * 0xff)));
                     byte color_value = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
 
                     pixels[x, y] = pallet[color_value];
@@ -128,7 +177,7 @@ namespace Monoboy
             }
 
             Image img = new Image(pixels);
-            img.SaveToFile("C:\\Users\\Econn\\Desktop\\Background.png");
+            img.SaveToFile("Background.png");
         }
 
         public void DumpTilemap()
@@ -153,7 +202,7 @@ namespace Monoboy
                     byte data1 = bus.gpu.VideoRam[tileGraphicAddress + line];
                     byte data2 = bus.gpu.VideoRam[tileGraphicAddress + line + 1];
 
-                    Bit bit = (Bit)(0b00000001 << (((x % 8) - 7) * 0xff));
+                    byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
                     byte color_value = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
 
                     pixels[x, y] = pallet[color_value];
@@ -161,7 +210,7 @@ namespace Monoboy
             }
 
             Image img = new Image(pixels);
-            img.SaveToFile("C:\\Users\\Econn\\Desktop\\Tilemap.png");
+            img.SaveToFile("Tilemap.png");
         }
 
         public void DumpMemory()
@@ -173,12 +222,12 @@ namespace Monoboy
                 file[i] = bus.Read(i);
             }
 
-            File.WriteAllBytes("C:\\Users\\Econn\\Desktop\\Memory.bin", file);
+            File.WriteAllBytes("Memory.bin", file);
         }
 
         public void DumpTrace()
         {
-            File.WriteAllBytes("C:\\Users\\Econn\\Desktop\\Trace.bin", bus.trace.ToArray());
+            File.WriteAllBytes("Trace.bin", bus.trace.ToArray());
         }
 
         #endregion

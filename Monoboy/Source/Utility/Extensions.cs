@@ -4,30 +4,6 @@ namespace Monoboy.Utility
 {
     public static class Extensions
     {
-        #region Debugging
-
-        public static string ToHex(this byte data)
-        {
-            return "0x" + data.ToString("x");
-        }
-
-        public static string ToHex(this ushort data)
-        {
-            return "0x" + data.ToString("x");
-        }
-
-        public static string ToBin(this byte data)
-        {
-            return "0b" + Convert.ToString(data, 2).PadLeft(8, '0');
-        }
-
-        public static string ToBin(this ushort data)
-        {
-            return "0b" + Convert.ToString(data, 2).PadLeft(16, '0');
-        }
-
-        #endregion
-
         /// <summary>
         /// Returns the higher byte
         /// </summary>
@@ -101,5 +77,32 @@ namespace Monoboy.Utility
         {
             return (byte)(data & bits);
         }
+
+        /// <summary>
+        /// Add and return bool if carry
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static (byte result, bool halfCarry, bool fullCarry) AddOverflow(this byte data, int value, int carry = 0)
+        {
+            int result = data + value;
+            bool halfCarry = (data & 0xF) + (value & 0xF) + carry > 0xF || (data & 0xF) + (value & 0xF) + carry < 0;
+            bool fullCarry = (data & 0xFF) + (value & 0xFF) + carry > 0xFF || (data & 0xFF) + (value & 0xFF) + carry < 0;
+            return ((byte)result, halfCarry, fullCarry);
+        }
+
+        /// <summary>
+        /// Add and return bool if carry
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static (ushort result, bool halfCarry, bool fullCarry) AddOverflow(this ushort data, int value, int carry = 0)
+        {
+            int result = data + value;
+            bool halfCarry = (data & 0xFFF) + (value & 0xFFF) + carry > 0xFFF || (data & 0xFFF) + (value & 0xFFF) + carry < 0;
+            bool fullCarry = (data & 0xFFFF) + (value & 0xFFFF) + carry > 0xFFFF || (data & 0xFFFF) + (value & 0xFFFF) + carry < 0;
+            return ((ushort)result, halfCarry, fullCarry);
+        }
+
     }
 }

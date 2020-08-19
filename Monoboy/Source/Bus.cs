@@ -68,7 +68,7 @@ namespace Monoboy
             }
         }
 
-        public void WriteWord(ushort address, ushort data)
+        public void WriteShort(ushort address, ushort data)
         {
             Write((ushort)(address + 1), (byte)(data >> 8));
             Write(address, (byte)data);

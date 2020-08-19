@@ -32,6 +32,7 @@ namespace Monoboy
 
             switch(opcode)
             {
+                // fine
                 #region 8-Bit Loads
 
                 // LD nn,n
@@ -61,6 +62,7 @@ namespace Monoboy
                 case 0x44: Reg.B = Reg.H; return 4;
                 case 0x45: Reg.B = Reg.L; return 4;
                 case 0x46: Reg.B = bus.Read(Reg.HL); return 8;
+                // Fine
 
                 // LD C,r2
                 case 0x4F: Reg.C = Reg.A; return 4;
@@ -159,6 +161,7 @@ namespace Monoboy
 
                 #endregion
 
+                // fine
                 #region 16-Bit Loads
 
                 // LD n,nn
@@ -174,7 +177,7 @@ namespace Monoboy
                 case 0xF8: LDHL(); return 12;
 
                 // LD (nn),SP
-                case 0x08: bus.WriteWord(NextShort(), Reg.SP); return 20;
+                case 0x08: bus.WriteShort(NextShort(), Reg.SP); return 20;
 
                 // Push nn
                 case 0xF5: Push(Reg.AF); return 16;
@@ -310,15 +313,18 @@ namespace Monoboy
                 case 0x29: ADD(Reg.HL); return 8;
                 case 0x39: ADD(Reg.SP); return 8;
 
+
                 // ADD SP,n
                 case 0xE8: ADD((sbyte)NextByte()); return 16;
 
+                // fine
                 // INC nn
                 case 0x03: Reg.BC++; return 8;
                 case 0x13: Reg.DE++; return 8;
                 case 0x23: Reg.HL++; return 8;
                 case 0x33: Reg.SP++; return 8;
 
+                // fine
                 // DEC nn
                 case 0x0B: Reg.BC--; return 8;
                 case 0x1B: Reg.DE--; return 8;
@@ -327,6 +333,7 @@ namespace Monoboy
 
                 #endregion
 
+                // fine
                 #region Miscellaneous
 
                 // CB Prefixed
@@ -361,10 +368,11 @@ namespace Monoboy
 
                 #endregion
 
+                // fine
                 #region Jumps
 
                 // JP nn
-                case 0xC3: JP(NextShort()); return 12;
+                case 0xC3: return JP(true);
 
                 // JP cc,nn
                 case 0xC2: return JP(Reg.GetFlag(Flag.Z) == false);
@@ -386,6 +394,7 @@ namespace Monoboy
 
                 #endregion
 
+                // fine
                 #region Calls
 
                 // CALL nn
@@ -399,6 +408,7 @@ namespace Monoboy
 
                 #endregion
 
+                // fine
                 #region Restarts
 
                 // RST n
@@ -413,22 +423,24 @@ namespace Monoboy
 
                 #endregion
 
+                // fine
                 #region Returns
 
                 // RET
-                case 0xC9: RET(); return 16;
+                case 0xC9: RET(true); return 16;
 
                 // RET cc
-                case 0xC0: if(Reg.GetFlag(Flag.Z) == false) { RET(); return 20; } else { return 8; }
-                case 0xC8: if(Reg.GetFlag(Flag.Z) == true) { RET(); return 20; } else { return 8; }
-                case 0xD0: if(Reg.GetFlag(Flag.C) == false) { RET(); return 20; } else { return 8; }
-                case 0xD8: if(Reg.GetFlag(Flag.C) == true) { RET(); return 20; } else { return 8; }
+                case 0xC0: return RET(Reg.GetFlag(Flag.Z) == false);
+                case 0xC8: return RET(Reg.GetFlag(Flag.Z) == true);
+                case 0xD0: return RET(Reg.GetFlag(Flag.C) == false);
+                case 0xD8: return RET(Reg.GetFlag(Flag.C) == true);
 
                 // RETI
-                case 0xD9: RET(); bus.interrupt.Enable(); return 8;
+                case 0xD9: RET(true); bus.interrupt.Enable(); return 16;
 
                 #endregion
 
+                // fine
                 #region Rotates
 
                 // RLCA
@@ -447,17 +459,18 @@ namespace Monoboy
 
                 #region Illegal
 
-                case 0xD3:
-                case 0xDB:
-                case 0xDD:
-                case 0xE3:
-                case 0xE4:
-                case 0xEB:
-                case 0xEC:
-                case 0xED:
-                case 0xF4:
-                case 0xFC:
-                case 0xFD: throw new Exception("Illegal Instruction : " + opcode);
+                case 0xD3: //Illegal Opcode
+                case 0xDB: //Illegal Opcode
+                case 0xDD: //Illegal Opcode
+                case 0xE3: //Illegal Opcode
+                case 0xE4: //Illegal Opcode
+                case 0xEB: //Illegal Opcode
+                case 0xEC: //Illegal Opcode
+                case 0xED: //Illegal Opcode
+                case 0xF4: //Illegal Opcode
+                case 0xFC: //Illegal Opcode
+                case 0xFD: //Illegal Opcode
+                throw new Exception("Illegal Instruction : " + opcode);
 
                 #endregion
             }
@@ -466,8 +479,6 @@ namespace Monoboy
         private byte PrefixedTable()
         {
             opcode = NextByte();
-
-            bus.trace.Add(opcode);
 
             switch(opcode)
             {
@@ -808,19 +819,16 @@ namespace Monoboy
 
         public void Push(ushort data)
         {
-            Reg.SP -= 1;
-            bus.Write(Reg.SP, data.High());
-            Reg.SP -= 1;
-            bus.Write(Reg.SP, data.Low());
+            Reg.SP -= 2;
+            bus.WriteShort(Reg.SP, data);
         }
 
         public ushort Pop()
         {
-            byte low = bus.Read(Reg.SP);
-            Reg.SP += 1;
-            byte high = bus.Read(Reg.SP);
-            Reg.SP += 1;
-            return Combine(low, high);
+            ushort result = bus.ReadShort(Reg.SP);
+            Reg.SP += 2;
+
+            return result;
         }
 
 
@@ -842,8 +850,8 @@ namespace Monoboy
 
             Reg.SetFlag(Flag.Z, false);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, (result & 0xF) < (Reg.SP & 0xF));
-            Reg.SetFlag(Flag.C, result >> 8 != 0);
+            Reg.SetFlag(Flag.H, (result & 0xF) + (Reg.SP & 0xF) > 0xF);
+            Reg.SetFlag(Flag.C, (result & 0xFF) + (Reg.SP & 0xFF) > 0xFF);
 
             Reg.HL = result;
         }
@@ -854,12 +862,12 @@ namespace Monoboy
 
         private void ADD(byte n)
         {
-            byte result = (byte)(Reg.A + n);
+            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(n);
 
             Reg.SetFlag(Flag.Z, result == 0);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, (Reg.A & 0xF) + (n & 0xF) > 0xF);
-            Reg.SetFlag(Flag.C, (Reg.A + n) > 0xFF);
+            Reg.SetFlag(Flag.H, halfCarry);
+            Reg.SetFlag(Flag.C, fullCarry);
 
             Reg.A = result;
         }
@@ -867,24 +875,24 @@ namespace Monoboy
         private void ADC(byte n)
         {
             int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
-            byte result = (byte)(Reg.A + n + carry);
+            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(n, carry);
 
             Reg.SetFlag(Flag.Z, result == 0);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, (Reg.A & 0xF) + (n & 0xF) + carry > 0xF);
-            Reg.SetFlag(Flag.C, (Reg.A + n + carry) > 0xFF);
+            Reg.SetFlag(Flag.H, halfCarry);
+            Reg.SetFlag(Flag.C, fullCarry);
 
             Reg.A = result;
         }
 
         private void SUB(byte n)
         {
-            byte result = (byte)(Reg.A - n);
+            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(-n);
 
             Reg.SetFlag(Flag.Z, result == 0);
             Reg.SetFlag(Flag.N, true);
-            Reg.SetFlag(Flag.H, ((short)(Reg.A & 0xF)) - ((short)(n & 0xF)) < 0);
-            Reg.SetFlag(Flag.C, (short)(Reg.A - n) < 0);
+            Reg.SetFlag(Flag.H, halfCarry);
+            Reg.SetFlag(Flag.C, fullCarry);
 
             Reg.A = result;
         }
@@ -892,12 +900,12 @@ namespace Monoboy
         private void SBC(byte n)
         {
             int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
-            byte result = (byte)(Reg.A - n - carry);
+            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(-n, -carry);
 
             Reg.SetFlag(Flag.Z, result == 0);
             Reg.SetFlag(Flag.N, true);
-            Reg.SetFlag(Flag.H, (Reg.A & 0xF) - (n & 0xF) - carry < 0);
-            Reg.SetFlag(Flag.C, (Reg.A + n + carry) > 0xFF);
+            Reg.SetFlag(Flag.H, halfCarry);
+            Reg.SetFlag(Flag.C, fullCarry);
 
             Reg.A = result;
         }
@@ -940,32 +948,32 @@ namespace Monoboy
 
         private void CP(byte n)
         {
-            byte result = (byte)(Reg.A - n);
+            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(-n);
 
             Reg.SetFlag(Flag.Z, result == 0);
             Reg.SetFlag(Flag.N, true);
-            Reg.SetFlag(Flag.H, ((short)(Reg.A & 0xF)) - ((short)(n & 0xF)) < 0);
-            Reg.SetFlag(Flag.C, (short)(Reg.A - n) < 0);
+            Reg.SetFlag(Flag.H, halfCarry);
+            Reg.SetFlag(Flag.C, fullCarry);
         }
 
         private byte INC(byte n)
         {
-            byte result = (byte)(n + 1);
+            (byte result, bool halfCarry, _) = n.AddOverflow(1);
 
             Reg.SetFlag(Flag.Z, result == 0);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, (ushort)(n & 0xF) + 1 > 0xF);
+            Reg.SetFlag(Flag.H, halfCarry);
 
             return result;
         }
 
         private byte DEC(byte n)
         {
-            byte result = (byte)(n - 1);
+            (byte result, bool halfCarry, _) = n.AddOverflow(-1);
 
             Reg.SetFlag(Flag.Z, result == 0);
             Reg.SetFlag(Flag.N, true);
-            Reg.SetFlag(Flag.H, (short)(n & 0xF) - 1 < 0);
+            Reg.SetFlag(Flag.H, halfCarry);
 
             return result;
         }
@@ -975,21 +983,23 @@ namespace Monoboy
         #region 16-Bit Arithmetic
         private void ADD(ushort nn)
         {
-            ushort result = (ushort)(Reg.HL + nn);
+            (ushort result, bool halfCarry, bool fullCarry) = Reg.HL.AddOverflow(nn);
+
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, ((Reg.HL & 0xFFF) + (nn & 0xFFF)) > 0xFFF);
-            Reg.SetFlag(Flag.C, Reg.HL > 0xFFFF - nn);
+            Reg.SetFlag(Flag.H, halfCarry);
+            Reg.SetFlag(Flag.C, fullCarry);
 
             Reg.HL = result;
         }
 
         private void ADD(sbyte n)
         {
-            ushort result = (ushort)(((short)Reg.SP) + n);
+            (ushort result, bool halfCarry, bool fullCarry) = Reg.SP.AddOverflow(n);
+
             Reg.SetFlag(Flag.Z, false);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, ((Reg.HL & 0xFFF) + (n & 0xFFF)) > 0xFFF);
-            Reg.SetFlag(Flag.C, (result & 0xFF) < (Reg.SP & 0xFF));
+            Reg.SetFlag(Flag.H, halfCarry);
+            Reg.SetFlag(Flag.C, fullCarry);
 
             Reg.SP = result;
         }
@@ -1212,8 +1222,7 @@ namespace Monoboy
         {
             if(condition == true)
             {
-                sbyte sb = (sbyte)bus.Read(Reg.PC);
-                JP((ushort)(Reg.PC + sb));
+                JP((ushort)(Reg.PC + (sbyte)bus.Read(Reg.PC)));
                 Reg.PC += 1;
                 return 12;
             }
@@ -1233,8 +1242,7 @@ namespace Monoboy
             if(condition == true)
             {
                 Push((ushort)(Reg.PC + 2));
-                JP(bus.Read(Reg.PC));
-                Reg.PC += 1;
+                JP(bus.ReadShort(Reg.PC));
                 return 12;
             }
             else
@@ -1247,9 +1255,17 @@ namespace Monoboy
         #endregion
 
         #region Returns
-        private void RET()
+        private byte RET(bool condition)
         {
-            JP(Pop());
+            if(condition == true)
+            {
+                Reg.PC = Pop();
+                return 20;
+            }
+            else
+            {
+                return 8;
+            }
         }
 
         #endregion

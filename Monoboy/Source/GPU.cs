@@ -31,7 +31,7 @@ namespace Monoboy
                 if(cycles >= 204)
                 {
                     DrawScanline();
-                    DrawFrame.Invoke();//TODO Only for debugging
+                    DrawFrame?.Invoke();//TODO Only for debugging
 
                     bus.memory.LY++;
                     cycles -= 204;
@@ -57,7 +57,7 @@ namespace Monoboy
 
                     if(bus.memory.LY == 154)
                     {
-                        DrawFrame.Invoke();
+                        DrawFrame?.Invoke();
                         bus.memory.LY = 0;
                         bus.memory.StatMode = Mode.OAM;
                     }
@@ -89,7 +89,7 @@ namespace Monoboy
                     {
                         bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
                     }
-                    bus.memory.Stat.SetBit(StatBit.CoincidenceFlag, lyc);
+                    bus.memory.Stat = bus.memory.Stat.SetBit(StatBit.CoincidenceFlag, lyc);
 
                     bus.memory.StatMode = Mode.Hblank;
                 }

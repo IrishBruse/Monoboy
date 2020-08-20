@@ -12,6 +12,8 @@ namespace Monoboy
 {
     public class Application
     {
+        public static Application Instance { get; internal set; }
+
         private Window mainWindow;
         private Window debugWindow;
 
@@ -36,14 +38,16 @@ namespace Monoboy
         private Keybind stepButton;
         private Keybind speedupButton;
         private Keybind runButton;
+
         private JObject opcodes;
-        private bool paused = true;
 
         public static bool Focused = true;
         private string[] debug = new string[32];
 
         public Application()
         {
+            Instance = this;
+
             emulator = new Emulator();
 
             opcodes = JObject.Parse(File.ReadAllText("Data/opcodes.json"));
@@ -144,7 +148,7 @@ namespace Monoboy
 
             if(pauseButton.IsActive() == true)
             {
-                paused = !paused;
+                emulator.paused = !emulator.paused;
             }
 
             if(stepButton.IsActive() == true)
@@ -162,7 +166,7 @@ namespace Monoboy
                 }
             }
 
-            if(paused == false)
+            if(emulator.paused == false)
             {
                 int cycles = 0;
                 while(cycles < CyclesPerFrame * overclock)

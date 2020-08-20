@@ -21,16 +21,6 @@ namespace Monoboy.Utility
         }
 
         /// <summary>
-        /// Returns the swapped byte
-        /// </summary>
-        public static byte Swap(this byte data)
-        {
-            byte high = (byte)(data >> 4);
-            byte low = (byte)(data << 4);
-            return (byte)(low | high);
-        }
-
-        /// <summary>
         /// Set bit
         /// </summary>
         /// <param name="bit">The bit to set</param>
@@ -39,11 +29,11 @@ namespace Monoboy.Utility
         {
             if(condition == true)
             {
-                return data |= (byte)(1 << bit);
+                return data |= bit;
             }
             else
             {
-                return data &= (byte)~(1 << bit);
+                return data &= (byte)~bit;
             }
         }
 
@@ -77,32 +67,5 @@ namespace Monoboy.Utility
         {
             return (byte)(data & bits);
         }
-
-        /// <summary>
-        /// Add and return bool if carry
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static (byte result, bool halfCarry, bool fullCarry) AddOverflow(this byte data, int value, int carry = 0)
-        {
-            int result = data + value;
-            bool halfCarry = (data & 0xF) + (value & 0xF) + carry > 0xF || (data & 0xF) + (value & 0xF) + carry < 0;
-            bool fullCarry = (data & 0xFF) + (value & 0xFF) + carry > 0xFF || (data & 0xFF) + (value & 0xFF) + carry < 0;
-            return ((byte)result, halfCarry, fullCarry);
-        }
-
-        /// <summary>
-        /// Add and return bool if carry
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static (ushort result, bool halfCarry, bool fullCarry) AddOverflow(this ushort data, int value, int carry = 0)
-        {
-            int result = data + value;
-            bool halfCarry = (data & 0xFFF) + (value & 0xFFF) + carry > 0xFFF || (data & 0xFFF) + (value & 0xFFF) + carry < 0;
-            bool fullCarry = (data & 0xFFFF) + (value & 0xFFFF) + carry > 0xFFFF || (data & 0xFFFF) + (value & 0xFFFF) + carry < 0;
-            return ((ushort)result, halfCarry, fullCarry);
-        }
-
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using Monoboy.Constants;
 using Monoboy.Utility;
+using static Monoboy.Constants.Bit;
 using static Monoboy.Utility.Helper;
 
 namespace Monoboy
@@ -13,7 +14,7 @@ namespace Monoboy
 
         private Register Reg { get => bus.register; }
 
-        private byte opcode;
+        public byte opcode;
 
         public Cpu(Bus bus)
         {
@@ -32,7 +33,6 @@ namespace Monoboy
 
             switch(opcode)
             {
-                // fine
                 #region 8-Bit Loads
 
                 // LD nn,n
@@ -62,7 +62,6 @@ namespace Monoboy
                 case 0x44: Reg.B = Reg.H; return 4;
                 case 0x45: Reg.B = Reg.L; return 4;
                 case 0x46: Reg.B = bus.Read(Reg.HL); return 8;
-                // Fine
 
                 // LD C,r2
                 case 0x4F: Reg.C = Reg.A; return 4;
@@ -161,7 +160,6 @@ namespace Monoboy
 
                 #endregion
 
-                // fine
                 #region 16-Bit Loads
 
                 // LD n,nn
@@ -174,7 +172,7 @@ namespace Monoboy
                 case 0xF9: Reg.SP = Reg.HL; return 8;
 
                 // LD HL,SP+n
-                case 0xF8: LDHL(); return 12;
+                case 0xF8: Reg.HL = ADDS(Reg.SP); return 12;
 
                 // LD (nn),SP
                 case 0x08: bus.WriteShort(NextShort(), Reg.SP); return 20;
@@ -315,16 +313,14 @@ namespace Monoboy
 
 
                 // ADD SP,n
-                case 0xE8: ADD((sbyte)NextByte()); return 16;
+                case 0xE8: Reg.SP = ADDS(Reg.SP); return 16;
 
-                // fine
                 // INC nn
                 case 0x03: Reg.BC++; return 8;
                 case 0x13: Reg.DE++; return 8;
                 case 0x23: Reg.HL++; return 8;
                 case 0x33: Reg.SP++; return 8;
 
-                // fine
                 // DEC nn
                 case 0x0B: Reg.BC--; return 8;
                 case 0x1B: Reg.DE--; return 8;
@@ -333,7 +329,6 @@ namespace Monoboy
 
                 #endregion
 
-                // fine
                 #region Miscellaneous
 
                 // CB Prefixed
@@ -368,7 +363,6 @@ namespace Monoboy
 
                 #endregion
 
-                // fine
                 #region Jumps
 
                 // JP nn
@@ -394,7 +388,6 @@ namespace Monoboy
 
                 #endregion
 
-                // fine
                 #region Calls
 
                 // CALL nn
@@ -408,7 +401,6 @@ namespace Monoboy
 
                 #endregion
 
-                // fine
                 #region Restarts
 
                 // RST n
@@ -423,7 +415,6 @@ namespace Monoboy
 
                 #endregion
 
-                // fine
                 #region Returns
 
                 // RET
@@ -440,20 +431,19 @@ namespace Monoboy
 
                 #endregion
 
-                // fine
                 #region Rotates
 
                 // RLCA
-                case 0x07: Reg.A = RotateLeft(Reg.A, false, false); return 4;
+                case 0x07: RLCA(); return 4;
 
                 //RLA
-                case 0x17: Reg.A = RotateLeft(Reg.A, true, false); return 4;
+                case 0x17: RLA(); return 4;
 
                 // RRCA
-                case 0x0F: Reg.A = RotateRight(Reg.A, false, false); return 4;
+                case 0x0F: RRCA(); return 4;
 
                 // RRA
-                case 0x1F: Reg.A = RotateRight(Reg.A, true, false); return 4;
+                case 0x1F: RRA(); return 4;
 
                 #endregion
 
@@ -573,245 +563,244 @@ namespace Monoboy
                 #region Bit Opcodes
 
                 // BIT 0,r
-                case 0x47: BIT(Bit.Bit0, Reg.A); return 8;
-                case 0x40: BIT(Bit.Bit0, Reg.B); return 8;
-                case 0x41: BIT(Bit.Bit0, Reg.C); return 8;
-                case 0x42: BIT(Bit.Bit0, Reg.D); return 8;
-                case 0x43: BIT(Bit.Bit0, Reg.E); return 8;
-                case 0x44: BIT(Bit.Bit0, Reg.H); return 8;
-                case 0x45: BIT(Bit.Bit0, Reg.L); return 8;
-                case 0x46: BIT(Bit.Bit0, bus.Read(Reg.HL)); return 12;
+                case 0x47: BIT(Bit0, Reg.A); return 8;
+                case 0x40: BIT(Bit0, Reg.B); return 8;
+                case 0x41: BIT(Bit0, Reg.C); return 8;
+                case 0x42: BIT(Bit0, Reg.D); return 8;
+                case 0x43: BIT(Bit0, Reg.E); return 8;
+                case 0x44: BIT(Bit0, Reg.H); return 8;
+                case 0x45: BIT(Bit0, Reg.L); return 8;
+                case 0x46: BIT(Bit0, bus.Read(Reg.HL)); return 12;
 
                 // BIT 1,r
-                case 0x4F: BIT(Bit.Bit1, Reg.A); return 8;
-                case 0x48: BIT(Bit.Bit1, Reg.B); return 8;
-                case 0x49: BIT(Bit.Bit1, Reg.C); return 8;
-                case 0x4A: BIT(Bit.Bit1, Reg.D); return 8;
-                case 0x4B: BIT(Bit.Bit1, Reg.E); return 8;
-                case 0x4C: BIT(Bit.Bit1, Reg.H); return 8;
-                case 0x4D: BIT(Bit.Bit1, Reg.L); return 8;
-                case 0x4E: BIT(Bit.Bit1, bus.Read(Reg.HL)); return 12;
+                case 0x4F: BIT(Bit1, Reg.A); return 8;
+                case 0x48: BIT(Bit1, Reg.B); return 8;
+                case 0x49: BIT(Bit1, Reg.C); return 8;
+                case 0x4A: BIT(Bit1, Reg.D); return 8;
+                case 0x4B: BIT(Bit1, Reg.E); return 8;
+                case 0x4C: BIT(Bit1, Reg.H); return 8;
+                case 0x4D: BIT(Bit1, Reg.L); return 8;
+                case 0x4E: BIT(Bit1, bus.Read(Reg.HL)); return 12;
 
                 // BIT 2,r
-                case 0x57: BIT(Bit.Bit2, Reg.A); return 8;
-                case 0x50: BIT(Bit.Bit2, Reg.B); return 8;
-                case 0x51: BIT(Bit.Bit2, Reg.C); return 8;
-                case 0x52: BIT(Bit.Bit2, Reg.D); return 8;
-                case 0x53: BIT(Bit.Bit2, Reg.E); return 8;
-                case 0x54: BIT(Bit.Bit2, Reg.H); return 8;
-                case 0x55: BIT(Bit.Bit2, Reg.L); return 8;
-                case 0x56: BIT(Bit.Bit2, bus.Read(Reg.HL)); return 12;
+                case 0x57: BIT(Bit2, Reg.A); return 8;
+                case 0x50: BIT(Bit2, Reg.B); return 8;
+                case 0x51: BIT(Bit2, Reg.C); return 8;
+                case 0x52: BIT(Bit2, Reg.D); return 8;
+                case 0x53: BIT(Bit2, Reg.E); return 8;
+                case 0x54: BIT(Bit2, Reg.H); return 8;
+                case 0x55: BIT(Bit2, Reg.L); return 8;
+                case 0x56: BIT(Bit2, bus.Read(Reg.HL)); return 12;
 
                 // BIT 3,r
-                case 0x5F: BIT(Bit.Bit3, Reg.A); return 8;
-                case 0x58: BIT(Bit.Bit3, Reg.B); return 8;
-                case 0x59: BIT(Bit.Bit3, Reg.C); return 8;
-                case 0x5A: BIT(Bit.Bit3, Reg.D); return 8;
-                case 0x5B: BIT(Bit.Bit3, Reg.E); return 8;
-                case 0x5C: BIT(Bit.Bit3, Reg.H); return 8;
-                case 0x5D: BIT(Bit.Bit3, Reg.L); return 8;
-                case 0x5E: BIT(Bit.Bit3, bus.Read(Reg.HL)); return 12;
+                case 0x5F: BIT(Bit3, Reg.A); return 8;
+                case 0x58: BIT(Bit3, Reg.B); return 8;
+                case 0x59: BIT(Bit3, Reg.C); return 8;
+                case 0x5A: BIT(Bit3, Reg.D); return 8;
+                case 0x5B: BIT(Bit3, Reg.E); return 8;
+                case 0x5C: BIT(Bit3, Reg.H); return 8;
+                case 0x5D: BIT(Bit3, Reg.L); return 8;
+                case 0x5E: BIT(Bit3, bus.Read(Reg.HL)); return 12;
 
                 // BIT 4,r
-                case 0x67: BIT(Bit.Bit4, Reg.A); return 8;
-                case 0x60: BIT(Bit.Bit4, Reg.B); return 8;
-                case 0x61: BIT(Bit.Bit4, Reg.C); return 8;
-                case 0x62: BIT(Bit.Bit4, Reg.D); return 8;
-                case 0x63: BIT(Bit.Bit4, Reg.E); return 8;
-                case 0x64: BIT(Bit.Bit4, Reg.H); return 8;
-                case 0x65: BIT(Bit.Bit4, Reg.L); return 8;
-                case 0x66: BIT(Bit.Bit4, bus.Read(Reg.HL)); return 12;
+                case 0x67: BIT(Bit4, Reg.A); return 8;
+                case 0x60: BIT(Bit4, Reg.B); return 8;
+                case 0x61: BIT(Bit4, Reg.C); return 8;
+                case 0x62: BIT(Bit4, Reg.D); return 8;
+                case 0x63: BIT(Bit4, Reg.E); return 8;
+                case 0x64: BIT(Bit4, Reg.H); return 8;
+                case 0x65: BIT(Bit4, Reg.L); return 8;
+                case 0x66: BIT(Bit4, bus.Read(Reg.HL)); return 12;
 
                 // BIT 5,r
-                case 0x6F: BIT(Bit.Bit5, Reg.A); return 8;
-                case 0x68: BIT(Bit.Bit5, Reg.B); return 8;
-                case 0x69: BIT(Bit.Bit5, Reg.C); return 8;
-                case 0x6A: BIT(Bit.Bit5, Reg.D); return 8;
-                case 0x6B: BIT(Bit.Bit5, Reg.E); return 8;
-                case 0x6C: BIT(Bit.Bit5, Reg.H); return 8;
-                case 0x6D: BIT(Bit.Bit5, Reg.L); return 8;
-                case 0x6E: BIT(Bit.Bit5, bus.Read(Reg.HL)); return 12;
+                case 0x6F: BIT(Bit5, Reg.A); return 8;
+                case 0x68: BIT(Bit5, Reg.B); return 8;
+                case 0x69: BIT(Bit5, Reg.C); return 8;
+                case 0x6A: BIT(Bit5, Reg.D); return 8;
+                case 0x6B: BIT(Bit5, Reg.E); return 8;
+                case 0x6C: BIT(Bit5, Reg.H); return 8;
+                case 0x6D: BIT(Bit5, Reg.L); return 8;
+                case 0x6E: BIT(Bit5, bus.Read(Reg.HL)); return 12;
 
                 // BIT 6,r
-                case 0x77: BIT(Bit.Bit6, Reg.A); return 8;
-                case 0x70: BIT(Bit.Bit6, Reg.B); return 8;
-                case 0x71: BIT(Bit.Bit6, Reg.C); return 8;
-                case 0x72: BIT(Bit.Bit6, Reg.D); return 8;
-                case 0x73: BIT(Bit.Bit6, Reg.E); return 8;
-                case 0x74: BIT(Bit.Bit6, Reg.H); return 8;
-                case 0x75: BIT(Bit.Bit6, Reg.L); return 8;
-                case 0x76: BIT(Bit.Bit6, bus.Read(Reg.HL)); return 12;
+                case 0x77: BIT(Bit6, Reg.A); return 8;
+                case 0x70: BIT(Bit6, Reg.B); return 8;
+                case 0x71: BIT(Bit6, Reg.C); return 8;
+                case 0x72: BIT(Bit6, Reg.D); return 8;
+                case 0x73: BIT(Bit6, Reg.E); return 8;
+                case 0x74: BIT(Bit6, Reg.H); return 8;
+                case 0x75: BIT(Bit6, Reg.L); return 8;
+                case 0x76: BIT(Bit6, bus.Read(Reg.HL)); return 12;
 
                 // BIT 7,r
-                case 0x7F: BIT(Bit.Bit7, Reg.A); return 8;
-                case 0x78: BIT(Bit.Bit7, Reg.B); return 8;
-                case 0x79: BIT(Bit.Bit7, Reg.C); return 8;
-                case 0x7A: BIT(Bit.Bit7, Reg.D); return 8;
-                case 0x7B: BIT(Bit.Bit7, Reg.E); return 8;
-                case 0x7C: BIT(Bit.Bit7, Reg.H); return 8;
-                case 0x7D: BIT(Bit.Bit7, Reg.L); return 8;
-                case 0x7E: BIT(Bit.Bit7, bus.Read(Reg.HL)); return 12;
-
+                case 0x7F: BIT(Bit7, Reg.A); return 8;
+                case 0x78: BIT(Bit7, Reg.B); return 8;
+                case 0x79: BIT(Bit7, Reg.C); return 8;
+                case 0x7A: BIT(Bit7, Reg.D); return 8;
+                case 0x7B: BIT(Bit7, Reg.E); return 8;
+                case 0x7C: BIT(Bit7, Reg.H); return 8;
+                case 0x7D: BIT(Bit7, Reg.L); return 8;
+                case 0x7E: BIT(Bit7, bus.Read(Reg.HL)); return 12;
 
                 // SET 0,r
-                case 0xC7: Reg.A = SET(Bit.Bit0, Reg.A); return 8;
-                case 0xC0: Reg.B = SET(Bit.Bit0, Reg.B); return 8;
-                case 0xC1: Reg.C = SET(Bit.Bit0, Reg.C); return 8;
-                case 0xC2: Reg.D = SET(Bit.Bit0, Reg.D); return 8;
-                case 0xC3: Reg.E = SET(Bit.Bit0, Reg.E); return 8;
-                case 0xC4: Reg.H = SET(Bit.Bit0, Reg.H); return 8;
-                case 0xC5: Reg.L = SET(Bit.Bit0, Reg.L); return 8;
-                case 0xC6: bus.Write(Reg.HL, SET(Bit.Bit0, bus.Read(Reg.HL))); return 16;
+                case 0xC7: Reg.A = SET(Bit0, Reg.A); return 8;
+                case 0xC0: Reg.B = SET(Bit0, Reg.B); return 8;
+                case 0xC1: Reg.C = SET(Bit0, Reg.C); return 8;
+                case 0xC2: Reg.D = SET(Bit0, Reg.D); return 8;
+                case 0xC3: Reg.E = SET(Bit0, Reg.E); return 8;
+                case 0xC4: Reg.H = SET(Bit0, Reg.H); return 8;
+                case 0xC5: Reg.L = SET(Bit0, Reg.L); return 8;
+                case 0xC6: bus.Write(Reg.HL, SET(Bit0, bus.Read(Reg.HL))); return 16;
 
                 // SET 1,r
-                case 0xCF: Reg.A = SET(Bit.Bit1, Reg.A); return 8;
-                case 0xC8: Reg.B = SET(Bit.Bit1, Reg.B); return 8;
-                case 0xC9: Reg.C = SET(Bit.Bit1, Reg.C); return 8;
-                case 0xCA: Reg.D = SET(Bit.Bit1, Reg.D); return 8;
-                case 0xCB: Reg.E = SET(Bit.Bit1, Reg.E); return 8;
-                case 0xCC: Reg.H = SET(Bit.Bit1, Reg.H); return 8;
-                case 0xCD: Reg.L = SET(Bit.Bit1, Reg.L); return 8;
-                case 0xCE: bus.Write(Reg.HL, SET(Bit.Bit1, bus.Read(Reg.HL))); return 16;
+                case 0xCF: Reg.A = SET(Bit1, Reg.A); return 8;
+                case 0xC8: Reg.B = SET(Bit1, Reg.B); return 8;
+                case 0xC9: Reg.C = SET(Bit1, Reg.C); return 8;
+                case 0xCA: Reg.D = SET(Bit1, Reg.D); return 8;
+                case 0xCB: Reg.E = SET(Bit1, Reg.E); return 8;
+                case 0xCC: Reg.H = SET(Bit1, Reg.H); return 8;
+                case 0xCD: Reg.L = SET(Bit1, Reg.L); return 8;
+                case 0xCE: bus.Write(Reg.HL, SET(Bit1, bus.Read(Reg.HL))); return 16;
 
                 // SET 2,r
-                case 0xD7: Reg.A = SET(Bit.Bit2, Reg.A); return 8;
-                case 0xD0: Reg.B = SET(Bit.Bit2, Reg.B); return 8;
-                case 0xD1: Reg.C = SET(Bit.Bit2, Reg.C); return 8;
-                case 0xD2: Reg.D = SET(Bit.Bit2, Reg.D); return 8;
-                case 0xD3: Reg.E = SET(Bit.Bit2, Reg.E); return 8;
-                case 0xD4: Reg.H = SET(Bit.Bit2, Reg.H); return 8;
-                case 0xD5: Reg.L = SET(Bit.Bit2, Reg.L); return 8;
-                case 0xD6: bus.Write(Reg.HL, SET(Bit.Bit2, bus.Read(Reg.HL))); return 16;
+                case 0xD7: Reg.A = SET(Bit2, Reg.A); return 8;
+                case 0xD0: Reg.B = SET(Bit2, Reg.B); return 8;
+                case 0xD1: Reg.C = SET(Bit2, Reg.C); return 8;
+                case 0xD2: Reg.D = SET(Bit2, Reg.D); return 8;
+                case 0xD3: Reg.E = SET(Bit2, Reg.E); return 8;
+                case 0xD4: Reg.H = SET(Bit2, Reg.H); return 8;
+                case 0xD5: Reg.L = SET(Bit2, Reg.L); return 8;
+                case 0xD6: bus.Write(Reg.HL, SET(Bit2, bus.Read(Reg.HL))); return 16;
 
                 // SET 3,r
-                case 0xDF: Reg.A = SET(Bit.Bit3, Reg.A); return 8;
-                case 0xD8: Reg.B = SET(Bit.Bit3, Reg.B); return 8;
-                case 0xD9: Reg.C = SET(Bit.Bit3, Reg.C); return 8;
-                case 0xDA: Reg.D = SET(Bit.Bit3, Reg.D); return 8;
-                case 0xDB: Reg.E = SET(Bit.Bit3, Reg.E); return 8;
-                case 0xDC: Reg.H = SET(Bit.Bit3, Reg.H); return 8;
-                case 0xDD: Reg.L = SET(Bit.Bit3, Reg.L); return 8;
-                case 0xDE: bus.Write(Reg.HL, SET(Bit.Bit3, bus.Read(Reg.HL))); return 16;
+                case 0xDF: Reg.A = SET(Bit3, Reg.A); return 8;
+                case 0xD8: Reg.B = SET(Bit3, Reg.B); return 8;
+                case 0xD9: Reg.C = SET(Bit3, Reg.C); return 8;
+                case 0xDA: Reg.D = SET(Bit3, Reg.D); return 8;
+                case 0xDB: Reg.E = SET(Bit3, Reg.E); return 8;
+                case 0xDC: Reg.H = SET(Bit3, Reg.H); return 8;
+                case 0xDD: Reg.L = SET(Bit3, Reg.L); return 8;
+                case 0xDE: bus.Write(Reg.HL, SET(Bit3, bus.Read(Reg.HL))); return 16;
 
                 // SET 4,r
-                case 0xE7: Reg.A = SET(Bit.Bit4, Reg.A); return 8;
-                case 0xE0: Reg.B = SET(Bit.Bit4, Reg.B); return 8;
-                case 0xE1: Reg.C = SET(Bit.Bit4, Reg.C); return 8;
-                case 0xE2: Reg.D = SET(Bit.Bit4, Reg.D); return 8;
-                case 0xE3: Reg.E = SET(Bit.Bit4, Reg.E); return 8;
-                case 0xE4: Reg.H = SET(Bit.Bit4, Reg.H); return 8;
-                case 0xE5: Reg.L = SET(Bit.Bit4, Reg.L); return 8;
-                case 0xE6: bus.Write(Reg.HL, SET(Bit.Bit4, bus.Read(Reg.HL))); return 16;
+                case 0xE7: Reg.A = SET(Bit4, Reg.A); return 8;
+                case 0xE0: Reg.B = SET(Bit4, Reg.B); return 8;
+                case 0xE1: Reg.C = SET(Bit4, Reg.C); return 8;
+                case 0xE2: Reg.D = SET(Bit4, Reg.D); return 8;
+                case 0xE3: Reg.E = SET(Bit4, Reg.E); return 8;
+                case 0xE4: Reg.H = SET(Bit4, Reg.H); return 8;
+                case 0xE5: Reg.L = SET(Bit4, Reg.L); return 8;
+                case 0xE6: bus.Write(Reg.HL, SET(Bit4, bus.Read(Reg.HL))); return 16;
 
                 // SET 5,r
-                case 0xEF: Reg.A = SET(Bit.Bit5, Reg.A); return 8;
-                case 0xE8: Reg.B = SET(Bit.Bit5, Reg.B); return 8;
-                case 0xE9: Reg.C = SET(Bit.Bit5, Reg.C); return 8;
-                case 0xEA: Reg.D = SET(Bit.Bit5, Reg.D); return 8;
-                case 0xEB: Reg.E = SET(Bit.Bit5, Reg.E); return 8;
-                case 0xEC: Reg.H = SET(Bit.Bit5, Reg.H); return 8;
-                case 0xED: Reg.L = SET(Bit.Bit5, Reg.L); return 8;
-                case 0xEE: bus.Write(Reg.HL, SET(Bit.Bit5, bus.Read(Reg.HL))); return 16;
+                case 0xEF: Reg.A = SET(Bit5, Reg.A); return 8;
+                case 0xE8: Reg.B = SET(Bit5, Reg.B); return 8;
+                case 0xE9: Reg.C = SET(Bit5, Reg.C); return 8;
+                case 0xEA: Reg.D = SET(Bit5, Reg.D); return 8;
+                case 0xEB: Reg.E = SET(Bit5, Reg.E); return 8;
+                case 0xEC: Reg.H = SET(Bit5, Reg.H); return 8;
+                case 0xED: Reg.L = SET(Bit5, Reg.L); return 8;
+                case 0xEE: bus.Write(Reg.HL, SET(Bit5, bus.Read(Reg.HL))); return 16;
 
                 // SET 6,r
-                case 0xF7: Reg.A = SET(Bit.Bit6, Reg.A); return 8;
-                case 0xF0: Reg.B = SET(Bit.Bit6, Reg.B); return 8;
-                case 0xF1: Reg.C = SET(Bit.Bit6, Reg.C); return 8;
-                case 0xF2: Reg.D = SET(Bit.Bit6, Reg.D); return 8;
-                case 0xF3: Reg.E = SET(Bit.Bit6, Reg.E); return 8;
-                case 0xF4: Reg.H = SET(Bit.Bit6, Reg.H); return 8;
-                case 0xF5: Reg.L = SET(Bit.Bit6, Reg.L); return 8;
-                case 0xF6: bus.Write(Reg.HL, SET(Bit.Bit6, bus.Read(Reg.HL))); return 16;
+                case 0xF7: Reg.A = SET(Bit6, Reg.A); return 8;
+                case 0xF0: Reg.B = SET(Bit6, Reg.B); return 8;
+                case 0xF1: Reg.C = SET(Bit6, Reg.C); return 8;
+                case 0xF2: Reg.D = SET(Bit6, Reg.D); return 8;
+                case 0xF3: Reg.E = SET(Bit6, Reg.E); return 8;
+                case 0xF4: Reg.H = SET(Bit6, Reg.H); return 8;
+                case 0xF5: Reg.L = SET(Bit6, Reg.L); return 8;
+                case 0xF6: bus.Write(Reg.HL, SET(Bit6, bus.Read(Reg.HL))); return 16;
 
                 // SET 7,r
-                case 0xFF: Reg.A = SET(Bit.Bit7, Reg.A); return 8;
-                case 0xF8: Reg.B = SET(Bit.Bit7, Reg.B); return 8;
-                case 0xF9: Reg.C = SET(Bit.Bit7, Reg.C); return 8;
-                case 0xFA: Reg.D = SET(Bit.Bit7, Reg.D); return 8;
-                case 0xFB: Reg.E = SET(Bit.Bit7, Reg.E); return 8;
-                case 0xFC: Reg.H = SET(Bit.Bit7, Reg.H); return 8;
-                case 0xFD: Reg.L = SET(Bit.Bit7, Reg.L); return 8;
-                case 0xFE: bus.Write(Reg.HL, SET(Bit.Bit7, bus.Read(Reg.HL))); return 16;
+                case 0xFF: Reg.A = SET(Bit7, Reg.A); return 8;
+                case 0xF8: Reg.B = SET(Bit7, Reg.B); return 8;
+                case 0xF9: Reg.C = SET(Bit7, Reg.C); return 8;
+                case 0xFA: Reg.D = SET(Bit7, Reg.D); return 8;
+                case 0xFB: Reg.E = SET(Bit7, Reg.E); return 8;
+                case 0xFC: Reg.H = SET(Bit7, Reg.H); return 8;
+                case 0xFD: Reg.L = SET(Bit7, Reg.L); return 8;
+                case 0xFE: bus.Write(Reg.HL, SET(Bit7, bus.Read(Reg.HL))); return 16;
 
                 // RES 0,r
-                case 0x87: Reg.A = RES(Bit.Bit0, Reg.A); return 8;
-                case 0x80: Reg.B = RES(Bit.Bit0, Reg.B); return 8;
-                case 0x81: Reg.C = RES(Bit.Bit0, Reg.C); return 8;
-                case 0x82: Reg.D = RES(Bit.Bit0, Reg.D); return 8;
-                case 0x83: Reg.E = RES(Bit.Bit0, Reg.E); return 8;
-                case 0x84: Reg.H = RES(Bit.Bit0, Reg.H); return 8;
-                case 0x85: Reg.L = RES(Bit.Bit0, Reg.L); return 8;
-                case 0x86: bus.Write(Reg.HL, RES(Bit.Bit0, bus.Read(Reg.HL))); return 16;
+                case 0x87: Reg.A = RES(Bit0, Reg.A); return 8;
+                case 0x80: Reg.B = RES(Bit0, Reg.B); return 8;
+                case 0x81: Reg.C = RES(Bit0, Reg.C); return 8;
+                case 0x82: Reg.D = RES(Bit0, Reg.D); return 8;
+                case 0x83: Reg.E = RES(Bit0, Reg.E); return 8;
+                case 0x84: Reg.H = RES(Bit0, Reg.H); return 8;
+                case 0x85: Reg.L = RES(Bit0, Reg.L); return 8;
+                case 0x86: bus.Write(Reg.HL, RES(Bit0, bus.Read(Reg.HL))); return 16;
 
                 // RES 1,r
-                case 0x8F: Reg.A = RES(Bit.Bit1, Reg.A); return 8;
-                case 0x88: Reg.B = RES(Bit.Bit1, Reg.B); return 8;
-                case 0x89: Reg.C = RES(Bit.Bit1, Reg.C); return 8;
-                case 0x8A: Reg.D = RES(Bit.Bit1, Reg.D); return 8;
-                case 0x8B: Reg.E = RES(Bit.Bit1, Reg.E); return 8;
-                case 0x8C: Reg.H = RES(Bit.Bit1, Reg.H); return 8;
-                case 0x8D: Reg.L = RES(Bit.Bit1, Reg.L); return 8;
-                case 0x8E: bus.Write(Reg.HL, RES(Bit.Bit1, bus.Read(Reg.HL))); return 16;
+                case 0x8F: Reg.A = RES(Bit1, Reg.A); return 8;
+                case 0x88: Reg.B = RES(Bit1, Reg.B); return 8;
+                case 0x89: Reg.C = RES(Bit1, Reg.C); return 8;
+                case 0x8A: Reg.D = RES(Bit1, Reg.D); return 8;
+                case 0x8B: Reg.E = RES(Bit1, Reg.E); return 8;
+                case 0x8C: Reg.H = RES(Bit1, Reg.H); return 8;
+                case 0x8D: Reg.L = RES(Bit1, Reg.L); return 8;
+                case 0x8E: bus.Write(Reg.HL, RES(Bit1, bus.Read(Reg.HL))); return 16;
 
                 // RES 2,r
-                case 0x97: Reg.A = RES(Bit.Bit2, Reg.A); return 8;
-                case 0x90: Reg.B = RES(Bit.Bit2, Reg.B); return 8;
-                case 0x91: Reg.C = RES(Bit.Bit2, Reg.C); return 8;
-                case 0x92: Reg.D = RES(Bit.Bit2, Reg.D); return 8;
-                case 0x93: Reg.E = RES(Bit.Bit2, Reg.E); return 8;
-                case 0x94: Reg.H = RES(Bit.Bit2, Reg.H); return 8;
-                case 0x95: Reg.L = RES(Bit.Bit2, Reg.L); return 8;
-                case 0x96: bus.Write(Reg.HL, RES(Bit.Bit2, bus.Read(Reg.HL))); return 16;
+                case 0x97: Reg.A = RES(Bit2, Reg.A); return 8;
+                case 0x90: Reg.B = RES(Bit2, Reg.B); return 8;
+                case 0x91: Reg.C = RES(Bit2, Reg.C); return 8;
+                case 0x92: Reg.D = RES(Bit2, Reg.D); return 8;
+                case 0x93: Reg.E = RES(Bit2, Reg.E); return 8;
+                case 0x94: Reg.H = RES(Bit2, Reg.H); return 8;
+                case 0x95: Reg.L = RES(Bit2, Reg.L); return 8;
+                case 0x96: bus.Write(Reg.HL, RES(Bit2, bus.Read(Reg.HL))); return 16;
 
                 // RES 3,r
-                case 0x9F: Reg.A = RES(Bit.Bit3, Reg.A); return 8;
-                case 0x98: Reg.B = RES(Bit.Bit3, Reg.B); return 8;
-                case 0x99: Reg.C = RES(Bit.Bit3, Reg.C); return 8;
-                case 0x9A: Reg.D = RES(Bit.Bit3, Reg.D); return 8;
-                case 0x9B: Reg.E = RES(Bit.Bit3, Reg.E); return 8;
-                case 0x9C: Reg.H = RES(Bit.Bit3, Reg.H); return 8;
-                case 0x9D: Reg.L = RES(Bit.Bit3, Reg.L); return 8;
-                case 0x9E: bus.Write(Reg.HL, RES(Bit.Bit3, bus.Read(Reg.HL))); return 16;
+                case 0x9F: Reg.A = RES(Bit3, Reg.A); return 8;
+                case 0x98: Reg.B = RES(Bit3, Reg.B); return 8;
+                case 0x99: Reg.C = RES(Bit3, Reg.C); return 8;
+                case 0x9A: Reg.D = RES(Bit3, Reg.D); return 8;
+                case 0x9B: Reg.E = RES(Bit3, Reg.E); return 8;
+                case 0x9C: Reg.H = RES(Bit3, Reg.H); return 8;
+                case 0x9D: Reg.L = RES(Bit3, Reg.L); return 8;
+                case 0x9E: bus.Write(Reg.HL, RES(Bit3, bus.Read(Reg.HL))); return 16;
 
                 // RES 4,r
-                case 0xA7: Reg.A = RES(Bit.Bit4, Reg.A); return 8;
-                case 0xA0: Reg.B = RES(Bit.Bit4, Reg.B); return 8;
-                case 0xA1: Reg.C = RES(Bit.Bit4, Reg.C); return 8;
-                case 0xA2: Reg.D = RES(Bit.Bit4, Reg.D); return 8;
-                case 0xA3: Reg.E = RES(Bit.Bit4, Reg.E); return 8;
-                case 0xA4: Reg.H = RES(Bit.Bit4, Reg.H); return 8;
-                case 0xA5: Reg.L = RES(Bit.Bit4, Reg.L); return 8;
-                case 0xA6: bus.Write(Reg.HL, RES(Bit.Bit4, bus.Read(Reg.HL))); return 16;
+                case 0xA7: Reg.A = RES(Bit4, Reg.A); return 8;
+                case 0xA0: Reg.B = RES(Bit4, Reg.B); return 8;
+                case 0xA1: Reg.C = RES(Bit4, Reg.C); return 8;
+                case 0xA2: Reg.D = RES(Bit4, Reg.D); return 8;
+                case 0xA3: Reg.E = RES(Bit4, Reg.E); return 8;
+                case 0xA4: Reg.H = RES(Bit4, Reg.H); return 8;
+                case 0xA5: Reg.L = RES(Bit4, Reg.L); return 8;
+                case 0xA6: bus.Write(Reg.HL, RES(Bit4, bus.Read(Reg.HL))); return 16;
 
                 // RES 5,r
-                case 0xAF: Reg.A = RES(Bit.Bit5, Reg.A); return 8;
-                case 0xA8: Reg.B = RES(Bit.Bit5, Reg.B); return 8;
-                case 0xA9: Reg.C = RES(Bit.Bit5, Reg.C); return 8;
-                case 0xAA: Reg.D = RES(Bit.Bit5, Reg.D); return 8;
-                case 0xAB: Reg.E = RES(Bit.Bit5, Reg.E); return 8;
-                case 0xAC: Reg.H = RES(Bit.Bit5, Reg.H); return 8;
-                case 0xAD: Reg.L = RES(Bit.Bit5, Reg.L); return 8;
-                case 0xAE: bus.Write(Reg.HL, RES(Bit.Bit5, bus.Read(Reg.HL))); return 16;
+                case 0xAF: Reg.A = RES(Bit5, Reg.A); return 8;
+                case 0xA8: Reg.B = RES(Bit5, Reg.B); return 8;
+                case 0xA9: Reg.C = RES(Bit5, Reg.C); return 8;
+                case 0xAA: Reg.D = RES(Bit5, Reg.D); return 8;
+                case 0xAB: Reg.E = RES(Bit5, Reg.E); return 8;
+                case 0xAC: Reg.H = RES(Bit5, Reg.H); return 8;
+                case 0xAD: Reg.L = RES(Bit5, Reg.L); return 8;
+                case 0xAE: bus.Write(Reg.HL, RES(Bit5, bus.Read(Reg.HL))); return 16;
 
                 // RES 6,r
-                case 0xB7: Reg.A = RES(Bit.Bit6, Reg.A); return 8;
-                case 0xB0: Reg.B = RES(Bit.Bit6, Reg.B); return 8;
-                case 0xB1: Reg.C = RES(Bit.Bit6, Reg.C); return 8;
-                case 0xB2: Reg.D = RES(Bit.Bit6, Reg.D); return 8;
-                case 0xB3: Reg.E = RES(Bit.Bit6, Reg.E); return 8;
-                case 0xB4: Reg.H = RES(Bit.Bit6, Reg.H); return 8;
-                case 0xB5: Reg.L = RES(Bit.Bit6, Reg.L); return 8;
-                case 0xB6: bus.Write(Reg.HL, RES(Bit.Bit6, bus.Read(Reg.HL))); return 16;
+                case 0xB7: Reg.A = RES(Bit6, Reg.A); return 8;
+                case 0xB0: Reg.B = RES(Bit6, Reg.B); return 8;
+                case 0xB1: Reg.C = RES(Bit6, Reg.C); return 8;
+                case 0xB2: Reg.D = RES(Bit6, Reg.D); return 8;
+                case 0xB3: Reg.E = RES(Bit6, Reg.E); return 8;
+                case 0xB4: Reg.H = RES(Bit6, Reg.H); return 8;
+                case 0xB5: Reg.L = RES(Bit6, Reg.L); return 8;
+                case 0xB6: bus.Write(Reg.HL, RES(Bit6, bus.Read(Reg.HL))); return 16;
 
                 // RES 7,r
-                case 0xBF: Reg.A = RES(Bit.Bit7, Reg.A); return 8;
-                case 0xB8: Reg.B = RES(Bit.Bit7, Reg.B); return 8;
-                case 0xB9: Reg.C = RES(Bit.Bit7, Reg.C); return 8;
-                case 0xBA: Reg.D = RES(Bit.Bit7, Reg.D); return 8;
-                case 0xBB: Reg.E = RES(Bit.Bit7, Reg.E); return 8;
-                case 0xBC: Reg.H = RES(Bit.Bit7, Reg.H); return 8;
-                case 0xBD: Reg.L = RES(Bit.Bit7, Reg.L); return 8;
-                case 0xBE: bus.Write(Reg.HL, RES(Bit.Bit7, bus.Read(Reg.HL))); return 16;
+                case 0xBF: Reg.A = RES(Bit7, Reg.A); return 8;
+                case 0xB8: Reg.B = RES(Bit7, Reg.B); return 8;
+                case 0xB9: Reg.C = RES(Bit7, Reg.C); return 8;
+                case 0xBA: Reg.D = RES(Bit7, Reg.D); return 8;
+                case 0xBB: Reg.E = RES(Bit7, Reg.E); return 8;
+                case 0xBC: Reg.H = RES(Bit7, Reg.H); return 8;
+                case 0xBD: Reg.L = RES(Bit7, Reg.L); return 8;
+                case 0xBE: bus.Write(Reg.HL, RES(Bit7, bus.Read(Reg.HL))); return 16;
 
                 #endregion
             }
@@ -819,18 +808,19 @@ namespace Monoboy
 
         public void Push(ushort data)
         {
-            Reg.SP -= 2;
-            bus.WriteShort(Reg.SP, data);
+            Reg.SP--;
+            bus.Write(Reg.SP, data.High());
+            Reg.SP--;
+            bus.Write(Reg.SP, data.Low());
         }
 
         public ushort Pop()
         {
-            ushort result = bus.ReadShort(Reg.SP);
-            Reg.SP += 2;
+            byte low = bus.Read(Reg.SP++);
+            byte high = bus.Read(Reg.SP++);
 
-            return result;
+            return Combine(low, high);
         }
-
 
         private byte NextByte()
         {
@@ -839,75 +829,68 @@ namespace Monoboy
 
         private ushort NextShort()
         {
-            return Combine(NextByte(), NextByte());
+            byte low = NextByte();
+            byte high = NextByte();
+            return Combine(low, high);
         }
-
-        #region 16-Bit Loads
-
-        private void LDHL()
-        {
-            ushort result = (ushort)(((short)Reg.SP) + (sbyte)NextByte());
-
-            Reg.SetFlag(Flag.Z, false);
-            Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, (result & 0xF) + (Reg.SP & 0xF) > 0xF);
-            Reg.SetFlag(Flag.C, (result & 0xFF) + (Reg.SP & 0xFF) > 0xFF);
-
-            Reg.HL = result;
-        }
-
-        #endregion
 
         #region 8-Bit ALU
 
         private void ADD(byte n)
         {
-            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(n);
+            int result = Reg.A + n;
 
-            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.Z, (byte)result == 0);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, halfCarry);
-            Reg.SetFlag(Flag.C, fullCarry);
+            Reg.SetFlag(Flag.H, ((Reg.A & 0xF) + (n & 0xF)) > 0xF);
+            Reg.SetFlag(Flag.C, (result >> 8) != 0);
 
-            Reg.A = result;
+            Reg.A = (byte)result;
         }
 
         private void ADC(byte n)
         {
             int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
-            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(n, carry);
+            int result = Reg.A + n + carry;
 
-            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.Z, (byte)result == 0);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, halfCarry);
-            Reg.SetFlag(Flag.C, fullCarry);
+            if(Reg.GetFlag(Flag.C) == true)
+            {
+                Reg.SetFlag(Flag.H, (Reg.A & 0xF) + (n & 0xF) >= 0xF);
+            }
+            else
+            {
+                Reg.SetFlag(Flag.H, (Reg.A & 0xF) + (n & 0xF) > 0xF);
+            }
+            Reg.SetFlag(Flag.C, (result >> 8) != 0);
 
-            Reg.A = result;
+            Reg.A = (byte)result;
         }
 
         private void SUB(byte n)
         {
-            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(-n);
+            int result = Reg.A - n;
 
-            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.Z, (byte)result == 0);
             Reg.SetFlag(Flag.N, true);
-            Reg.SetFlag(Flag.H, halfCarry);
-            Reg.SetFlag(Flag.C, fullCarry);
+            Reg.SetFlag(Flag.H, (Reg.A & 0xF) < (n & 0xF));
+            Reg.SetFlag(Flag.C, (result >> 8) != 0);
 
-            Reg.A = result;
+            Reg.A = (byte)result;
         }
 
         private void SBC(byte n)
         {
             int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
-            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(-n, -carry);
+            int result = Reg.A - n - carry;
 
-            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.Z, (byte)result == 0);
             Reg.SetFlag(Flag.N, true);
-            Reg.SetFlag(Flag.H, halfCarry);
-            Reg.SetFlag(Flag.C, fullCarry);
+            Reg.SetFlag(Flag.H, (Reg.A & 0xF) < (n & 0xF) + carry);
+            Reg.SetFlag(Flag.C, (result >> 8) != 0);
 
-            Reg.A = result;
+            Reg.A = (byte)result;
         }
 
         private void AND(byte n)
@@ -948,34 +931,34 @@ namespace Monoboy
 
         private void CP(byte n)
         {
-            (byte result, bool halfCarry, bool fullCarry) = Reg.A.AddOverflow(-n);
+            int result = Reg.A - n;
 
-            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.Z, (byte)result == 0);
             Reg.SetFlag(Flag.N, true);
-            Reg.SetFlag(Flag.H, halfCarry);
-            Reg.SetFlag(Flag.C, fullCarry);
+            Reg.SetFlag(Flag.H, (Reg.A & 0xF) < (n & 0xF));
+            Reg.SetFlag(Flag.C, (result >> 8) != 0);
         }
 
         private byte INC(byte n)
         {
-            (byte result, bool halfCarry, _) = n.AddOverflow(1);
+            int result = n + 1;
 
-            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.Z, (byte)result == 0);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, halfCarry);
+            Reg.SetFlag(Flag.H, ((n & 0xF) + (1 & 0xF)) > 0xF);
 
-            return result;
+            return (byte)result;
         }
 
         private byte DEC(byte n)
         {
-            (byte result, bool halfCarry, _) = n.AddOverflow(-1);
+            int result = n - 1;
 
-            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.Z, (byte)result == 0);
             Reg.SetFlag(Flag.N, true);
-            Reg.SetFlag(Flag.H, halfCarry);
+            Reg.SetFlag(Flag.H, (n & 0xF) < (1 & 0xF));
 
-            return result;
+            return (byte)result;
         }
 
         #endregion
@@ -983,25 +966,25 @@ namespace Monoboy
         #region 16-Bit Arithmetic
         private void ADD(ushort nn)
         {
-            (ushort result, bool halfCarry, bool fullCarry) = Reg.HL.AddOverflow(nn);
+            int result = Reg.HL + nn;
 
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, halfCarry);
-            Reg.SetFlag(Flag.C, fullCarry);
+            Reg.SetFlag(Flag.H, ((Reg.HL & 0xFFF) + (nn & 0xFFF)) > 0xFFF);
+            Reg.SetFlag(Flag.C, (result >> 16) != 0);
 
-            Reg.HL = result;
+            Reg.HL = (ushort)result;
         }
 
-        private void ADD(sbyte n)
+        private ushort ADDS(ushort nn)
         {
-            (ushort result, bool halfCarry, bool fullCarry) = Reg.SP.AddOverflow(n);
+            byte n = NextByte();
 
             Reg.SetFlag(Flag.Z, false);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.H, halfCarry);
-            Reg.SetFlag(Flag.C, fullCarry);
+            Reg.SetFlag(Flag.H, (((byte)nn & 0xF) + (n & 0xF)) > 0xF);
+            Reg.SetFlag(Flag.C, ((byte)nn + n >> 8) != 0);
 
-            Reg.SP = result;
+            return (ushort)(nn + (sbyte)n);
         }
 
         #endregion
@@ -1032,7 +1015,8 @@ namespace Monoboy
 
         private byte SWAP(byte n)
         {
-            byte result = n.Swap();
+            byte result = (byte)((n & 0xF0) >> 4 | (n & 0x0F) << 4);
+
             Reg.SetFlag(Flag.Z, result == 0);
             Reg.SetFlag(Flag.N, false);
             Reg.SetFlag(Flag.H, false);
@@ -1076,88 +1060,118 @@ namespace Monoboy
 
         #region Rotates & Shifts
 
+        private void RLCA()
+        {
+            Reg.SetFlag(Flag.Z, false);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (byte)(Reg.A & 0b10000000) != 0);
+
+            Reg.A = (byte)(Reg.A << 1 | Reg.A >> 7);
+        }
+
+        private void RLA()
+        {
+            int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
+
+            Reg.SetFlag(Flag.Z, false);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (byte)(Reg.A & 0b10000000) != 0);
+
+            Reg.A = (byte)(Reg.A << 1 | carry);
+        }
+
+        private void RRCA()
+        {
+            Reg.SetFlag(Flag.Z, false);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (byte)(Reg.A & 0b00000001) != 0);
+
+            Reg.A = (byte)(Reg.A >> 1 | Reg.A << 7);
+        }
+
+        private void RRA()
+        {
+            int carry = Reg.GetFlag(Flag.C) ? 0b10000000 : 0;
+
+            Reg.SetFlag(Flag.Z, false);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (byte)(Reg.A & 0b00000001) != 0);
+
+            Reg.A = (byte)(Reg.A >> 1 | carry);
+        }
+
         private byte RLC(byte n)
         {
-            return RotateLeft(n, false, true);
+            byte result = (byte)((n << 1) | (n >> 7));
+
+            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (n & 0b10000000) != 0);
+
+            return result;
         }
 
         private byte RL(byte n)
         {
-            return RotateLeft(n, true, true);
+            int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
+            byte result = (byte)((n << 1) | carry);
+
+            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (n & 0b10000000) != 0);
+
+            return result;
         }
 
         private byte RRC(byte n)
         {
-            return RotateRight(n, false, true);
+            byte result = (byte)((n >> 1) | (n << 7));
+
+            Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (n & 0b00000001) != 0);
+
+            return result;
         }
 
         private byte RR(byte n)
         {
-            return RotateRight(n, true, true);
-        }
+            int carry = Reg.GetFlag(Flag.C) ? 0b10000000 : 0;
+            byte result = (byte)((n >> 1) | carry);
 
-
-        private byte RotateLeft(byte n, bool includeCarry = false, bool updateZero = false)
-        {
-            byte bit7 = (byte)(n >> 7);
-            byte result;
-
-            if(includeCarry)
-            {
-                result = (byte)((n << 1) | (byte)(Reg.GetFlag(Flag.C) ? 1 : 0));
-            }
-            else
-            {
-                result = (byte)((n << 1) | (n >> 7));
-            }
-
-            Reg.SetFlag(Flag.C, (bit7 == 1));
-            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.Z, result == 0);
             Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.Z, (result == 0 && updateZero));
-            return result;
-        }
-
-        private byte RotateRight(byte n, bool includeCarry = false, bool updateZero = false)
-        {
-            byte bit1 = (byte)(n & 1);
-            byte result;
-
-            if(includeCarry)
-            {
-                result = (byte)((n >> 1) | (byte)(Reg.GetFlag(Flag.C) ? 1 : 0) << 7);
-            }
-            else
-            {
-                result = (byte)((n >> 1) | (n << 7));
-            }
-
-            Reg.SetFlag(Flag.C, (bit1 == 1));
             Reg.SetFlag(Flag.H, false);
-            Reg.SetFlag(Flag.N, false);
-            Reg.SetFlag(Flag.Z, (result == 0 && updateZero));
+            Reg.SetFlag(Flag.C, (n & 0b00000001) != 0);
+
             return result;
         }
 
         private byte SLA(byte n)
         {
             byte result = (byte)(n << 1);
-            byte bit7 = (byte)(n >> 7);
-            Reg.SetFlag(Flag.C, bit7 == 1);
-            Reg.SetFlag(Flag.H, false);
-            Reg.SetFlag(Flag.N, false);
             Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (n & 0b10000000) != 0);
             return result;
         }
 
         private byte SRA(byte n)
         {
-            byte result = (byte)((n >> 1) | (n & 0x80));
+            byte result = (byte)((n >> 1) | (n & 0b10000000));
 
-            Reg.SetFlag(Flag.C, (n & 1) == 1);
-            Reg.SetFlag(Flag.H, false);
-            Reg.SetFlag(Flag.N, false);
             Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (n & 1) != 0);
 
             return result;
         }
@@ -1166,10 +1180,10 @@ namespace Monoboy
         {
             byte result = (byte)(n >> 1);
 
-            Reg.SetFlag(Flag.C, (n & 1) == 1);
-            Reg.SetFlag(Flag.H, false);
-            Reg.SetFlag(Flag.N, false);
             Reg.SetFlag(Flag.Z, result == 0);
+            Reg.SetFlag(Flag.N, false);
+            Reg.SetFlag(Flag.H, false);
+            Reg.SetFlag(Flag.C, (n & 1) != 0);
 
             return result;
         }
@@ -1185,12 +1199,12 @@ namespace Monoboy
             Reg.SetFlag(Flag.H, true);
         }
 
-        private byte SET(byte bit, byte r)
+        private static byte SET(byte bit, byte r)
         {
             return (byte)(r | bit);
         }
 
-        private byte RES(byte bit, byte r)
+        private static byte RES(byte bit, byte r)
         {
             return (byte)(r & ~bit);
         }
@@ -1208,7 +1222,7 @@ namespace Monoboy
         {
             if(condition == true)
             {
-                JP(bus.ReadShort(Reg.PC));
+                Reg.PC = bus.ReadShort(Reg.PC);
                 return 16;
             }
             else
@@ -1218,7 +1232,7 @@ namespace Monoboy
             }
         }
 
-        byte JR(bool condition)
+        private byte JR(bool condition)
         {
             if(condition == true)
             {

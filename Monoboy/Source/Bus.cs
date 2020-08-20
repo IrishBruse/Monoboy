@@ -121,15 +121,6 @@ namespace Monoboy
 
         private void WriteZP(ushort address, byte data)
         {
-            switch(address)
-            {
-                case 0xFFFF:// IE
-                {
-                    interrupt.IE = data;
-                }
-                break;
-            }
-
             memory.zp[address - 0xFF80] = data;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Threading;
 using SFML.Graphics;
 using SFML.System;
@@ -41,6 +42,23 @@ namespace Monoboy.Frontend
             window.LostFocus += (sender, e) => Focused = false;
             window.GainedFocus += (sender, e) => Focused = true;
             window.RequestFocus();
+
+            Bitmap bitmap = new Bitmap("Data/Icon.png");
+
+            byte[] pixels = new byte[bitmap.Width * bitmap.Width * 4];
+
+            for(int x = 0; x < bitmap.Width; x++)
+                for(int y = 0; y < bitmap.Height; y++)
+                {
+                    int index = ((y * bitmap.Width) + x) * 4;
+                    pixels[index] = bitmap.GetPixel(x, y).R;
+                    pixels[index + 1] = bitmap.GetPixel(x, y).G;
+                    pixels[index + 2] = bitmap.GetPixel(x, y).B;
+                    pixels[index + 3] = bitmap.GetPixel(x, y).A;
+                }
+
+            window.SetIcon((uint)bitmap.Width, (uint)bitmap.Width, pixels);
+
 
             clock = new Clock();
             surface = new DrawingSurface(window);

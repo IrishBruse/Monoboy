@@ -9,8 +9,8 @@ namespace Monoboy
     public class Emulator
     {
         public Bus bus;
-
         public long cyclesRan;
+        public bool paused = true;
 
         public Emulator()
         {
@@ -25,6 +25,8 @@ namespace Monoboy
                 SkipBootRom();
             }
 
+            SkipBootRom();
+
             //LoadRom("Mario.gb");
             //LoadRom("Dr. Mario.gb");
             //LoadRom("Tetris.gb");
@@ -32,20 +34,17 @@ namespace Monoboy
             //LoadRom("01-special.gb");
             //LoadRom("02-interrupts.gb");
             //LoadRom("03-op sp,hl.gb");
-            //LoadRom("04.gb");
-            //LoadRom("01-special.gb");
-            //LoadRom("01-special.gb");
+            //LoadRom("04-op r,imm.gb");
+            //LoadRom("05-op rp.gb");
+            //LoadRom("06-ld r,r.gb");
             //LoadRom("07-jr,jp,call,ret,rst.gb");
-            //LoadRom("01-special.gb");
-            //LoadRom("01-special.gb");
+            //LoadRom("08-misc instrs.gb");
+            //LoadRom("09-op r,r.gb");
+            //LoadRom("10-bit ops.gb");
+            //LoadRom("11-op a,(hl).gb");
 
 
-            //while(bus.register.PC != 0xc365)// 0xc365
-            //{
-            //    Step();
-            //}
-
-            //while(bus.memory.LY == 0)
+            //while(bus.register.PC != 0xc018)
             //{
             //    Step();
             //}
@@ -58,6 +57,11 @@ namespace Monoboy
             bus.joypad.Step();
             bus.interrupt.HandleInterupts();
             cyclesRan += cycles;
+
+            //if(bus.Read((ushort)(bus.register.PC + 1)) == 0x01)
+            //{
+            //    paused = true;
+            //}
 
             // Disable the bios in the bus
             if(bus.biosEnabled == true && bus.register.PC >= 0x100)
@@ -99,6 +103,7 @@ namespace Monoboy
             bus.register.DE = 0x00D8;
             bus.register.HL = 0x014D;
             bus.register.SP = 0xFFFE;
+            bus.register.PC = 0x100;
             bus.Write(0xFF05, 0x00);
             bus.Write(0xFF06, 0x00);
             bus.Write(0xFF07, 0x00);

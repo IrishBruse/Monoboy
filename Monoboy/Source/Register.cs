@@ -34,7 +34,7 @@ namespace Monoboy
             set
             {
                 A = value.High();
-                F = value.Low();
+                F = (byte)(value.Low() & 0xF0);
             }
         }
 

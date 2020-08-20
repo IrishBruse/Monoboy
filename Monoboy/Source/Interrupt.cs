@@ -5,11 +5,11 @@ namespace Monoboy
     public class Interrupt
     {
         private Bus bus;
-        private bool IME = false;// Master interupt enabled
-        private bool IMEDelay = false;// Master interupt enabled delay
+        private bool IME;// Master interupt enabled
+        private bool IMEDelay;// Master interupt enabled delay
 
-        public byte IE { get; set; }
-        public byte IF { get; set; }
+        public byte IE { get { return bus.Read(0xFFFF); } set { bus.Write(0xFFFF, value); } }
+        public byte IF { get { return bus.Read(0xFF0F); } set { bus.Write(0xFF0F, value); } }
 
         public Interrupt(Bus bus)
         {
@@ -44,14 +44,17 @@ namespace Monoboy
 
         public void InterruptRequest(byte interrupt)
         {
-            IF.SetBit(interrupt, true);
+            IF = IF.SetBit(interrupt, true);
         }
 
         public void HandleInterupts()
         {
+            byte _ie = IE;
+            byte _if = IF;
+
             for(byte i = 0; i < 5; i++)
             {
-                if((((IE & IF) >> i) & 0b1) == 1)
+                if((((_ie & _if) >> i) & 0b1) == 1)
                 {
                     if(bus.cpu.halted == true)
                     {
@@ -61,9 +64,9 @@ namespace Monoboy
                     if(IME == true)
                     {
                         bus.cpu.Push(bus.register.PC);
-                        bus.register.PC = (ushort)(0b10000000 + (8 * i));
+                        bus.register.PC = (ushort)(0b1000000 + (8 * i));
                         IME = false;
-                        IF.SetBit(i, false);
+                        IF = IF.SetBit((byte)(1 << i), false);
                     }
                 }
             }

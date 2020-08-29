@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Monoboy.Utility
+﻿namespace Monoboy.Utility
 {
     public static class Extensions
     {

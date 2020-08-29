@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 
 namespace Monoboy
 {
@@ -13,8 +11,9 @@ namespace Monoboy
         public Cpu cpu;
         public Gpu gpu;
         public Joypad joypad;
+        public Timer timer;
 
-        public bool biosEnabled = true;
+        public bool biosEnabled = false;
         public List<byte> trace = new List<byte>(100000);
 
         public Bus()
@@ -22,6 +21,7 @@ namespace Monoboy
             register = new Register();
             memory = new Memory();
 
+            timer = new Timer(this);
             cpu = new Cpu(this);
             gpu = new Gpu(this);
             joypad = new Joypad(this);
@@ -41,7 +41,7 @@ namespace Monoboy
                 ushort _ when(address <= 0xFDFF) => memory.workram[address - 0xE000],            // Same as C000-DDFF (ECHO) (typically not used)
                 ushort _ when(address <= 0xFE9F) => memory.oam[address - 0xFE00],                // Sprite Attribute Table (OAM)
                 ushort _ when(address <= 0xFEFF) => 0x00,                                        // Not Usable
-                ushort _ when(address <= 0xFF7F) => memory.io[address - 0xFF00],                 // I/O Ports
+                ushort _ when(address <= 0xFF7F) => ReadIO(address),                             // I/O Ports
                 ushort _ when(address <= 0xFFFF) => memory.zp[address - 0xFF80],                 // Zero Page RAM
                 _ => 0xFF,
             };
@@ -56,15 +56,15 @@ namespace Monoboy
         {
             switch(address)
             {
-                case ushort _ when(address <= 0x7FFF): memoryBankController.WriteBank(address, data); break;     // 16KB ROM Bank > 00 (in cartridge, every other bank)
-                case ushort _ when(address <= 0x9FFF): memory.vram[address - 0x8000] = data; break;              // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
-                case ushort _ when(address <= 0xBFFF): memoryBankController.WriteRam(address, data); break;      // 8KB External RAM (in cartridge, switchable bank, if any)
-                case ushort _ when(address <= 0xDFFF): memory.workram[address - 0xC000] = data; break;           // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
-                case ushort _ when(address <= 0xFDFF): memory.workram[address - 0xE000] = data; break;           // Same as C000-DDFF (ECHO) (typically not used)
-                case ushort _ when(address <= 0xFE9F): memory.oam[address - 0xFE00] = data; break;               // Sprite Attribute Table (OAM)
-                case ushort _ when(address <= 0xFEFF): break;                                                    // Not Usable
-                case ushort _ when(address <= 0xFF7F): WriteIO(address, data); break;                            // I/O Ports
-                case ushort _ when(address <= 0xFFFF): WriteZP(address, data); break;                            // Zero Page RAM
+                case ushort _ when(address <= 0x7FFF): memoryBankController.WriteBank(address, data); break;    // 16KB ROM Bank > 00 (in cartridge, every other bank)
+                case ushort _ when(address <= 0x9FFF): memory.vram[address - 0x8000] = data; break;             // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+                case ushort _ when(address <= 0xBFFF): memoryBankController.WriteRam(address, data); break;     // 8KB External RAM (in cartridge, switchable bank, if any)
+                case ushort _ when(address <= 0xDFFF): memory.workram[address - 0xC000] = data; break;          // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
+                case ushort _ when(address <= 0xFDFF): memory.workram[address - 0xE000] = data; break;          // Same as C000-DDFF (ECHO) (typically not used)
+                case ushort _ when(address <= 0xFE9F): memory.oam[address - 0xFE00] = data; break;              // Sprite Attribute Table (OAM)
+                case ushort _ when(address <= 0xFEFF): break;                                                   // Not Usable
+                case ushort _ when(address <= 0xFF7F): WriteIO(address, data); break;                           // I/O Ports
+                case ushort _ when(address <= 0xFFFF): memory.zp[address - 0xFF80] = data; break;               // Zero Page RAM
             }
         }
 
@@ -74,19 +74,36 @@ namespace Monoboy
             Write(address, (byte)data);
         }
 
+        private byte ReadIO(ushort address)
+        {
+            switch(address)
+            {
+                case 0xFF00:// JOYP
+                {
+                    return joypad.JOYP;
+                }
+
+                default:
+                {
+                    return memory.io[address - 0xFF00];
+                }
+            }
+
+        }
+
         private void WriteIO(ushort address, byte data)
         {
             switch(address)
             {
-                case 0xFF04:// DIV
+                case 0xFF00:// JOYP
                 {
-                    data = 0;
+                    joypad.JOYP = data;
                 }
                 break;
 
-                case 0xFF0F:// Mask IF first 3 bits to 1
+                case 0xFF04:// DIV
                 {
-                    data |= 0xE0;
+                    data = 0;
                 }
                 break;
 
@@ -106,22 +123,17 @@ namespace Monoboy
                 }
                 break;
 
-                case 0xFF02:
-                {
-                    if(data == 0x81)
-                    {
-                        Debug.Write(Convert.ToChar(Read(0xFF01)));
-                    }
-                }
-                break;
+                //case 0xFF02:
+                //{
+                //    if(data == 0x81)
+                //    {
+                //        Debug.Write(Convert.ToChar(Read(0xFF01)));
+                //    }
+                //}
+                //break;
             }
 
             memory.io[address - 0xFF00] = data;
-        }
-
-        private void WriteZP(ushort address, byte data)
-        {
-            memory.zp[address - 0xFF80] = data;
         }
     }
 }

@@ -12,56 +12,40 @@ namespace Monoboy
         public long cyclesRan;
         public bool paused = true;
 
+        string romPath;
+        bool skipBootRom = false;
+
         public Emulator()
         {
             bus = new Bus();
 
-            if(File.Exists("Data/dmg_boot.bin") == true)
-            {
-                bus.memory.boot = File.ReadAllBytes("Data/dmg_boot.bin");
-            }
-            else
-            {
-                SkipBootRom();
-            }
+            //Open("Data/Roms/Mario.gb");
+            //Open("Data/Roms/Dr. Mario.gb");
+            //Open("Data/Roms/Tetris.gb");
 
-            SkipBootRom();
-
-            //LoadRom("Mario.gb");
-            //LoadRom("Dr. Mario.gb");
-            //LoadRom("Tetris.gb");
-            LoadRom("cpu_instrs.gb");
-            //LoadRom("01-special.gb");
-            //LoadRom("02-interrupts.gb");
-            //LoadRom("03-op sp,hl.gb");
-            //LoadRom("04-op r,imm.gb");
-            //LoadRom("05-op rp.gb");
-            //LoadRom("06-ld r,r.gb");
-            //LoadRom("07-jr,jp,call,ret,rst.gb");
-            //LoadRom("08-misc instrs.gb");
-            //LoadRom("09-op r,r.gb");
-            //LoadRom("10-bit ops.gb");
-            //LoadRom("11-op a,(hl).gb");
-
-
-            //while(bus.register.PC != 0xc018)
-            //{
-            //    Step();
-            //}
+            //Open("Data/Roms/cpu_instrs.gb");
+            //Open("Data/Roms/01-special.gb");
+            //Open("Data/Roms/02-interrupts.gb");
+            //Open("Data/Roms/03-op sp,hl.gb");
+            //Open("Data/Roms/04-op r,imm.gb");
+            //Open("Data/Roms/05-op rp.gb");
+            //Open("Data/Roms/06-ld r,r.gb");
+            //Open("Data/Roms/07-jr,jp,call,ret,rst.gb");
+            //Open("Data/Roms/08-misc instrs.gb");
+            //Open("Data/Roms/09-op r,r.gb");
+            //Open("Data/Roms/10-bit ops.gb");
+            //Open("Data/Roms/11-op a,(hl).gb");
         }
 
         public byte Step()
         {
             byte cycles = bus.cpu.Step();
-            bus.gpu.Step(cycles);
-            bus.joypad.Step();
-            bus.interrupt.HandleInterupts();
-            cyclesRan += cycles;
 
-            //if(bus.Read((ushort)(bus.register.PC + 1)) == 0x01)
-            //{
-            //    paused = true;
-            //}
+            bus.timer.Step(cycles);
+            bus.gpu.Step(cycles);
+            bus.interrupt.HandleInterupts();
+
+            cyclesRan += cycles;
 
             // Disable the bios in the bus
             if(bus.biosEnabled == true && bus.register.PC >= 0x100)
@@ -72,12 +56,19 @@ namespace Monoboy
             return cycles;
         }
 
-        public void LoadRom(string rom)
+        public void Open()
         {
-            string path = "Data/Roms/" + rom;
+            Open(romPath);
+        }
+
+        public void Open(string rom)
+        {
+            Reset();
+
+            paused = false;
 
             byte cartridgeType;
-            using(BinaryReader reader = new BinaryReader(new FileStream(path, FileMode.Open)))
+            using(BinaryReader reader = new BinaryReader(new FileStream(rom, FileMode.Open)))
             {
                 reader.BaseStream.Seek(0x147, SeekOrigin.Begin);
                 cartridgeType = reader.ReadByte();
@@ -90,12 +81,35 @@ namespace Monoboy
                 _ => throw new NotImplementedException()
             };
 
-            bus.memoryBankController.Load(path);
+            bus.memoryBankController.Load(rom);
+        }
+
+        public void Reset()
+        {
+            bus.memory = new Memory();
+            bus.register = new Register();
+
+            if(File.Exists("Data/dmg_boot.bin") == true)
+            {
+                if(skipBootRom == false)
+                {
+                    bus.memory.boot = File.ReadAllBytes("Data/dmg_boot.bin");
+                    bus.biosEnabled = true;
+                }
+                else
+                {
+                    SkipBootRom();
+                }
+            }
+            else
+            {
+                SkipBootRom();
+            }
         }
 
         #region Debug
 
-        public void SkipBootRom()
+        void SkipBootRom()
         {
             bus.biosEnabled = false;
             bus.register.AF = 0x01B0;
@@ -142,8 +156,8 @@ namespace Monoboy
             Color[] pallet = new Color[] { new Color(0, 0, 0, 255), new Color(76, 76, 76, 255), new Color(107, 107, 107, 255), new Color(255, 255, 255, 255) };
             Color[,] pixels = new Color[256, 256];
 
-            bool tileset = bus.memory.LCDC.GetBit(LCDCBit.Tileset);
-            bool tilemap = bus.memory.LCDC.GetBit(LCDCBit.Tilemap);
+            bool tileset = bus.gpu.LCDC.GetBit(LCDCBit.Tileset);
+            bool tilemap = bus.gpu.LCDC.GetBit(LCDCBit.Tilemap);
 
             ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x0800);
             ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
@@ -160,7 +174,7 @@ namespace Monoboy
 
                     ushort vramAddress;
 
-                    if(bus.memory.LCDC.GetBit(LCDCBit.Tileset) == true)
+                    if(bus.gpu.LCDC.GetBit(LCDCBit.Tileset) == true)
                     {
                         vramAddress = (ushort)((rawTile * 16) + tilesetAddress);
                     }

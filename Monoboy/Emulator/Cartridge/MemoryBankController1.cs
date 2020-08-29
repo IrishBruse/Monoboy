@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace Monoboy
 {
@@ -105,7 +104,7 @@ namespace Monoboy
             rom = File.ReadAllBytes(path);
         }
 
-        enum BankingMode
+        private enum BankingMode
         {
             Rom,
             Ram,

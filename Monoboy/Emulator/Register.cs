@@ -81,7 +81,7 @@ namespace Monoboy
         {
             if(condition == true)
             {
-                F |= (byte)flag;
+                F |= flag;
             }
             else
             {
@@ -91,7 +91,7 @@ namespace Monoboy
 
         public bool GetFlag(byte flag)
         {
-            return (F & (byte)flag) != 0;
+            return (F & flag) != 0;
         }
     }
 }

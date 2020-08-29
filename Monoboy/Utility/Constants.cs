@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Monoboy.Constants
+﻿namespace Monoboy.Constants
 {
     public static class Constant
     {
@@ -38,7 +36,7 @@ namespace Monoboy.Constants
         public const byte Tilemap = Bit.Bit3;
         public const byte SpritesSize = Bit.Bit2;
         public const byte SpritesEnabled = Bit.Bit1;
-        public const byte BackgroundWindowPriority = Bit.Bit0;
+        public const byte BackgroundEnabled = Bit.Bit0;
     }
 
     public static class StatBit

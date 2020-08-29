@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using SFML.Graphics;
+﻿using SFML.Graphics;
 using SFML.System;
 
 namespace Monoboy.Frontend
 {
     public class DrawingSurface
     {
-        private readonly RenderWindow window;
-
-        Font font;
-        Text text;
+        private RenderWindow window;
+        private Font font;
+        private Text text;
 
         public DrawingSurface(RenderWindow window)
         {

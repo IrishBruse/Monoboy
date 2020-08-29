@@ -1,15 +1,14 @@
-﻿using SFML.System;
-using SFML.Window;
+﻿using SFML.Window;
 
 namespace Monoboy.Frontend
 {
     public class Keybind
     {
-        Button[] buttons;
-        Action action;
-        bool oldState;
+        private Key[] buttons;
+        private InputAction action;
+        private bool oldState;
 
-        public Keybind(Action action, params Button[] buttons)
+        public Keybind(InputAction action, params Key[] buttons)
         {
             this.buttons = buttons;
             this.action = action;
@@ -24,7 +23,7 @@ namespace Monoboy.Frontend
 
             for(int i = 0; i < buttons.Length; i++)
             {
-                bool newState = false;
+                bool newState;
 
                 if((int)buttons[i] <= 100)
                 {
@@ -36,18 +35,30 @@ namespace Monoboy.Frontend
                     Mouse.Button button = (Mouse.Button)(buttons[i] - 101);
                     newState = Mouse.IsButtonPressed(button);
                 }
-                else if((int)buttons[i] <= 109)
+                else if((int)buttons[i] <= 115)
                 {
                     uint button = (uint)(buttons[i] - 106);
-                    newState = Joystick.IsButtonPressed(0, button + 1);
+                    newState = Joystick.IsButtonPressed(0, button);
+                }
+                else
+                {
+                    uint button = (uint)(buttons[i] - 116);
+                    newState = button switch
+                    {
+                        0 => Joystick.GetAxisPosition(0, Joystick.Axis.PovY) > 0.1,
+                        1 => Joystick.GetAxisPosition(0, Joystick.Axis.PovY) < -0.1,
+                        2 => Joystick.GetAxisPosition(0, Joystick.Axis.PovX) < -0.1,
+                        3 => Joystick.GetAxisPosition(0, Joystick.Axis.PovX) > 0.1,
+                        _ => throw new System.NotImplementedException(),
+                    };
                 }
 
 
                 bool result = action switch
                 {
-                    Action.Pressed => oldState == false && newState == true,
-                    Action.Held => newState,
-                    Action.Released => oldState == true && newState == false,
+                    InputAction.Pressed => oldState == false && newState == true,
+                    InputAction.Held => newState,
+                    InputAction.Released => oldState == true && newState == false,
                     _ => false,
                 };
 
@@ -62,14 +73,14 @@ namespace Monoboy.Frontend
         }
     }
 
-    public enum Action
+    public enum InputAction
     {
         Pressed,
         Held,
         Released,
     }
 
-    public enum Button
+    public enum Key
     {
         A = 0,
         B = 1,
@@ -182,20 +193,19 @@ namespace Monoboy.Frontend
         MouseMiddle = 103,
         MouseXButton1 = 104,
         MouseXButton2 = 105,
-        JoystickA = 106,// 1
-        JoystickB = 107,
-        JoystickX = 108,
-        JoystickY = 109,
-        JoystickLB = 110,
-        JoystickRB = 111,
-        JoystickLeftStickClick = 112,
-        JoystickRightStickClick = 113,
-        JoystickStart = 114,
-        JoystickSelect = 115,// 10
-        JoystickHome = 116,
-        JoystickUp = 117,
-        JoystickDown = 118,
-        JoystickLeft = 119,
-        JoystickRight = 120,
+        JoystickA = 106,//0
+        JoystickB = 107,//1
+        JoystickX = 108,//2
+        JoystickY = 109,//3
+        JoystickLB = 110,//4
+        JoystickRB = 111,//5
+        JoystickSelect = 112,//6
+        JoystickStart = 113,//7
+        JoystickLeftStickClick = 114,//8
+        JoystickRightStickClick = 115,//9
+        JoystickUp = 116,
+        JoystickDown = 117,
+        JoystickLeft = 118,
+        JoystickRight = 119,
     }
 }

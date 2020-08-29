@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Monoboy.Utility
+namespace Monoboy.Frontend.UI
 {
-    class TinyFileDialog
+    internal class TinyFileDialog
     {
 #pragma warning disable IDE1006 // Naming Styles
 #if x86
@@ -105,9 +105,18 @@ namespace Monoboy.Utility
             return StringFromAnsi(tinyfd_saveFileDialog(title, defaultPathAndFile, filterPatterns.Length, filterPatterns, singleFilterDescription));
         }
 
-        public static string OpenFileDialog(string title, string defaultPathAndFile, string[] filterPatterns, string singleFilterDescription, int allowMultipleSelects)
+        /// <summary>
+        /// Open File
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="defaultPathAndFile"></param>
+        /// <param name="filterPatterns"></param>
+        /// <param name="singleFilterDescription"></param>
+        /// <param name="allowMultipleSelects"></param>
+        /// <returns>Absolute path of the file</returns>
+        public static string OpenFileDialog(string title, string defaultPathAndFile, string[] filterPatterns, string singleFilterDescription, bool allowMultipleSelects)
         {
-            return StringFromAnsi(tinyfd_openFileDialog(title, defaultPathAndFile, filterPatterns.Length, filterPatterns, singleFilterDescription, allowMultipleSelects));
+            return StringFromAnsi(tinyfd_openFileDialog(title, defaultPathAndFile, filterPatterns.Length, filterPatterns, singleFilterDescription, allowMultipleSelects ? 1 : 0));
         }
 
         public static string SelectFolderDialog(string title, string defaultPathAndFile)

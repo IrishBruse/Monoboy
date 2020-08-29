@@ -24,6 +24,8 @@ mono_crash.*
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+[Bb]uild/
+[Bb]uilds/
 
 x64/
 x86/
@@ -352,3 +354,4 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+Monoboy/GlobalSuppressions.cs

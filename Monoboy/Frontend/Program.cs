@@ -1,7 +1,6 @@
 ﻿using System;
-using Monoboy.Frontend;
 
-namespace Monoboy
+namespace Monoboy.Frontend
 {
     public static class Program
     {

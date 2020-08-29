@@ -4,8 +4,15 @@
 
 Monoboy is a Gameboy emulator written in C#
 
-For more informaion and a write up of the emulator check out:
+# Tests
+| a | b | c |
+| --- | --- | --- |
+| ![Cpu Test](https://github.com/IrishBruse/Monoboy/Images/Cpu_Test.png) | ![Cpu Test](https://github.com/IrishBruse/Monoboy/Images/Cpu_Test.png) | ![Cpu Test](https://github.com/IrishBruse/Monoboy/Images/Cpu_Test.png) |
 
-[Monoboy Page](https://irishbruse.github.io/Projects/Monoboy) W.I.P
+# Games
+| a | b | c |
+| --- | --- | --- |
+| ![Cpu Test](https://github.com/IrishBruse/Monoboy/Images/Cpu_Test.png) | ![Cpu Test](https://github.com/IrishBruse/Monoboy/Images/Cpu_Test.png) | ![Cpu Test](https://github.com/IrishBruse/Monoboy/Images/Cpu_Test.png) |
 
-It currently needs a boot rom to launch.
+# Build Instructions
+Run the build.bat it will create a Build folder with all the platform builds

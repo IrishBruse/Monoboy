@@ -107,9 +107,7 @@ namespace Monoboy
             }
         }
 
-        #region Debug
-
-        void SkipBootRom()
+        public void SkipBootRom()
         {
             bus.biosEnabled = false;
             bus.register.AF = 0x01B0;
@@ -151,84 +149,73 @@ namespace Monoboy
             bus.Write(0xFFFF, 0x00);
         }
 
+        #region Debug
+
         public void DumpBackground()
         {
-            Color[] pallet = new Color[] { new Color(0, 0, 0, 255), new Color(76, 76, 76, 255), new Color(107, 107, 107, 255), new Color(255, 255, 255, 255) };
-            Color[,] pixels = new Color[256, 256];
+            Color[] palette = new Color[] { new Color(0, 0, 0, 255), new Color(76, 76, 76, 255), new Color(107, 107, 107, 255), new Color(255, 255, 255, 255) };
+            Image img = new Image(256, 256);
 
             bool tileset = bus.gpu.LCDC.GetBit(LCDCBit.Tileset);
             bool tilemap = bus.gpu.LCDC.GetBit(LCDCBit.Tilemap);
 
-            ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x0800);
+            ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x1000);
             ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
 
-            for(int y = 0; y < 256; y++)
+            for(uint y = 0; y < 256; y++)
             {
                 ushort row = (ushort)(y / 8);
 
-                for(int x = 0; x < 256; x++)
+                for(uint x = 0; x < 256; x++)
                 {
                     ushort colum = (ushort)(x / 8);
 
                     byte rawTile = bus.gpu.VideoRam[tilemapAddress + ((row * 32) + colum)];
 
-                    ushort vramAddress;
+                    int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
 
-                    if(bus.gpu.LCDC.GetBit(LCDCBit.Tileset) == true)
-                    {
-                        vramAddress = (ushort)((rawTile * 16) + tilesetAddress);
-                    }
-                    else
-                    {
-                        ushort signedAddress = (ushort)((sbyte)rawTile * 16);
-                        vramAddress = (ushort)(((short)tilesetAddress) + signedAddress);
-                    }
-
-                    byte line = (byte)((byte)(y % 8) * 2);
+                    int line = (byte)(y % 8) * 2;
                     byte data1 = bus.gpu.VideoRam[vramAddress + line];
                     byte data2 = bus.gpu.VideoRam[vramAddress + line + 1];
 
-                    byte bit = ((byte)(0b00000001 << (((x % 8) - 7) * 0xff)));
-                    byte color_value = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-
-                    pixels[x, y] = pallet[color_value];
+                    byte bit = (byte)(0b00000001 << ((((int)x % 8) - 7) * 0xff));
+                    byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
+                    byte colorIndex = (byte)((bus.gpu.BGP >> palletIndex * 2) & 0b11);
+                    img.SetPixel(x, y, palette[colorIndex]);
                 }
             }
 
-            Image img = new Image(pixels);
             img.SaveToFile("Background.png");
         }
 
         public void DumpTilemap()
         {
-            Color[] pallet = new Color[] { new Color(0, 0, 0, 255), new Color(76, 76, 76, 255), new Color(107, 107, 107, 255), new Color(255, 255, 255, 255) };
+            Color[] palette = new Color[] { new Color(0, 0, 0, 255), new Color(76, 76, 76, 255), new Color(107, 107, 107, 255), new Color(255, 255, 255, 255) };
+            Image img = new Image(128, 192);
 
-            Color[,] pixels = new Color[128, 192];
-
-            for(int y = 0; y < 192; y++)
+            for(uint y = 0; y < 192; y++)
             {
                 ushort row = (ushort)(y / 8);
 
-                for(int x = 0; x < 128; x++)
+                for(uint x = 0; x < 128; x++)
                 {
                     ushort colum = (ushort)(x / 8);
 
-                    ushort raw_tile_num = (ushort)((row * 16) + colum);
+                    ushort rawTile = (ushort)((row * 16) + colum);
 
-                    ushort tileGraphicAddress = (ushort)(raw_tile_num * 16);
+                    ushort tileGraphicAddress = (ushort)(rawTile * 16);
 
                     byte line = (byte)((byte)(y % 8) * 2);
                     byte data1 = bus.gpu.VideoRam[tileGraphicAddress + line];
                     byte data2 = bus.gpu.VideoRam[tileGraphicAddress + line + 1];
 
-                    byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
-                    byte color_value = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-
-                    pixels[x, y] = pallet[color_value];
+                    byte bit = (byte)(0b00000001 << ((((int)x % 8) - 7) * 0xff));
+                    byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
+                    byte colorIndex = (byte)((bus.gpu.BGP >> palletIndex * 2) & 0b11);
+                    img.SetPixel(x, y, palette[colorIndex]);
                 }
             }
 
-            Image img = new Image(pixels);
             img.SaveToFile("Tilemap.png");
         }
 
@@ -242,11 +229,6 @@ namespace Monoboy
             }
 
             File.WriteAllBytes("Memory.bin", file);
-        }
-
-        public void DumpTrace()
-        {
-            File.WriteAllBytes("Trace.bin", bus.trace.ToArray());
         }
 
         #endregion

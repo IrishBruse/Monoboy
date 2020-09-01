@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Threading;
-using System.Threading.Tasks.Dataflow;
-using Monoboy.Frontend.UI;
 using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
@@ -23,15 +21,12 @@ namespace Monoboy.Frontend
         public RenderWindow window;
         public DrawingSurface surface;
 
-        public Gui gui;
-
         private bool firstLoop = true;
         private Clock clock;
 
         public Window(string title, uint width, uint height)
         {
             window = new RenderWindow(new VideoMode(width, height), title);
-            gui = new Gui(window);
 
             // Event handling
             window.Closed += (sender, e) => Quit();
@@ -67,8 +62,6 @@ namespace Monoboy.Frontend
 
             Update?.Invoke();
             Draw?.Invoke(surface);
-
-            gui.Draw();
 
             long elapsed = clock.ElapsedTime.AsMicroseconds();
 

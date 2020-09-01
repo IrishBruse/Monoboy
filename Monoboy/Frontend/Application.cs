@@ -1,6 +1,5 @@
 ﻿using Monoboy.Constants;
 using Monoboy.Frontend.UI;
-using Monoboy.Frontend.UI.Widgets;
 using Monoboy.Utility;
 using SFML.Graphics;
 using SFML.System;
@@ -32,13 +31,18 @@ namespace Monoboy.Frontend
         private Keybind tilemapDumpButton;
         private Keybind backgroundDumpButton;
         private Keybind memoryDumpButton;
-        private Keybind traceDumpButton;
         private Keybind pauseButton;
         private Keybind stepButton;
         private Keybind speedupButton;
         private Keybind runButton;
 
         public static bool Focused = true;
+
+        public static bool SkipBootRom = true;
+        public static bool BackgroundDisable = false;
+        public static bool WindowDisable = false;
+        public static bool SpritesDisable = true;
+
         private string[] debug = new string[32];
 
         public Application()
@@ -103,7 +107,6 @@ namespace Monoboy.Frontend
             tilemapDumpButton = new Keybind(InputAction.Pressed, Key.Num1);
             backgroundDumpButton = new Keybind(InputAction.Pressed, Key.Num2);
             memoryDumpButton = new Keybind(InputAction.Pressed, Key.Num3);
-            traceDumpButton = new Keybind(InputAction.Pressed, Key.Num4);
             pauseButton = new Keybind(InputAction.Pressed, Key.P);
             stepButton = new Keybind(InputAction.Pressed, Key.Enter);
             speedupButton = new Keybind(InputAction.Held, Key.V);
@@ -112,17 +115,34 @@ namespace Monoboy.Frontend
 
         private void CreateGUI()
         {
-            Dropdown filemenu = new Dropdown("File");
-            {
-                Button open = new Button("Open Rom");
-                open.Clicked += () => OpenRom();
-                filemenu.Add(open);
-
-                Button quit = new Button("Quit");
-                quit.Clicked += () => mainWindow.Quit();
-                filemenu.Add(quit);
-            }
-            mainWindow.gui.Add(filemenu);
+            //MenuBar menuBar = new MenuBar();
+            //Dropdown filemenu = new Dropdown("File", 0, 0);
+            //{
+            //    Button open = new Button("Open Rom", 0, 0);
+            //    open.Clicked += () => OpenRom();
+            //    filemenu.Add(open);
+            //
+            //    Button quit = new Button("Quit", 0, 0);
+            //    quit.Clicked += () => mainWindow.Quit();
+            //    filemenu.Add(quit);
+            //}
+            // mainWindow.gui.Add(menuBar);
+            //
+            //Dropdown debugmenu = new Dropdown("Debug", (int)filemenu.Width, 0);
+            //{
+            //    Button background = new Button("Toggle Background Rendering", 0, 0);
+            //    background.Clicked += () => BackgroundDisable = !BackgroundDisable;
+            //    debugmenu.Add(background);
+            //
+            //    Button window = new Button("Toggle Window Rendering", 0, 0);
+            //    window.Clicked += () => WindowDisable = !WindowDisable;
+            //    debugmenu.Add(window);
+            //
+            //    Button sprites = new Button("Toggle Sprites Rendering", 0, 0);
+            //    sprites.Clicked += () => SpritesDisable = !SpritesDisable;
+            //    debugmenu.Add(sprites);
+            //}
+            //mainWindow.gui.Add(debugmenu);
         }
 
         private void OpenRom()
@@ -132,6 +152,12 @@ namespace Monoboy.Frontend
             if(string.IsNullOrEmpty(file) == false)
             {
                 emulator.Open(file);
+
+                if(SkipBootRom == true)
+                {
+                    emulator.SkipBootRom();
+                }
+
                 UpdateTitle();
             }
         }
@@ -180,11 +206,6 @@ namespace Monoboy.Frontend
             if(memoryDumpButton.IsActive() == true)
             {
                 emulator.DumpMemory();
-            }
-
-            if(traceDumpButton.IsActive() == true)
-            {
-                emulator.DumpTrace();
             }
 
             if(pauseButton.IsActive() == true)

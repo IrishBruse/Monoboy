@@ -1,6 +1,4 @@
-﻿using Monoboy.Utility;
-
-namespace Monoboy
+﻿namespace Monoboy
 {
     public class Memory
     {

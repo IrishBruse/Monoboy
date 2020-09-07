@@ -1,16 +1,11 @@
 ﻿using Monoboy.Constants;
-using Monoboy.Frontend;
 using Monoboy.Utility;
-using SFML.Graphics;
 using static Monoboy.Constants.Constant;
 
 namespace Monoboy
 {
     public class Gpu
     {
-        public int cycles;
-        private readonly Bus bus;
-
         public byte[] VideoRam { get => bus.memory.vram; set => bus.memory.vram = value; }
 
         public byte LCDC { get => bus.memory.io[0x0040]; set => bus.memory.io[0x0040] = value; }
@@ -23,24 +18,23 @@ namespace Monoboy
         public byte LY { get => bus.memory.io[0x0044]; set => bus.memory.io[0x0044] = value; }
         public byte LYC { get => bus.memory.io[0x0045]; set => bus.memory.io[0x0045] = value; }
         public byte BGP { get => bus.memory.io[0x0047]; set => bus.memory.io[0x0047] = value; }
-
         public byte OBP0 { get => bus.memory.io[0x0048]; set => bus.memory.io[0x0048] = value; }
         public byte OBP1 { get => bus.memory.io[0x0049]; set => bus.memory.io[0x0049] = value; }
 
+        public int cycles;
+
+        private readonly Bus bus;
         private bool[] backgroundPriority;
+        private readonly uint[] palette = { 0xD0D058, 0xA0A840, 0x708028, 0x405010 };
 
-        private readonly Color[] palette = new Color[] { new Color(0xD0D058FF), new Color(0xA0A840FF), new Color(0x708028FF), new Color(0x405010FF) };
-        //private readonly Color[] palette = new Color[] { new Color(0x332C50FF), new Color(0x46878FFF), new Color(0x94E344FF), new Color(0xe2F3E4FF) };
-
-        public Image Framebuffer { get; }
-
+        public Framebuffer framebuffer;
 
         public System.Action DrawFrame;
 
         public Gpu(Bus bus)
         {
             this.bus = bus;
-            Framebuffer = new Image(WindowWidth, WindowHeight);
+            framebuffer = new Framebuffer(WindowWidth, WindowHeight);
         }
 
         public void Step(int ticks)
@@ -58,7 +52,6 @@ namespace Monoboy
                 if(cycles >= 204)
                 {
                     DrawScanline();
-                    DrawFrame?.Invoke();//TODO Only for debugging
 
                     LY++;
                     cycles -= 204;
@@ -84,6 +77,7 @@ namespace Monoboy
                     if(LY == 154)
                     {
                         DrawFrame?.Invoke();
+                        framebuffer = new Framebuffer(WindowWidth, WindowHeight);
                         LY = 0;
                         StatMode = Mode.OAM;
                     }
@@ -133,12 +127,12 @@ namespace Monoboy
                 DrawBackground();
             }
 
-            if(LCDC.GetBit(LCDCBit.WindowEnabled) == true && Application.WindowDisable == false)
+            if(LCDC.GetBit(LCDCBit.WindowEnabled) == true)
             {
                 DrawWindow();
             }
 
-            if(LCDC.GetBit(LCDCBit.SpritesEnabled) == true && Application.SpritesDisable == false)
+            if(LCDC.GetBit(LCDCBit.SpritesEnabled) == true)
             {
                 DrawSprites();
             }
@@ -169,7 +163,11 @@ namespace Monoboy
                 byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
                 byte colorIndex = (byte)((BGP >> palletIndex * 2) & 0b11);
                 backgroundPriority[i] = colorIndex != 0;
-                Framebuffer.SetPixel(i, LY, palette[colorIndex]);
+
+                if(Application.Application.BackgroundEnabled == true)
+                {
+                    framebuffer.SetPixel(i, LY, palette[colorIndex]);
+                }
             }
         }
 
@@ -203,7 +201,11 @@ namespace Monoboy
                 byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
                 byte colorIndex = (byte)((BGP >> palletIndex * 2) & 0b11);
                 backgroundPriority[i] = colorIndex != 0;
-                Framebuffer.SetPixel(i, LY, palette[colorIndex]);
+
+                if(Application.Application.WindowEnabled == true)
+                {
+                    framebuffer.SetPixel(i, LY, palette[colorIndex]);
+                }
             }
         }
 
@@ -215,25 +217,25 @@ namespace Monoboy
             {
                 ushort offset = (ushort)(0xFE00 + (i * 4));
 
-                int y = bus.Read((ushort)(offset + 0)) - 8;
-                int x = bus.Read((ushort)(offset + 1)) - 16;
-                int tileID = bus.Read((ushort)(offset + 2));
+                int y = bus.Read((ushort)(offset + 0)) - 16;
+                int x = bus.Read((ushort)(offset + 1)) - 8;
+                byte tileID = bus.Read((ushort)(offset + 2));
                 byte flags = bus.Read((ushort)(offset + 3));
-                int pallet = flags.GetBit(Bit.Bit4) ? OBP1 : OBP0;
+                byte obp = flags.GetBit(Bit.Bit4) ? OBP1 : OBP0;
 
                 if(spritesSize == true)
                 {
-                    DrawSprite(pallet, x, y + 8, tileID, flags);
-                    DrawSprite(pallet, x, y, tileID & 0b11111110, flags);
+                    DrawSprite(obp, x, (byte)(y + 8), tileID, flags);
+                    DrawSprite(obp, x, y, (byte)(tileID & 0b11111110), flags);
                 }
                 else
                 {
-                    DrawSprite(pallet, x, y, tileID, flags);
+                    DrawSprite(obp, x, y, tileID, flags);
                 }
             }
         }
 
-        private void DrawSprite(int palette, int x, int y, int tileID, byte flags)
+        private void DrawSprite(byte obp, int x, int y, byte tileID, byte flags)
         {
             bool mirrorX = flags.GetBit(Bit.Bit5);
             bool mirrorY = flags.GetBit(Bit.Bit6);
@@ -242,35 +244,56 @@ namespace Monoboy
             for(int Y = 0; Y < 8; Y++)
             {
                 int offset = (tileID * 16) + 0x8000;
-                byte high = bus.Read((ushort)(offset + (y * 2) + 1));
-                byte low = bus.Read((ushort)(offset + (y * 2)));
+                byte high = bus.Read((ushort)(offset + (Y * 2) + 1));
+                byte low = bus.Read((ushort)(offset + (Y * 2) + 0));
 
                 for(int X = 0; X < 8; X++)
                 {
-                    int pixel_x = mirrorX ? (x + X) : (x + 7 - X);
-                    int pixel_y = mirrorY ? (y + 7 - Y) : (y + Y);
+                    int pixelX = mirrorX ? (x + X) : (x + 7 - X);
+                    int pixelY = mirrorY ? (y + 7 - Y) : (y + Y);
 
-                    if(pixel_x < 0 || pixel_x >= WindowWidth || pixel_y < 0 || pixel_y >= WindowHeight)
+                    if(pixelX < 0 || pixelX >= WindowWidth || pixelY < 0 || pixelY >= WindowHeight)
                     {
                         continue;
                     }
 
-                    //sf::Color color = get_pixel_color(palette, low, high, x, true);
+                    uint? pixel = GetPixel(obp, low, high, (byte)(0b00000001 << X));
 
-                    byte bit = (byte)(0b00000001 << (((x % 8))));
-                    byte palletIndex = (byte)(((high.GetBit(bit) ? 1 : 0) << 1) | (low.GetBit(bit) ? 1 : 0));
-                    byte colorIndex = (byte)((BGP >> palletIndex * 2) & 0b11);
+                    uint backgroundColor = framebuffer.GetPixel(pixelX, pixelY);
 
-                    Color backgroundColor = Framebuffer.GetPixel((uint)pixel_x, (uint)pixel_y);
-
-                    if(priority == true && backgroundColor != this.palette[0])
+                    if(priority == true && backgroundColor != palette[0])
                     {
                         continue;
                     }
 
-                    Framebuffer.SetPixel((uint)pixel_x, (uint)pixel_y, this.palette[colorIndex]);
+                    if(Application.Application.SpritesEnabled == true && pixel != null)
+                    {
+                        framebuffer.SetPixel(pixelX, pixelY, (uint)pixel);
+                    }
                 }
             }
+        }
+
+        uint? GetPixel(byte obp, byte top, byte bottom, byte bit)
+        {
+            byte color_3_shade = (byte)(obp >> 6);           // extract bits 7 & 6
+            byte color_2_shade = (byte)((obp >> 4) & 0x03);  // extract bits 5 & 4
+            byte color_1_shade = (byte)((obp >> 2) & 0x03);  // extract bits 3 & 2
+            byte color_0_shade = (byte)(obp & 0x03);         // extract bits 1 & 0
+
+            // Get color code from the two defining bytes
+            byte first = (byte)(top.GetBit(bit) ? 1 : 0);
+            byte second = (byte)(bottom.GetBit(bit) ? 1 : 0);
+            byte pixel = (byte)((second << 1) | first);
+
+            return pixel switch
+            {
+                0x0 => null,
+                0x1 => palette[color_1_shade],
+                0x2 => palette[color_2_shade],
+                0x3 => palette[color_3_shade],
+                _ => 0xFF00FF,
+            };
         }
         #endregion
     }

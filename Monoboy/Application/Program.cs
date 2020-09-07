@@ -1,13 +1,10 @@
-﻿using System;
-
-namespace Monoboy.Frontend
+﻿namespace Monoboy.Application
 {
     public static class Program
     {
-        [STAThread]
         public static void Main()
         {
-            new Application();
+            new Application().Run();
         }
     }
 }

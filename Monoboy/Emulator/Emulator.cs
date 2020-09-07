@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
 using Monoboy.Constants;
 using Monoboy.Utility;
-using SFML.Graphics;
 
 namespace Monoboy
 {
@@ -11,30 +11,12 @@ namespace Monoboy
         public Bus bus;
         public long cyclesRan;
         public bool paused = true;
-
-        string romPath;
-        bool skipBootRom = false;
+        private string romPath;
+        private bool skipBootRom = false;
 
         public Emulator()
         {
             bus = new Bus();
-
-            //Open("Data/Roms/Mario.gb");
-            //Open("Data/Roms/Dr. Mario.gb");
-            //Open("Data/Roms/Tetris.gb");
-
-            //Open("Data/Roms/cpu_instrs.gb");
-            //Open("Data/Roms/01-special.gb");
-            //Open("Data/Roms/02-interrupts.gb");
-            //Open("Data/Roms/03-op sp,hl.gb");
-            //Open("Data/Roms/04-op r,imm.gb");
-            //Open("Data/Roms/05-op rp.gb");
-            //Open("Data/Roms/06-ld r,r.gb");
-            //Open("Data/Roms/07-jr,jp,call,ret,rst.gb");
-            //Open("Data/Roms/08-misc instrs.gb");
-            //Open("Data/Roms/09-op r,r.gb");
-            //Open("Data/Roms/10-bit ops.gb");
-            //Open("Data/Roms/11-op a,(hl).gb");
         }
 
         public byte Step()
@@ -153,8 +135,8 @@ namespace Monoboy
 
         public void DumpBackground()
         {
-            Color[] palette = new Color[] { new Color(0, 0, 0, 255), new Color(76, 76, 76, 255), new Color(107, 107, 107, 255), new Color(255, 255, 255, 255) };
-            Image img = new Image(256, 256);
+            uint[] palette = { 0xD0D058FF, 0xA0A840FF, 0x708028FF, 0x405010FF };
+            uint[,] framebuffer = new uint[256, 256];
 
             bool tileset = bus.gpu.LCDC.GetBit(LCDCBit.Tileset);
             bool tilemap = bus.gpu.LCDC.GetBit(LCDCBit.Tilemap);
@@ -181,17 +163,17 @@ namespace Monoboy
                     byte bit = (byte)(0b00000001 << ((((int)x % 8) - 7) * 0xff));
                     byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
                     byte colorIndex = (byte)((bus.gpu.BGP >> palletIndex * 2) & 0b11);
-                    img.SetPixel(x, y, palette[colorIndex]);
+                    framebuffer[x, y] = palette[colorIndex];
                 }
             }
 
-            img.SaveToFile("Background.png");
+            //framebuffer.SaveToFile("Background.png");
         }
 
         public void DumpTilemap()
         {
-            Color[] palette = new Color[] { new Color(0, 0, 0, 255), new Color(76, 76, 76, 255), new Color(107, 107, 107, 255), new Color(255, 255, 255, 255) };
-            Image img = new Image(128, 192);
+            uint[] palette = { 0xD0D058FF, 0xA0A840FF, 0x708028FF, 0x405010FF };
+            uint[,] framebuffer = new uint[128, 192];
 
             for(uint y = 0; y < 192; y++)
             {
@@ -212,11 +194,11 @@ namespace Monoboy
                     byte bit = (byte)(0b00000001 << ((((int)x % 8) - 7) * 0xff));
                     byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
                     byte colorIndex = (byte)((bus.gpu.BGP >> palletIndex * 2) & 0b11);
-                    img.SetPixel(x, y, palette[colorIndex]);
+                    framebuffer[x, y] = palette[colorIndex];
                 }
             }
 
-            img.SaveToFile("Tilemap.png");
+            //img.SaveToFile("Tilemap.png");
         }
 
         public void DumpMemory()

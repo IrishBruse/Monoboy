@@ -1,5 +1,4 @@
 ﻿using Monoboy.Constants;
-using Monoboy.Utility;
 
 namespace Monoboy
 {
@@ -15,8 +14,7 @@ namespace Monoboy
 
         private int dividerCounter;
         private int timerCounter;
-
-        readonly int[] TimerFrequancy = { 1024, 16, 64, 256 };
+        private readonly int[] TimerFrequancy = { 1024, 16, 64, 256 };
 
         public Timer(Bus bus)
         {

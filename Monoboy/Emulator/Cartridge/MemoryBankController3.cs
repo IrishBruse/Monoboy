@@ -1,8 +1,9 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace Monoboy
 {
-    public class MemoryBankController1 : IMemoryBankController
+    public class MemoryBankController3 : IMemoryBankController
     {
         public byte[] rom;
         public byte[] ram = new byte[32768];
@@ -11,7 +12,12 @@ namespace Monoboy
         public byte ramBank = 0;
         public bool ramEnabled = false;
 
-        private BankingMode bankingMode = BankingMode.Rom;
+        // Timer
+        byte seconds;   // RTC S
+        byte minutes;   // RTC M
+        byte hours;     // RTC H
+        byte days;      // RTC DL
+        byte daysCarry; // RTC DH
 
         public byte ReadBank00(ushort address)
         {
@@ -28,19 +34,59 @@ namespace Monoboy
         {
             if(ramEnabled == true)
             {
-                return ram[(0x2000 * ramBank) + (address & 0x1FFF)];
+                switch(ramBank)
+                {
+                    case byte _ when address < 0x3:
+                    return ram[(0x2000 * ramBank) + (address & 0x1FFF)];
+
+                    // Timer
+                    case 0x8:
+                    return seconds;
+
+                    case 0x9:
+                    return minutes;
+
+                    case 0xA:
+                    return hours;
+
+                    case 0xB:
+                    return days;
+
+                    case 0xC:
+                    return daysCarry;
+                }
             }
-            else
-            {
-                return 0xff;
-            }
+
+            return 0xFF;
         }
 
         public void WriteRam(ushort address, byte data)
         {
             if(ramEnabled == true)
             {
-                ram[(0x2000 * ramBank) + (address & 0x1FFF)] = data;
+                switch(ramBank)
+                {
+                    case byte _ when address < 0x3:
+                    ram[(0x2000 * ramBank) + (address & 0x1FFF)] = data;
+                    break;
+
+                    // Timer
+                    case 0x8:
+                    seconds = data;
+                    break;
+                    case 0x9:
+                    minutes = data;
+                    break;
+                    case 0xA:
+                    hours = data;
+                    break;
+                    case 0xB:
+                    days = data;
+                    break;
+                    case 0xC:
+                    daysCarry = data;
+                    break;
+                }
             }
         }
 
@@ -56,9 +102,8 @@ namespace Monoboy
 
                 case ushort _ when address < 0x4000:
                 {
-                    byte bank = (byte)(data & 0b00011111);
-                    romBank = (byte)((romBank & 0b11100000) | bank);
-                    if(romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
+                    romBank = (byte)(data & 0b01111111);
+                    if(romBank == 0x00)
                     {
                         romBank += 1;
                     }
@@ -67,33 +112,19 @@ namespace Monoboy
 
                 case ushort _ when address < 0x6000:
                 {
-                    byte bank = (byte)(data & 0b11);
-
-                    if(bankingMode == BankingMode.Rom)
+                    if(data >= 0x00 && data <= 0x03 && data >= 0x08 && data <= 0xC0)
                     {
-                        romBank = (byte)(romBank | (bank << 5));
-                        if(romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
-                        {
-                            romBank++;
-                        }
-                    }
-                    else
-                    {
-                        ramBank = bank;
+                        ramBank = data;
                     }
                 }
                 break;
 
                 case ushort _ when address < 0x8000:
                 {
-                    if((data & 1) == 0)
-                    {
-                        bankingMode = BankingMode.Rom;
-                    }
-                    else
-                    {
-                        bankingMode = BankingMode.Ram;
-                    }
+                    DateTime now = DateTime.Now;
+                    seconds = (byte)now.Second;
+                    minutes = (byte)now.Minute;
+                    hours = (byte)now.Hour;
                 }
                 break;
             }
@@ -119,12 +150,6 @@ namespace Monoboy
         public void SetRam(byte[] ram)
         {
             this.ram = ram;
-        }
-
-        private enum BankingMode
-        {
-            Rom,
-            Ram,
         }
     }
 }

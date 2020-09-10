@@ -11,8 +11,11 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
 		<DefineConstants>TRACE;DEBUG</DefineConstants>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+	</PropertyGroup>
 	<ItemGroup>
-		<None Update="tinyfiledialogsx64.dll" Condition="'$(Platform)'=='x64'">
+		<None Update="tinyfiledialogsx64.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="tinyfiledialogsx86.dll" Condition="'$(Platform)'=='x86'">
@@ -22,8 +25,6 @@
 		<PackageReference Include="OpenTK" Version="4.0.0-pre9.4" />
 	</ItemGroup>
 	<ItemGroup>
-		<Folder Include="Saves\" />
-
 		<None Update="$(ProjectDir)Roms\**" CopyToOutputDirectory="PreserveNewest" />
 		<None Update="$(ProjectDir)Saves\**" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>

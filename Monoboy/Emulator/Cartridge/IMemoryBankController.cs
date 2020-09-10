@@ -8,5 +8,7 @@
         public void WriteBank(ushort address, byte data);
         public void WriteRam(ushort address, byte data);
         public void Load(string path);
+        public byte[] GetRam();
+        public void SetRam(byte[] ram);
     }
 }

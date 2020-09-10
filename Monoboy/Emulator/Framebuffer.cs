@@ -1,28 +1,31 @@
-﻿using Monoboy.Constants;
+﻿using System.Numerics;
+using Monoboy.Constants;
 
 namespace Monoboy
 {
     public class Framebuffer
     {
-        public readonly byte[] pixels;
+        public byte[] Pixels { get; }
+        public Vector2 Size { get; }
 
         public Framebuffer(int width, int height)
         {
-            pixels = new byte[width * height * 3];
+            Size = new Vector2(width, height);
+            Pixels = new byte[width * height * 3];
         }
 
         public void SetPixel(int x, int y, uint pixel)
         {
-            pixels[(((Constant.WindowWidth * y) + x) * 3) + 0] = (byte)(pixel >> 16);
-            pixels[(((Constant.WindowWidth * y) + x) * 3) + 1] = (byte)(pixel >> 08);
-            pixels[(((Constant.WindowWidth * y) + x) * 3) + 2] = (byte)(pixel >> 00);
+            Pixels[(((((int)Size.X) * y) + x) * 3) + 0] = (byte)(pixel >> 16);
+            Pixels[(((((int)Size.X) * y) + x) * 3) + 1] = (byte)(pixel >> 08);
+            Pixels[(((((int)Size.X) * y) + x) * 3) + 2] = (byte)(pixel >> 00);
         }
 
         public uint GetPixel(int x, int y)
         {
-            byte r = pixels[(((Constant.WindowWidth * y) + x) * 3) + 0];
-            byte g = pixels[(((Constant.WindowWidth * y) + x) * 3) + 1];
-            byte b = pixels[(((Constant.WindowWidth * y) + x) * 3) + 2];
+            byte r = Pixels[(((((int)Size.X) * y) + x) * 3) + 0];
+            byte g = Pixels[(((((int)Size.X) * y) + x) * 3) + 1];
+            byte b = Pixels[(((((int)Size.X) * y) + x) * 3) + 2];
 
             uint result = (uint)((r << 16) | (g << 8) | (b << 0));
 

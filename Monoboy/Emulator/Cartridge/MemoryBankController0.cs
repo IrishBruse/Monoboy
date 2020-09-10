@@ -35,5 +35,14 @@ namespace Monoboy
         {
             rom = File.ReadAllBytes(path);
         }
+
+        public byte[] GetRam()
+        {
+            return null;
+        }
+
+        public void SetRam(byte[] ram)
+        {
+        }
     }
 }

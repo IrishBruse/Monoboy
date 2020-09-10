@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using OpenTK.Graphics.OpenGL4;
 using PixelFormat = OpenTK.Graphics.OpenGL4.PixelFormat;
 
@@ -76,8 +75,7 @@ namespace ImGuiOpenTK
             Util.CreateTexture(TextureTarget.Texture2D, Name, out GLTexture);
             GL.TextureStorage2D(GLTexture, MipmapLevels, InternalFormat, Width, Height);
 
-            IntPtr dataPRT = GCHandle.Alloc(data, GCHandleType.Pinned).AddrOfPinnedObject();
-            GL.TextureSubImage2D(GLTexture, 0, 0, 0, Width, Height, PixelFormat.Rgba, PixelType.UnsignedByte, dataPRT);
+            GL.TextureSubImage2D(GLTexture, 0, 0, 0, Width, Height, PixelFormat.Rgb, PixelType.UnsignedByte, data);
 
             if(generateMipmaps) GL.GenerateTextureMipmap(GLTexture);
 
@@ -85,6 +83,11 @@ namespace ImGuiOpenTK
             SetWrap(TextureCoordinate.T, TextureWrapMode.Repeat);
 
             GL.TextureParameter(GLTexture, TextureParameterName.TextureMaxLevel, MipmapLevels - 1);
+        }
+
+        public void Update(byte[] data)
+        {
+            GL.TextureSubImage2D(GLTexture, 0, 0, 0, Width, Height, PixelFormat.Rgb, PixelType.UnsignedByte, data);
         }
 
         public void SetMinFilter(TextureMinFilter filter)

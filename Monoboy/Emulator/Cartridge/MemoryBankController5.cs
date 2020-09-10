@@ -2,7 +2,7 @@
 
 namespace Monoboy
 {
-    public class MemoryBankController1 : IMemoryBankController
+    public class MemoryBankController5 : IMemoryBankController
     {
         public byte[] rom;
         public byte[] ram = new byte[32768];
@@ -102,13 +102,6 @@ namespace Monoboy
         public void Load(string path)
         {
             rom = File.ReadAllBytes(path);
-
-            string save = path.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
-
-            if(File.Exists(save) == true)
-            {
-                ram = File.ReadAllBytes(save);
-            }
         }
 
         public byte[] GetRam()

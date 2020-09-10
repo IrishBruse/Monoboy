@@ -11,8 +11,9 @@ namespace Monoboy
         public Bus bus;
         public long cyclesRan;
         public bool paused = true;
-        private string romPath;
+        private string openRom;
         private bool skipBootRom = false;
+
 
         public Emulator()
         {
@@ -40,17 +41,19 @@ namespace Monoboy
 
         public void Open()
         {
-            Open(romPath);
+            Open(openRom);
         }
 
         public void Open(string rom)
         {
+            openRom = rom;
+
             Reset();
 
             paused = false;
 
             byte cartridgeType;
-            using(BinaryReader reader = new BinaryReader(new FileStream(rom, FileMode.Open)))
+            using(BinaryReader reader = new BinaryReader(new FileStream(openRom, FileMode.Open)))
             {
                 reader.BaseStream.Seek(0x147, SeekOrigin.Begin);
                 cartridgeType = reader.ReadByte();
@@ -58,12 +61,21 @@ namespace Monoboy
 
             bus.memoryBankController = cartridgeType switch
             {
-                byte _ when(cartridgeType <= 0) => new MemoryBankController0(),
-                byte _ when(cartridgeType <= 3) => new MemoryBankController1(),
+                byte _ when(cartridgeType <= 00) => new MemoryBankController0(),
+                byte _ when(cartridgeType <= 03) => new MemoryBankController1(),
+                byte _ when(cartridgeType <= 06) => new MemoryBankController2(),
+                byte _ when(cartridgeType <= 19) => new MemoryBankController3(),
+                byte _ when(cartridgeType <= 27) => new MemoryBankController5(),
                 _ => throw new NotImplementedException()
             };
 
-            bus.memoryBankController.Load(rom);
+            bus.memoryBankController.Load(openRom);
+
+            string saveFile = openRom.Replace("Roms", "Saves").Replace(".gb", ".sav");
+            if(File.Exists(saveFile) == true)
+            {
+                bus.memoryBankController.SetRam(File.ReadAllBytes(saveFile));
+            }
         }
 
         public void Reset()
@@ -130,89 +142,5 @@ namespace Monoboy
             bus.Write(0xFF4B, 0x00);
             bus.Write(0xFFFF, 0x00);
         }
-
-        #region Debug
-
-        public void DumpBackground()
-        {
-            uint[] palette = { 0xD0D058FF, 0xA0A840FF, 0x708028FF, 0x405010FF };
-            uint[,] framebuffer = new uint[256, 256];
-
-            bool tileset = bus.gpu.LCDC.GetBit(LCDCBit.Tileset);
-            bool tilemap = bus.gpu.LCDC.GetBit(LCDCBit.Tilemap);
-
-            ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x1000);
-            ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
-
-            for(uint y = 0; y < 256; y++)
-            {
-                ushort row = (ushort)(y / 8);
-
-                for(uint x = 0; x < 256; x++)
-                {
-                    ushort colum = (ushort)(x / 8);
-
-                    byte rawTile = bus.gpu.VideoRam[tilemapAddress + ((row * 32) + colum)];
-
-                    int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
-
-                    int line = (byte)(y % 8) * 2;
-                    byte data1 = bus.gpu.VideoRam[vramAddress + line];
-                    byte data2 = bus.gpu.VideoRam[vramAddress + line + 1];
-
-                    byte bit = (byte)(0b00000001 << ((((int)x % 8) - 7) * 0xff));
-                    byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-                    byte colorIndex = (byte)((bus.gpu.BGP >> palletIndex * 2) & 0b11);
-                    framebuffer[x, y] = palette[colorIndex];
-                }
-            }
-
-            //framebuffer.SaveToFile("Background.png");
-        }
-
-        public void DumpTilemap()
-        {
-            uint[] palette = { 0xD0D058FF, 0xA0A840FF, 0x708028FF, 0x405010FF };
-            uint[,] framebuffer = new uint[128, 192];
-
-            for(uint y = 0; y < 192; y++)
-            {
-                ushort row = (ushort)(y / 8);
-
-                for(uint x = 0; x < 128; x++)
-                {
-                    ushort colum = (ushort)(x / 8);
-
-                    ushort rawTile = (ushort)((row * 16) + colum);
-
-                    ushort tileGraphicAddress = (ushort)(rawTile * 16);
-
-                    byte line = (byte)((byte)(y % 8) * 2);
-                    byte data1 = bus.gpu.VideoRam[tileGraphicAddress + line];
-                    byte data2 = bus.gpu.VideoRam[tileGraphicAddress + line + 1];
-
-                    byte bit = (byte)(0b00000001 << ((((int)x % 8) - 7) * 0xff));
-                    byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-                    byte colorIndex = (byte)((bus.gpu.BGP >> palletIndex * 2) & 0b11);
-                    framebuffer[x, y] = palette[colorIndex];
-                }
-            }
-
-            //img.SaveToFile("Tilemap.png");
-        }
-
-        public void DumpMemory()
-        {
-            byte[] file = new byte[0xFFFF];
-
-            for(ushort i = 0; i < 0xFFFF; i++)
-            {
-                file[i] = bus.Read(i);
-            }
-
-            File.WriteAllBytes("Memory.bin", file);
-        }
-
-        #endregion
     }
 }

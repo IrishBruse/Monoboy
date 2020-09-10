@@ -23,9 +23,8 @@ namespace Monoboy
 
         public int cycles;
 
-        private readonly Bus bus;
+        private Bus bus;
         private bool[] backgroundPriority;
-        private readonly uint[] palette = { 0xD0D058, 0xA0A840, 0x708028, 0x405010 };
 
         public Framebuffer framebuffer;
 
@@ -41,6 +40,9 @@ namespace Monoboy
         {
             if(LCDC.GetBit(LCDCBit.LCDEnabled) == false)
             {
+                LY = 0;
+                cycles = 0;
+                StatMode = 0;
                 return;
             }
 
@@ -51,19 +53,18 @@ namespace Monoboy
                 case Mode.Hblank:
                 if(cycles >= 204)
                 {
-                    DrawScanline();
-
                     LY++;
                     cycles -= 204;
 
                     if(LY == 144)
                     {
-                        StatMode = Mode.Vblank;
+                        HandleModeChange(Mode.Vblank);
+                        DrawFrame?.Invoke();
                         bus.interrupt.InterruptRequest(InterruptFlag.VBlank);
                     }
                     else
                     {
-                        StatMode = Mode.OAM;
+                        HandleModeChange(Mode.OAM);
                     }
                 }
                 break;
@@ -76,10 +77,9 @@ namespace Monoboy
 
                     if(LY == 154)
                     {
-                        DrawFrame?.Invoke();
                         framebuffer = new Framebuffer(WindowWidth, WindowHeight);
                         LY = 0;
-                        StatMode = Mode.OAM;
+                        HandleModeChange(Mode.OAM);
                     }
                 }
                 break;
@@ -88,7 +88,7 @@ namespace Monoboy
                 if(cycles >= 80)
                 {
                     cycles -= 80;
-                    StatMode = Mode.VRAM;
+                    HandleModeChange(Mode.VRAM);
                 }
                 break;
 
@@ -96,6 +96,8 @@ namespace Monoboy
                 if(cycles >= 172)
                 {
                     cycles -= 172;
+
+                    DrawScanline();
 
                     if(LCDC.GetBit(LCDCBit.Tilemap) == true)
                     {
@@ -111,10 +113,15 @@ namespace Monoboy
                     }
                     Stat = Stat.SetBit(StatBit.CoincidenceFlag, lyc);
 
-                    StatMode = Mode.Hblank;
+                    HandleModeChange(Mode.Hblank);
                 }
                 break;
             }
+        }
+
+        void HandleModeChange(byte newMode)
+        {
+            StatMode = newMode;
         }
 
         #region Drawing
@@ -166,7 +173,7 @@ namespace Monoboy
 
                 if(Application.Application.BackgroundEnabled == true)
                 {
-                    framebuffer.SetPixel(i, LY, palette[colorIndex]);
+                    framebuffer.SetPixel(i, LY, Pallet.GetColor(colorIndex));
                 }
             }
         }
@@ -204,7 +211,7 @@ namespace Monoboy
 
                 if(Application.Application.WindowEnabled == true)
                 {
-                    framebuffer.SetPixel(i, LY, palette[colorIndex]);
+                    framebuffer.SetPixel(i, LY, Pallet.GetColor(colorIndex));
                 }
             }
         }
@@ -261,7 +268,7 @@ namespace Monoboy
 
                     uint backgroundColor = framebuffer.GetPixel(pixelX, pixelY);
 
-                    if(priority == true && backgroundColor != palette[0])
+                    if(priority == true && backgroundColor != Pallet.GetColor(0))
                     {
                         continue;
                     }
@@ -279,8 +286,6 @@ namespace Monoboy
             byte color_3_shade = (byte)(obp >> 6);           // extract bits 7 & 6
             byte color_2_shade = (byte)((obp >> 4) & 0x03);  // extract bits 5 & 4
             byte color_1_shade = (byte)((obp >> 2) & 0x03);  // extract bits 3 & 2
-            byte color_0_shade = (byte)(obp & 0x03);         // extract bits 1 & 0
-
             // Get color code from the two defining bytes
             byte first = (byte)(top.GetBit(bit) ? 1 : 0);
             byte second = (byte)(bottom.GetBit(bit) ? 1 : 0);
@@ -289,9 +294,9 @@ namespace Monoboy
             return pixel switch
             {
                 0x0 => null,
-                0x1 => palette[color_1_shade],
-                0x2 => palette[color_2_shade],
-                0x3 => palette[color_3_shade],
+                0x1 => Pallet.GetColor(color_1_shade),
+                0x2 => Pallet.GetColor(color_2_shade),
+                0x3 => Pallet.GetColor(color_3_shade),
                 _ => 0xFF00FF,
             };
         }

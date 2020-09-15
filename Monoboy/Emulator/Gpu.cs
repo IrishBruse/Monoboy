@@ -1,5 +1,6 @@
 ﻿using Monoboy.Constants;
 using Monoboy.Utility;
+using OpenTK.Graphics.GL;
 using static Monoboy.Constants.Constant;
 
 namespace Monoboy
@@ -53,14 +54,14 @@ namespace Monoboy
                 case Mode.Hblank:
                 if(cycles >= 204)
                 {
-                    LY++;
                     cycles -= 204;
+                    LY++;
 
                     if(LY == 144)
                     {
                         HandleModeChange(Mode.Vblank);
-                        DrawFrame?.Invoke();
                         bus.interrupt.InterruptRequest(InterruptFlag.VBlank);
+                        DrawFrame?.Invoke();
                     }
                     else
                     {
@@ -72,14 +73,13 @@ namespace Monoboy
                 case Mode.Vblank:
                 if(cycles >= 456)
                 {
-                    LY++;
                     cycles -= 456;
+                    LY++;
 
                     if(LY == 154)
                     {
-                        framebuffer = new Framebuffer(WindowWidth, WindowHeight);
-                        LY = 0;
                         HandleModeChange(Mode.OAM);
+                        LY = 0;
                     }
                 }
                 break;
@@ -96,32 +96,42 @@ namespace Monoboy
                 if(cycles >= 172)
                 {
                     cycles -= 172;
-
                     DrawScanline();
-
-                    if(LCDC.GetBit(LCDCBit.Tilemap) == true)
-                    {
-                        bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
-                    }
-
-                    bool lycInterrupt = Stat.GetBit(StatBit.CoincidenceInterrupt);
-                    bool lyc = LYC == LY;
-
-                    if(lycInterrupt && lyc)
-                    {
-                        bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
-                    }
-                    Stat = Stat.SetBit(StatBit.CoincidenceFlag, lyc);
-
                     HandleModeChange(Mode.Hblank);
                 }
                 break;
+            }
+
+            if(LY == LYC)
+            {
+                Stat.SetBit(Bit.Bit2, true);
+                if(Stat.GetBit(Bit.Bit6) == true)
+                {
+                    bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
+                }
+            }
+            else
+            {
+                Stat.SetBit(Bit.Bit2, false);
             }
         }
 
         void HandleModeChange(byte newMode)
         {
             StatMode = newMode;
+
+            if(newMode == 2 && Stat.GetBit(Bit.Bit5) == true)
+            {
+                bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
+            }
+            else if(newMode == 0 && Stat.GetBit(Bit.Bit3))
+            {
+                bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
+            }
+            else if(newMode == 1 && Stat.GetBit(Bit.Bit4))
+            {
+                bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
+            }
         }
 
         #region Drawing
@@ -218,9 +228,9 @@ namespace Monoboy
 
         private void DrawSprites()
         {
-            bool spritesSize = LCDC.GetBit(LCDCBit.SpritesSize);
+            int spriteSize = LCDC.GetBit(LCDCBit.SpritesSize) ? 16 : 8;
 
-            for(int i = 40 - 1; i >= 0; i--)
+            for(int i = 64; i >= 0; i--)
             {
                 ushort offset = (ushort)(0xFE00 + (i * 4));
 
@@ -230,75 +240,37 @@ namespace Monoboy
                 byte flags = bus.Read((ushort)(offset + 3));
                 byte obp = flags.GetBit(Bit.Bit4) ? OBP1 : OBP0;
 
-                if(spritesSize == true)
+                bool mirrorX = flags.GetBit(Bit.Bit5);
+                bool mirrorY = flags.GetBit(Bit.Bit6);
+                bool aboveBG = flags.GetBit(Bit.Bit7);
+
+                if(LY >= y && LY < y + spriteSize)
                 {
-                    DrawSprite(obp, x, (byte)(y + 8), tileID, flags);
-                    DrawSprite(obp, x, y, (byte)(tileID & 0b11111110), flags);
-                }
-                else
-                {
-                    DrawSprite(obp, x, y, tileID, flags);
-                }
-            }
-        }
+                    int row = mirrorY ? spriteSize - 1 - (LY - y) : LY - y;
 
-        private void DrawSprite(byte obp, int x, int y, byte tileID, byte flags)
-        {
-            bool mirrorX = flags.GetBit(Bit.Bit5);
-            bool mirrorY = flags.GetBit(Bit.Bit6);
-            bool priority = flags.GetBit(Bit.Bit7);
+                    int vramAddress = 0x8000 + (tileID * 16) + (row * 2);
+                    byte data1 = bus.Read((ushort)(vramAddress + 0));
+                    byte data2 = bus.Read((ushort)(vramAddress + 1));
 
-            for(int Y = 0; Y < 8; Y++)
-            {
-                int offset = (tileID * 16) + 0x8000;
-                byte high = bus.Read((ushort)(offset + (Y * 2) + 1));
-                byte low = bus.Read((ushort)(offset + (Y * 2) + 0));
-
-                for(int X = 0; X < 8; X++)
-                {
-                    int pixelX = mirrorX ? (x + X) : (x + 7 - X);
-                    int pixelY = mirrorY ? (y + 7 - Y) : (y + Y);
-
-                    if(pixelX < 0 || pixelX >= WindowWidth || pixelY < 0 || pixelY >= WindowHeight)
+                    for(int r = 0; r < 8; r++)
                     {
-                        continue;
-                    }
+                        int pixelBit = mirrorX ? r : 7 - r;
 
-                    uint? pixel = GetPixel(obp, low, high, (byte)(0b00000001 << X));
+                        int hi = (data2 >> pixelBit) & 1;
+                        int lo = (data1 >> pixelBit) & 1;
+                        byte palletIndex = (byte)(hi << 1 | lo);
+                        byte palletColor = (byte)((obp >> palletIndex * 2) & 0b11);
 
-                    uint backgroundColor = framebuffer.GetPixel(pixelX, pixelY);
-
-                    if(priority == true && backgroundColor != Pallet.GetColor(0))
-                    {
-                        continue;
-                    }
-
-                    if(Application.Application.SpritesEnabled == true && pixel != null)
-                    {
-                        framebuffer.SetPixel(pixelX, pixelY, (uint)pixel);
+                        if(x + r >= 0 && x + r < WindowWidth)
+                        {
+                            if(palletIndex != 0 && (aboveBG == false || framebuffer.GetPixel(x - r, LY) == Pallet.GetColor((byte)(BGP & 0b11))))
+                            {
+                                framebuffer.SetPixel(x + r, LY, Pallet.GetColor(palletColor));
+                            }
+                        }
                     }
                 }
             }
-        }
-
-        uint? GetPixel(byte obp, byte top, byte bottom, byte bit)
-        {
-            byte color_3_shade = (byte)(obp >> 6);           // extract bits 7 & 6
-            byte color_2_shade = (byte)((obp >> 4) & 0x03);  // extract bits 5 & 4
-            byte color_1_shade = (byte)((obp >> 2) & 0x03);  // extract bits 3 & 2
-            // Get color code from the two defining bytes
-            byte first = (byte)(top.GetBit(bit) ? 1 : 0);
-            byte second = (byte)(bottom.GetBit(bit) ? 1 : 0);
-            byte pixel = (byte)((second << 1) | first);
-
-            return pixel switch
-            {
-                0x0 => null,
-                0x1 => Pallet.GetColor(color_1_shade),
-                0x2 => Pallet.GetColor(color_2_shade),
-                0x3 => Pallet.GetColor(color_3_shade),
-                _ => 0xFF00FF,
-            };
         }
         #endregion
     }

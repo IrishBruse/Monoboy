@@ -10,4 +10,4 @@ it was written to help me get better at C# and learn the more indepth parts of i
 ![Cpu Test](https://raw.githubusercontent.com/IrishBruse/Monoboy/master/Images/Cpu_Test.png) 
 
 # Games
-![Cpu Test](https://raw.githubusercontent.com/IrishBruse/Monoboy/master/Images/Cpu_Test.png)
+![Tetris](https://raw.githubusercontent.com/IrishBruse/Monoboy/master/Images/Tetris.png)

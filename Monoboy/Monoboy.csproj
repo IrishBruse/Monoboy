@@ -15,7 +15,7 @@
 		<DefineConstants>DEBUG;TRACE</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Update="tinyfiledialogsx64.dll">
+		<None Update="tinyfiledialogsx64.dll" Condition="'$(Platform)'=='x86'">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="tinyfiledialogsx86.dll" Condition="'$(Platform)'=='x86'">

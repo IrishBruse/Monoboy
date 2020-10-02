@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Numerics;
-using OpenTK.Graphics.OpenGL4;
-using PixelFormat = OpenTK.Graphics.OpenGL4.PixelFormat;
+
+using OpenTK.Graphics.OpenGL;
+
+using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
 namespace ImGuiOpenTK
 {
@@ -56,7 +58,7 @@ namespace ImGuiOpenTK
 
             GL.TextureSubImage2D(GLTexture, 0, 0, 0, Width, Height, PixelFormat.Bgra, PixelType.UnsignedByte, data);
 
-            if(generateMipmaps) GL.GenerateTextureMipmap(GLTexture);
+            if (generateMipmaps) GL.GenerateTextureMipmap(GLTexture);
 
             SetWrap(TextureCoordinate.S, TextureWrapMode.Repeat);
             SetWrap(TextureCoordinate.T, TextureWrapMode.Repeat);
@@ -77,7 +79,7 @@ namespace ImGuiOpenTK
 
             GL.TextureSubImage2D(GLTexture, 0, 0, 0, Width, Height, PixelFormat.Rgb, PixelType.UnsignedByte, data);
 
-            if(generateMipmaps) GL.GenerateTextureMipmap(GLTexture);
+            if (generateMipmaps) GL.GenerateTextureMipmap(GLTexture);
 
             SetWrap(TextureCoordinate.S, TextureWrapMode.Repeat);
             SetWrap(TextureCoordinate.T, TextureWrapMode.Repeat);

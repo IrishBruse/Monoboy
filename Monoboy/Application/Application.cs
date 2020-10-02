@@ -1,11 +1,14 @@
 ﻿using System;
-using System.IO;
 using System.Numerics;
+
 using ImGuiNET;
+
 using ImGuiOpenTK;
+
 using Monoboy.Constants;
 using Monoboy.Utility;
-using OpenTK.Graphics.OpenGL4;
+
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
@@ -61,10 +64,10 @@ namespace Monoboy.Application
 
             UpdateJoypad();
 
-            if(emulator.paused == false)
+            if (emulator.paused == false)
             {
                 int cycles = 0;
-                while(cycles < Constant.CyclesPerFrame)
+                while (cycles < Constant.CyclesPerFrame)
                 {
                     cycles += emulator.Step();
                 }
@@ -106,45 +109,45 @@ namespace Monoboy.Application
             windowFlags |= ImGuiWindowFlags.NoBringToFrontOnFocus;
             windowFlags |= ImGuiWindowFlags.AlwaysAutoResize;
 
-            if(ImGui.Begin("Monoboy", windowFlags) == false)
+            if (ImGui.Begin("Monoboy", windowFlags) == false)
             {
                 ImGui.End();
                 return;
             }
 
             // Menubar
-            if(ImGui.BeginMenuBar())
+            if (ImGui.BeginMenuBar())
             {
-                if(ImGui.BeginMenu("File"))
+                if (ImGui.BeginMenu("File"))
                 {
-                    if(ImGui.MenuItem("Open", "Ctrl+O"))
+                    if (ImGui.MenuItem("Open", "Ctrl+O"))
                     {
                         openRom = TinyFileDialog.OpenFileDialog("Open Rom", "", new string[] { "*.gb", "*.gbc" }, "Rom (.gb,.gbc)", false);
 
-                        if(string.IsNullOrEmpty(openRom) == false)
+                        if (string.IsNullOrEmpty(openRom) == false)
                         {
                             emulator.Open(openRom);
                         }
                     }
-                    if(ImGui.MenuItem("Quit", "Alt+F4"))
+                    if (ImGui.MenuItem("Quit", "Alt+F4"))
                     {
                         Close();
                     }
                     ImGui.EndMenu();
                 }
 
-                if(ImGui.BeginMenu("Debug"))
+                if (ImGui.BeginMenu("Debug"))
                 {
-                    if(ImGui.MenuItem("Background Toggle", null, ref BackgroundEnabled)) { }
-                    if(ImGui.MenuItem("Window Toggle", null, ref WindowEnabled)) { }
-                    if(ImGui.MenuItem("Sprites Toggle", null, ref SpritesEnabled)) { }
+                    if (ImGui.MenuItem("Background Toggle", null, ref BackgroundEnabled)) { }
+                    if (ImGui.MenuItem("Window Toggle", null, ref WindowEnabled)) { }
+                    if (ImGui.MenuItem("Sprites Toggle", null, ref SpritesEnabled)) { }
                     ImGui.EndMenu();
                 }
 
-                if(ImGui.BeginMenu("Windows"))
+                if (ImGui.BeginMenu("Windows"))
                 {
-                    if(ImGui.MenuItem("Background", null, ref backgroundWindow)) { }
-                    if(ImGui.MenuItem("Tilemap", null, ref tilemapWindow)) { }
+                    if (ImGui.MenuItem("Background", null, ref backgroundWindow)) { }
+                    if (ImGui.MenuItem("Tilemap", null, ref tilemapWindow)) { }
                     ImGui.EndMenu();
                 }
 
@@ -170,7 +173,7 @@ namespace Monoboy.Application
 
         private void BackgroundWindow()
         {
-            if(backgroundWindow == true)
+            if (backgroundWindow == true)
             {
                 uint[] palette = { 0xD0D058, 0xA0A840, 0x708028, 0x405010 };
 
@@ -180,11 +183,11 @@ namespace Monoboy.Application
                 ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x1000);
                 ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
 
-                for(int y = 0; y < 256; y++)
+                for (int y = 0; y < 256; y++)
                 {
                     ushort row = (ushort)(y / 8);
 
-                    for(int x = 0; x < 256; x++)
+                    for (int x = 0; x < 256; x++)
                     {
                         ushort colum = (ushort)(x / 8);
 
@@ -219,15 +222,15 @@ namespace Monoboy.Application
 
         private void TilemapWindow()
         {
-            if(tilemapWindow == true)
+            if (tilemapWindow == true)
             {
                 uint[] palette = { 0xD0D058, 0xA0A840, 0x708028, 0x405010 };
 
-                for(int y = 0; y < 192; y++)
+                for (int y = 0; y < 192; y++)
                 {
                     ushort row = (ushort)(y / 8);
 
-                    for(int x = 0; x < 128; x++)
+                    for (int x = 0; x < 128; x++)
                     {
                         ushort colum = (ushort)(x / 8);
 

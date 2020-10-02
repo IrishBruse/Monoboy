@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
@@ -156,7 +156,7 @@ void main()
         /// </summary>
         public void Render()
         {
-            if(_frameBegun)
+            if (_frameBegun)
             {
                 _frameBegun = false;
                 ImGui.Render();
@@ -169,7 +169,7 @@ void main()
         /// </summary>
         public void Update(GameWindow wnd, float deltaSeconds)
         {
-            if(_frameBegun)
+            if (_frameBegun)
             {
                 ImGui.Render();
             }
@@ -214,16 +214,16 @@ void main()
             var point = screenPoint;//wnd.PointToClient(screenPoint);
             io.MousePos = new System.Numerics.Vector2(point.X, point.Y);
 
-            foreach(Key key in Enum.GetValues(typeof(Key)))
+            foreach (Key key in Enum.GetValues(typeof(Key)))
             {
-                if(key == Key.Unknown)
+                if (key == Key.Unknown)
                 {
                     continue;
                 }
                 io.KeysDown[(int)key] = KeyboardState.IsKeyDown(key);
             }
 
-            foreach(var c in PressedChars)
+            foreach (var c in PressedChars)
             {
                 io.AddInputCharacter(c);
             }
@@ -278,17 +278,17 @@ void main()
 
         private void RenderImDrawData(ImDrawDataPtr draw_data)
         {
-            if(draw_data.CmdListsCount == 0)
+            if (draw_data.CmdListsCount == 0)
             {
                 return;
             }
 
-            for(int i = 0; i < draw_data.CmdListsCount; i++)
+            for (int i = 0; i < draw_data.CmdListsCount; i++)
             {
                 ImDrawListPtr cmd_list = draw_data.CmdListsRange[i];
 
                 int vertexSize = cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>();
-                if(vertexSize > _vertexBufferSize)
+                if (vertexSize > _vertexBufferSize)
                 {
                     int newSize = (int)Math.Max(_vertexBufferSize * 1.5f, vertexSize);
                     GL.NamedBufferData(_vertexBuffer, newSize, IntPtr.Zero, BufferUsageHint.DynamicDraw);
@@ -298,7 +298,7 @@ void main()
                 }
 
                 int indexSize = cmd_list.IdxBuffer.Size * sizeof(ushort);
-                if(indexSize > _indexBufferSize)
+                if (indexSize > _indexBufferSize)
                 {
                     int newSize = (int)Math.Max(_indexBufferSize * 1.5f, indexSize);
                     GL.NamedBufferData(_indexBuffer, newSize, IntPtr.Zero, BufferUsageHint.DynamicDraw);
@@ -336,7 +336,7 @@ void main()
             GL.Disable(EnableCap.DepthTest);
 
             // Render command lists
-            for(int n = 0; n < draw_data.CmdListsCount; n++)
+            for (int n = 0; n < draw_data.CmdListsCount; n++)
             {
                 ImDrawListPtr cmd_list = draw_data.CmdListsRange[n];
 
@@ -349,10 +349,10 @@ void main()
                 int vtx_offset = 0;
                 int idx_offset = 0;
 
-                for(int cmd_i = 0; cmd_i < cmd_list.CmdBuffer.Size; cmd_i++)
+                for (int cmd_i = 0; cmd_i < cmd_list.CmdBuffer.Size; cmd_i++)
                 {
                     ImDrawCmdPtr pcmd = cmd_list.CmdBuffer[cmd_i];
-                    if(pcmd.UserCallback != IntPtr.Zero)
+                    if (pcmd.UserCallback != IntPtr.Zero)
                     {
                         throw new NotImplementedException();
                     }
@@ -367,7 +367,7 @@ void main()
                         GL.Scissor((int)clip.X, _windowHeight - (int)clip.W, (int)(clip.Z - clip.X), (int)(clip.W - clip.Y));
                         Util.CheckGLError("Scissor");
 
-                        if((io.BackendFlags & ImGuiBackendFlags.RendererHasVtxOffset) != 0)
+                        if ((io.BackendFlags & ImGuiBackendFlags.RendererHasVtxOffset) != 0)
                         {
                             GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)pcmd.ElemCount, DrawElementsType.UnsignedShort, (IntPtr)(idx_offset * sizeof(ushort)), vtx_offset);
                         }

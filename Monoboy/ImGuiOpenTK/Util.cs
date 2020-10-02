@@ -1,7 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using OpenTK.Graphics.OpenGL4;
+
+using OpenTK.Graphics.OpenGL;
 
 namespace ImGuiOpenTK
 {
@@ -17,7 +18,7 @@ namespace ImGuiOpenTK
         public static void CheckGLError(string title)
         {
             var error = GL.GetError();
-            if(error != ErrorCode.NoError)
+            if (error != ErrorCode.NoError)
             {
                 Debug.Print($"{title}: {error}");
             }

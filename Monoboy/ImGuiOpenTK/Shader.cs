@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using OpenTK.Graphics.OpenGL4;
+
+using OpenTK.Graphics.OpenGL;
 
 namespace ImGuiOpenTK
 {
@@ -38,7 +39,7 @@ namespace ImGuiOpenTK
 
         public void Dispose()
         {
-            if(Initialized)
+            if (Initialized)
             {
                 GL.DeleteProgram(Program);
                 Initialized = false;
@@ -51,7 +52,7 @@ namespace ImGuiOpenTK
 
             UniformFieldInfo[] Uniforms = new UniformFieldInfo[UnifromCount];
 
-            for(int i = 0; i < UnifromCount; i++)
+            for (int i = 0; i < UnifromCount; i++)
             {
                 string Name = GL.GetActiveUniform(Program, i, out int Size, out ActiveUniformType Type);
 
@@ -70,12 +71,12 @@ namespace ImGuiOpenTK
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetUniformLocation(string uniform)
         {
-            if(UniformToLocation.TryGetValue(uniform, out int location) == false)
+            if (UniformToLocation.TryGetValue(uniform, out int location) == false)
             {
                 location = GL.GetUniformLocation(Program, uniform);
                 UniformToLocation.Add(uniform, location);
 
-                if(location == -1)
+                if (location == -1)
                 {
                     Debug.Print($"The uniform '{uniform}' does not exist in the shader '{Name}'!");
                 }
@@ -89,24 +90,24 @@ namespace ImGuiOpenTK
             Util.CreateProgram(name, out int Program);
 
             int[] Shaders = new int[shaderPaths.Length];
-            for(int i = 0; i < shaderPaths.Length; i++)
+            for (int i = 0; i < shaderPaths.Length; i++)
             {
                 Shaders[i] = CompileShader(name, shaderPaths[i].Type, shaderPaths[i].source);
             }
 
-            foreach(var shader in Shaders)
+            foreach (var shader in Shaders)
                 GL.AttachShader(Program, shader);
 
             GL.LinkProgram(Program);
 
             GL.GetProgram(Program, GetProgramParameterName.LinkStatus, out int Success);
-            if(Success == 0)
+            if (Success == 0)
             {
                 string Info = GL.GetProgramInfoLog(Program);
                 Debug.WriteLine($"GL.LinkProgram had info log [{name}]:\n{Info}");
             }
 
-            foreach(var Shader in Shaders)
+            foreach (var Shader in Shaders)
             {
                 GL.DetachShader(Program, Shader);
                 GL.DeleteShader(Shader);
@@ -124,7 +125,7 @@ namespace ImGuiOpenTK
             GL.CompileShader(Shader);
 
             GL.GetShader(Shader, ShaderParameter.CompileStatus, out int success);
-            if(success == 0)
+            if (success == 0)
             {
                 string Info = GL.GetShaderInfoLog(Shader);
                 Debug.WriteLine($"GL.CompileShader for shader '{Name}' [{type}] had info log:\n{Info}");

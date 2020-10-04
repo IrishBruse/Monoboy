@@ -1,6 +1,6 @@
 ﻿using Monoboy.Constants;
 using Monoboy.Utility;
-using OpenTK.Graphics.GL;
+
 using static Monoboy.Constants.Constant;
 
 namespace Monoboy
@@ -39,7 +39,7 @@ namespace Monoboy
 
         public void Step(int ticks)
         {
-            if(LCDC.GetBit(LCDCBit.LCDEnabled) == false)
+            if (LCDC.GetBit(LCDCBit.LCDEnabled) == false)
             {
                 LY = 0;
                 cycles = 0;
@@ -49,63 +49,63 @@ namespace Monoboy
 
             cycles += ticks;
 
-            switch(StatMode)
+            switch (StatMode)
             {
                 case Mode.Hblank:
-                if(cycles >= 204)
-                {
-                    cycles -= 204;
-                    LY++;
+                    if (cycles >= 204)
+                    {
+                        cycles -= 204;
+                        LY++;
 
-                    if(LY == 144)
-                    {
-                        HandleModeChange(Mode.Vblank);
-                        bus.interrupt.InterruptRequest(InterruptFlag.VBlank);
-                        DrawFrame?.Invoke();
+                        if (LY == 144)
+                        {
+                            HandleModeChange(Mode.Vblank);
+                            bus.interrupt.InterruptRequest(InterruptFlag.VBlank);
+                            DrawFrame?.Invoke();
+                        }
+                        else
+                        {
+                            HandleModeChange(Mode.OAM);
+                        }
                     }
-                    else
-                    {
-                        HandleModeChange(Mode.OAM);
-                    }
-                }
-                break;
+                    break;
 
                 case Mode.Vblank:
-                if(cycles >= 456)
-                {
-                    cycles -= 456;
-                    LY++;
-
-                    if(LY == 154)
+                    if (cycles >= 456)
                     {
-                        HandleModeChange(Mode.OAM);
-                        LY = 0;
+                        cycles -= 456;
+                        LY++;
+
+                        if (LY == 154)
+                        {
+                            HandleModeChange(Mode.OAM);
+                            LY = 0;
+                        }
                     }
-                }
-                break;
+                    break;
 
                 case Mode.OAM:
-                if(cycles >= 80)
-                {
-                    cycles -= 80;
-                    HandleModeChange(Mode.VRAM);
-                }
-                break;
+                    if (cycles >= 80)
+                    {
+                        cycles -= 80;
+                        HandleModeChange(Mode.VRAM);
+                    }
+                    break;
 
                 case Mode.VRAM:
-                if(cycles >= 172)
-                {
-                    cycles -= 172;
-                    DrawScanline();
-                    HandleModeChange(Mode.Hblank);
-                }
-                break;
+                    if (cycles >= 172)
+                    {
+                        cycles -= 172;
+                        DrawScanline();
+                        HandleModeChange(Mode.Hblank);
+                    }
+                    break;
             }
 
-            if(LY == LYC)
+            if (LY == LYC)
             {
                 Stat.SetBit(Bit.Bit2, true);
-                if(Stat.GetBit(Bit.Bit6) == true)
+                if (Stat.GetBit(Bit.Bit6) == true)
                 {
                     bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
                 }
@@ -120,15 +120,15 @@ namespace Monoboy
         {
             StatMode = newMode;
 
-            if(newMode == 2 && Stat.GetBit(Bit.Bit5) == true)
+            if (newMode == 2 && Stat.GetBit(Bit.Bit5) == true)
             {
                 bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
             }
-            else if(newMode == 0 && Stat.GetBit(Bit.Bit3))
+            else if (newMode == 0 && Stat.GetBit(Bit.Bit3))
             {
                 bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
             }
-            else if(newMode == 1 && Stat.GetBit(Bit.Bit4))
+            else if (newMode == 1 && Stat.GetBit(Bit.Bit4))
             {
                 bus.interrupt.InterruptRequest(InterruptFlag.LCDStat);
             }
@@ -139,17 +139,17 @@ namespace Monoboy
         {
             backgroundPriority = new bool[WindowWidth];
 
-            if(LCDC.GetBit(LCDCBit.BackgroundEnabled) == true)
+            if (LCDC.GetBit(LCDCBit.BackgroundEnabled) == true)
             {
                 DrawBackground();
             }
 
-            if(LCDC.GetBit(LCDCBit.WindowEnabled) == true)
+            if (LCDC.GetBit(LCDCBit.WindowEnabled) == true)
             {
                 DrawWindow();
             }
 
-            if(LCDC.GetBit(LCDCBit.SpritesEnabled) == true)
+            if (LCDC.GetBit(LCDCBit.SpritesEnabled) == true)
             {
                 DrawSprites();
             }
@@ -164,7 +164,7 @@ namespace Monoboy
             byte y = (byte)(LY + SCY);
             int row = y / 8;
 
-            for(byte i = 0; i < WindowWidth; i++)
+            for (byte i = 0; i < WindowWidth; i++)
             {
                 byte x = (byte)(i + SCX);
                 int colum = x / 8;
@@ -181,7 +181,7 @@ namespace Monoboy
                 byte colorIndex = (byte)((BGP >> palletIndex * 2) & 0b11);
                 backgroundPriority[i] = colorIndex != 0;
 
-                if(Application.Application.BackgroundEnabled == true)
+                if (Application.Application.BackgroundEnabled == true)
                 {
                     framebuffer.SetPixel(i, LY, Pallet.GetColor(colorIndex));
                 }
@@ -198,10 +198,10 @@ namespace Monoboy
             byte y = (byte)(LY - WY);
             int row = y / 8;
 
-            for(byte i = WX; i < WindowWidth; i++)
+            for (byte i = WX; i < WindowWidth; i++)
             {
                 byte x = (byte)(i + SCX);
-                if(x >= WX)
+                if (x >= WX)
                 {
                     x = (byte)(i - WX);
                 }
@@ -219,7 +219,7 @@ namespace Monoboy
                 byte colorIndex = (byte)((BGP >> palletIndex * 2) & 0b11);
                 backgroundPriority[i] = colorIndex != 0;
 
-                if(Application.Application.WindowEnabled == true)
+                if (Application.Application.WindowEnabled == true)
                 {
                     framebuffer.SetPixel(i, LY, Pallet.GetColor(colorIndex));
                 }
@@ -230,7 +230,7 @@ namespace Monoboy
         {
             int spriteSize = LCDC.GetBit(LCDCBit.SpritesSize) ? 16 : 8;
 
-            for(int i = 64; i >= 0; i--)
+            for (int i = 64; i >= 0; i--)
             {
                 ushort offset = (ushort)(0xFE00 + (i * 4));
 
@@ -244,7 +244,7 @@ namespace Monoboy
                 bool mirrorY = flags.GetBit(Bit.Bit6);
                 bool aboveBG = flags.GetBit(Bit.Bit7);
 
-                if(LY >= y && LY < y + spriteSize)
+                if (LY >= y && LY < y + spriteSize)
                 {
                     int row = mirrorY ? spriteSize - 1 - (LY - y) : LY - y;
 
@@ -252,7 +252,7 @@ namespace Monoboy
                     byte data1 = bus.Read((ushort)(vramAddress + 0));
                     byte data2 = bus.Read((ushort)(vramAddress + 1));
 
-                    for(int r = 0; r < 8; r++)
+                    for (int r = 0; r < 8; r++)
                     {
                         int pixelBit = mirrorX ? r : 7 - r;
 
@@ -261,9 +261,9 @@ namespace Monoboy
                         byte palletIndex = (byte)(hi << 1 | lo);
                         byte palletColor = (byte)((obp >> palletIndex * 2) & 0b11);
 
-                        if(x + r >= 0 && x + r < WindowWidth)
+                        if (x + r >= 0 && x + r < WindowWidth)
                         {
-                            if(palletIndex != 0 && (aboveBG == false || framebuffer.GetPixel(x - r, LY) == Pallet.GetColor((byte)(BGP & 0b11))))
+                            if (palletIndex != 0 && (aboveBG == false || framebuffer.GetPixel(x - r, LY) == Pallet.GetColor((byte)(BGP & 0b11))))
                             {
                                 framebuffer.SetPixel(x + r, LY, Pallet.GetColor(palletColor));
                             }

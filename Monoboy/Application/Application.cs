@@ -2,16 +2,15 @@
 using System.Numerics;
 
 using ImGuiNET;
-
-using ImGuiOpenTK;
+using ImGuiNET.OpenTK;
 
 using Monoboy.Constants;
 using Monoboy.Utility;
 
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.Common;
-using OpenTK.Windowing.Common.Input;
 using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Monoboy.Application
 {
@@ -38,10 +37,8 @@ namespace Monoboy.Application
 
         public Application(GameWindowSettings gameWindow, NativeWindowSettings nativeWindow) : base(gameWindow, nativeWindow)
         {
-
             emulator = new Emulator();
 
-            // opentk 4.0 bug!
             MakeCurrent();
 
             framebufferTexture = new Texture("FrameBuffer", Constant.WindowWidth, Constant.WindowHeight, emulator.bus.gpu.framebuffer.Pixels);
@@ -76,14 +73,14 @@ namespace Monoboy.Application
 
         void UpdateJoypad()
         {
-            emulator.bus.joypad.SetButton(Joypad.Button.A, KeyboardState.IsKeyDown(Key.Space));
-            emulator.bus.joypad.SetButton(Joypad.Button.B, KeyboardState.IsKeyDown(Key.ShiftLeft));
-            emulator.bus.joypad.SetButton(Joypad.Button.Select, KeyboardState.IsKeyDown(Key.Escape));
-            emulator.bus.joypad.SetButton(Joypad.Button.Start, KeyboardState.IsKeyDown(Key.Enter));
-            emulator.bus.joypad.SetButton(Joypad.Button.Up, KeyboardState.IsKeyDown(Key.W));
-            emulator.bus.joypad.SetButton(Joypad.Button.Down, KeyboardState.IsKeyDown(Key.S));
-            emulator.bus.joypad.SetButton(Joypad.Button.Left, KeyboardState.IsKeyDown(Key.A));
-            emulator.bus.joypad.SetButton(Joypad.Button.Right, KeyboardState.IsKeyDown(Key.D));
+            emulator.bus.joypad.SetButton(Joypad.Button.A, KeyboardState.IsKeyDown(Keys.Space));
+            emulator.bus.joypad.SetButton(Joypad.Button.B, KeyboardState.IsKeyDown(Keys.LeftShift));
+            emulator.bus.joypad.SetButton(Joypad.Button.Select, KeyboardState.IsKeyDown(Keys.Escape));
+            emulator.bus.joypad.SetButton(Joypad.Button.Start, KeyboardState.IsKeyDown(Keys.Enter));
+            emulator.bus.joypad.SetButton(Joypad.Button.Up, KeyboardState.IsKeyDown(Keys.W));
+            emulator.bus.joypad.SetButton(Joypad.Button.Down, KeyboardState.IsKeyDown(Keys.S));
+            emulator.bus.joypad.SetButton(Joypad.Button.Left, KeyboardState.IsKeyDown(Keys.A));
+            emulator.bus.joypad.SetButton(Joypad.Button.Right, KeyboardState.IsKeyDown(Keys.D));
         }
 
         void DrawFrame()
@@ -242,7 +239,7 @@ namespace Monoboy.Application
                         byte data1 = emulator.bus.gpu.VideoRam[tileGraphicAddress + line];
                         byte data2 = emulator.bus.gpu.VideoRam[tileGraphicAddress + line + 1];
 
-                        byte bit = (byte)(0b00000001 << ((((int)x % 8) - 7) * 0xff));
+                        byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
                         byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
                         byte colorIndex = (byte)((emulator.bus.gpu.BGP >> palletIndex * 2) & 0b11);
                         tilemapBuffer.SetPixel(x, y, palette[colorIndex]);

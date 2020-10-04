@@ -27,10 +27,7 @@ namespace Monoboy
 
         public ushort AF
         {
-            get
-            {
-                return (ushort)((A << 8) | F);
-            }
+            get => (ushort)((A << 8) | F);
             set
             {
                 A = value.High();
@@ -40,10 +37,7 @@ namespace Monoboy
 
         public ushort BC
         {
-            get
-            {
-                return (ushort)((B << 8) | C);
-            }
+            get => (ushort)((B << 8) | C);
             set
             {
                 B = value.High();
@@ -53,10 +47,7 @@ namespace Monoboy
 
         public ushort DE
         {
-            get
-            {
-                return (ushort)((D << 8) | E);
-            }
+            get => (ushort)((D << 8) | E);
             set
             {
                 D = value.High();
@@ -66,10 +57,7 @@ namespace Monoboy
 
         public ushort HL
         {
-            get
-            {
-                return (ushort)((H << 8) | L);
-            }
+            get => (ushort)((H << 8) | L);
             set
             {
                 H = value.High();
@@ -79,7 +67,7 @@ namespace Monoboy
 
         public void SetFlag(byte flag, bool condition)
         {
-            if(condition == true)
+            if (condition == true)
             {
                 F |= flag;
             }

@@ -8,8 +8,8 @@ namespace Monoboy
         private bool IME;// Master interupt enabled
         private bool IMEDelay;// Master interupt enabled delay
 
-        public byte IE { get { return bus.Read(0xFFFF); } set { bus.Write(0xFFFF, value); } }
-        public byte IF { get { return bus.Read(0xFF0F); } set { bus.Write(0xFF0F, value); } }
+        public byte IE { get => bus.Read(0xFFFF); set => bus.Write(0xFFFF, value); }
+        public byte IF { get => bus.Read(0xFF0F); set => bus.Write(0xFF0F, value); }
 
         public Interrupt(Bus bus)
         {
@@ -28,9 +28,9 @@ namespace Monoboy
 
         public void Halt()
         {
-            if(IME == false)
+            if (IME == false)
             {
-                if((IE & IF & 0b11111) == 0)
+                if ((IE & IF & 0b11111) == 0)
                 {
                     bus.cpu.halted = true;
                     bus.register.PC--;
@@ -52,16 +52,16 @@ namespace Monoboy
             byte _ie = IE;
             byte _if = IF;
 
-            for(byte i = 0; i < 5; i++)
+            for (byte i = 0; i < 5; i++)
             {
-                if((((_ie & _if) >> i) & 0b1) == 1)
+                if ((((_ie & _if) >> i) & 0b1) == 1)
                 {
-                    if(bus.cpu.halted == true)
+                    if (bus.cpu.halted == true)
                     {
                         bus.register.PC++;
                         bus.cpu.halted = false;
                     }
-                    if(IME == true)
+                    if (IME == true)
                     {
                         bus.cpu.Push(bus.register.PC);
                         bus.register.PC = (ushort)(0b1000000 + (8 * i));

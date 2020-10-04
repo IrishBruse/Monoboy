@@ -5,7 +5,7 @@ using OpenTK.Graphics.OpenGL;
 
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 
-namespace ImGuiOpenTK
+namespace ImGuiNET.OpenTK
 {
     public enum TextureCoordinate
     {
@@ -30,7 +30,7 @@ namespace ImGuiOpenTK
 
         public readonly string Name;
         public readonly int GLTexture;
-        public Vector2 Size { get => new Vector2(Width, Height); }
+        public Vector2 Size => new Vector2(Width, Height);
         public readonly int Width, Height;
         public readonly int MipmapLevels;
         public readonly SizedInternalFormat InternalFormat;
@@ -58,7 +58,10 @@ namespace ImGuiOpenTK
 
             GL.TextureSubImage2D(GLTexture, 0, 0, 0, Width, Height, PixelFormat.Bgra, PixelType.UnsignedByte, data);
 
-            if (generateMipmaps) GL.GenerateTextureMipmap(GLTexture);
+            if (generateMipmaps)
+            {
+                GL.GenerateTextureMipmap(GLTexture);
+            }
 
             SetWrap(TextureCoordinate.S, TextureWrapMode.Repeat);
             SetWrap(TextureCoordinate.T, TextureWrapMode.Repeat);
@@ -79,7 +82,10 @@ namespace ImGuiOpenTK
 
             GL.TextureSubImage2D(GLTexture, 0, 0, 0, Width, Height, PixelFormat.Rgb, PixelType.UnsignedByte, data);
 
-            if (generateMipmaps) GL.GenerateTextureMipmap(GLTexture);
+            if (generateMipmaps)
+            {
+                GL.GenerateTextureMipmap(GLTexture);
+            }
 
             SetWrap(TextureCoordinate.S, TextureWrapMode.Repeat);
             SetWrap(TextureCoordinate.T, TextureWrapMode.Repeat);

@@ -1,34 +1,50 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFramework>netcoreapp3.1</TargetFramework>
-		<OutputType>WinExe</OutputType>
-		<StartupObject>Monoboy.Application.Program</StartupObject>
-		<ApplicationIcon>Icon.ico</ApplicationIcon>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<Platforms>x64;x86</Platforms>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-		<DefineConstants>TRACE;DEBUG</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-		<DefineConstants>DEBUG;TRACE</DefineConstants>
-	</PropertyGroup>
-	<ItemGroup>
-		<None Update="tinyfiledialogsx64.dll" Condition="'$(Platform)'=='x86'">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="tinyfiledialogsx64.dll">
-		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</None>
-		<None Update="tinyfiledialogsx86.dll" Condition="'$(Platform)'=='x86'">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<PackageReference Include="ImGui.NET" Version="1.78.0" />
-		<PackageReference Include="OpenTK" Version="4.0.0-pre9.7" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Update="$(ProjectDir)Roms\**" CopyToOutputDirectory="PreserveNewest" />
-		<None Update="$(ProjectDir)Saves\**" CopyToOutputDirectory="PreserveNewest" />
-	</ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RuntimeIdentifiers>win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
+
+    <StartupObject>Monoboy.Application.Program</StartupObject>
+    <ApplicationIcon>Icon.ico</ApplicationIcon>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <Platforms>x64;x86</Platforms>
+    <NoWin32Manifest>true</NoWin32Manifest>
+    <Authors>Ethan Conneely</Authors>
+    <Description>Gameboy Emulator</Description>
+    <PackageIcon>Icon.png</PackageIcon>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="TinyFileDialogs x64.dll">
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TinyFileDialogs x86.dll">
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ImGui.NET" Version="1.78.0" />
+    <PackageReference Include="OpenTK" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="$(ProjectDir)Roms\**" CopyToOutputDirectory="Always" />
+    <None Update="$(ProjectDir)Saves\**" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
 </Project>

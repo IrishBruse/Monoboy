@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Monoboy
+﻿namespace Monoboy
 {
     public class Bus
     {
@@ -53,7 +51,7 @@ namespace Monoboy
 
         public void Write(ushort address, byte data)
         {
-            switch(address)
+            switch (address)
             {
                 case ushort _ when address <= 0x7FFF: memoryBankController.WriteBank(address, data); break;    // 16KB ROM Bank > 00 (in cartridge, every other bank)
                 case ushort _ when address <= 0x9FFF: memory.vram[address - 0x8000] = data; break;             // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
@@ -75,61 +73,61 @@ namespace Monoboy
 
         private byte ReadIO(ushort address)
         {
-            switch(address)
+            switch (address)
             {
                 case 0xFF00:// JOYP
-                {
-                    return joypad.JOYP;
-                }
+                    {
+                        return joypad.JOYP;
+                    }
 
                 default:
-                {
-                    return memory.io[address - 0xFF00];
-                }
+                    {
+                        return memory.io[address - 0xFF00];
+                    }
             }
 
         }
 
         private void WriteIO(ushort address, byte data)
         {
-            switch(address)
+            switch (address)
             {
                 case 0xFF00:// JOYP
-                {
-                    joypad.JOYP = data;
-                }
-                break;
+                    {
+                        joypad.JOYP = data;
+                    }
+                    break;
 
                 case 0xFF04:// DIV
-                {
-                    data = 0;
-                }
-                break;
+                    {
+                        data = 0;
+                    }
+                    break;
 
                 case 0xFF44:// LY
-                {
-                    data = 0;
-                }
-                break;
+                    {
+                        data = 0;
+                    }
+                    break;
 
                 case 0xFF46:
-                {
-                    ushort offset = (ushort)(data << 8);
-                    for(byte i = 0; i < memory.oam.Length; i++)
                     {
-                        memory.oam[i] = Read((ushort)(offset + i));
+                        ushort offset = (ushort)(data << 8);
+                        for (byte i = 0; i < memory.oam.Length; i++)
+                        {
+                            memory.oam[i] = Read((ushort)(offset + i));
+                        }
                     }
-                }
-                break;
+                    break;
 
-                //case 0xFF02:
-                //{
-                //    if(data == 0x81)
-                //    {
-                //        Debug.Write(Convert.ToChar(Read(0xFF01)));
-                //    }
-                //}
-                //break;
+                    //case 0xFF02:
+                    //{
+                    //    if(data == 0x81)
+                    //    {
+                    //        Debug.Write(Convert.ToChar(Read(0xFF01)));
+                    //    }
+                    //}
+                    //break;
             }
 
             memory.io[address - 0xFF00] = data;

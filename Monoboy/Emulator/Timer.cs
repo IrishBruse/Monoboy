@@ -4,11 +4,11 @@ namespace Monoboy
 {
     public class Timer
     {
-        public byte Div { get { return bus.memory.io[0x04]; } set { bus.memory.io[0x04] = value; } }
-        public byte Tima { get { return bus.memory.io[0x05]; } set { bus.memory.io[0x05] = value; } }
-        public byte Tma { get { return bus.memory.io[0x06]; } set { bus.memory.io[0x06] = value; } }
-        public bool TacEnabled { get { return (bus.memory.io[0x07] & 0b100) != 0; } }
-        public byte TacFrequancy { get { return (byte)(bus.memory.io[0x07] & 0b011); } }
+        public byte Div { get => bus.memory.io[0x04]; set => bus.memory.io[0x04] = value; }
+        public byte Tima { get => bus.memory.io[0x05]; set => bus.memory.io[0x05] = value; }
+        public byte Tma { get => bus.memory.io[0x06]; set => bus.memory.io[0x06] = value; }
+        public bool TacEnabled => (bus.memory.io[0x07] & 0b100) != 0;
+        public byte TacFrequancy => (byte)(bus.memory.io[0x07] & 0b011);
 
         private Bus bus;
 
@@ -24,23 +24,23 @@ namespace Monoboy
         public void Step(int ticks)
         {
             dividerCounter += ticks;
-            if(dividerCounter >= 256)
+            if (dividerCounter >= 256)
             {
                 Div++;
                 dividerCounter -= 256;
             }
 
-            if(TacEnabled == true)
+            if (TacEnabled == true)
             {
                 timerCounter += ticks;
 
-                while(timerCounter >= TimerFrequancy[TacFrequancy])
+                while (timerCounter >= TimerFrequancy[TacFrequancy])
                 {
                     Tima++;
                     timerCounter -= TimerFrequancy[TacFrequancy];
                 }
 
-                if(Tima == 0xFF)
+                if (Tima == 0xFF)
                 {
                     Tima = Tma;
                     bus.interrupt.InterruptRequest(InterruptFlag.Timer);

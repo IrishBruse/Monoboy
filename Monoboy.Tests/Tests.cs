@@ -8,9 +8,9 @@ namespace Monoboy.Tests
         public void BootRom()
         {
             Emulator emulator = new Emulator();
-            emulator.LoadRom("Tetris.gb");
+            emulator.Open("Tetris.gb");
 
-            while(emulator.bus.register.PC != 0x100)
+            while (emulator.bus.register.PC != 0x100)
             {
                 emulator.Step();
             }

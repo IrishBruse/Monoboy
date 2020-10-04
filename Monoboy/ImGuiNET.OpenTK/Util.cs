@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 using OpenTK.Graphics.OpenGL;
 
-namespace ImGuiOpenTK
+namespace ImGuiNET.OpenTK
 {
     static class Util
     {
@@ -17,7 +17,7 @@ namespace ImGuiOpenTK
         [Conditional("DEBUG")]
         public static void CheckGLError(string title)
         {
-            var error = GL.GetError();
+            ErrorCode error = GL.GetError();
             if (error != ErrorCode.NoError)
             {
                 Debug.Print($"{title}: {error}");
@@ -59,10 +59,16 @@ namespace ImGuiOpenTK
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void CreateVertexBuffer(string Name, out int Buffer) => CreateBuffer($"VBO: {Name}", out Buffer);
+        public static void CreateVertexBuffer(string Name, out int Buffer)
+        {
+            CreateBuffer($"VBO: {Name}", out Buffer);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void CreateElementBuffer(string Name, out int Buffer) => CreateBuffer($"EBO: {Name}", out Buffer);
+        public static void CreateElementBuffer(string Name, out int Buffer)
+        {
+            CreateBuffer($"EBO: {Name}", out Buffer);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void CreateVertexArray(string Name, out int VAO)

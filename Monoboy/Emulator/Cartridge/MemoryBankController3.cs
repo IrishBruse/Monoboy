@@ -32,28 +32,28 @@ namespace Monoboy
 
         public byte ReadRam(ushort address)
         {
-            if(ramEnabled == true)
+            if (ramEnabled == true)
             {
-                switch(ramBank)
+                switch (ramBank)
                 {
                     case byte _ when address < 0x3:
-                    return ram[(0x2000 * ramBank) + (address & 0x1FFF)];
+                        return ram[(0x2000 * ramBank) + (address & 0x1FFF)];
 
                     // Timer
                     case 0x8:
-                    return seconds;
+                        return seconds;
 
                     case 0x9:
-                    return minutes;
+                        return minutes;
 
                     case 0xA:
-                    return hours;
+                        return hours;
 
                     case 0xB:
-                    return days;
+                        return days;
 
                     case 0xC:
-                    return daysCarry;
+                        return daysCarry;
                 }
             }
 
@@ -62,71 +62,71 @@ namespace Monoboy
 
         public void WriteRam(ushort address, byte data)
         {
-            if(ramEnabled == true)
+            if (ramEnabled == true)
             {
-                switch(ramBank)
+                switch (ramBank)
                 {
                     case byte _ when address < 0x3:
-                    ram[(0x2000 * ramBank) + (address & 0x1FFF)] = data;
-                    break;
+                        ram[(0x2000 * ramBank) + (address & 0x1FFF)] = data;
+                        break;
 
                     // Timer
                     case 0x8:
-                    seconds = data;
-                    break;
+                        seconds = data;
+                        break;
                     case 0x9:
-                    minutes = data;
-                    break;
+                        minutes = data;
+                        break;
                     case 0xA:
-                    hours = data;
-                    break;
+                        hours = data;
+                        break;
                     case 0xB:
-                    days = data;
-                    break;
+                        days = data;
+                        break;
                     case 0xC:
-                    daysCarry = data;
-                    break;
+                        daysCarry = data;
+                        break;
                 }
             }
         }
 
         public void WriteBank(ushort address, byte data)
         {
-            switch(address)
+            switch (address)
             {
                 case ushort _ when address < 0x2000:
-                {
-                    ramEnabled = data == 0x0A;
-                }
-                break;
+                    {
+                        ramEnabled = data == 0x0A;
+                    }
+                    break;
 
                 case ushort _ when address < 0x4000:
-                {
-                    romBank = (byte)(data & 0b01111111);
-                    if(romBank == 0x00)
                     {
-                        romBank += 1;
+                        romBank = (byte)(data & 0b01111111);
+                        if (romBank == 0x00)
+                        {
+                            romBank += 1;
+                        }
                     }
-                }
-                break;
+                    break;
 
                 case ushort _ when address < 0x6000:
-                {
-                    if(data >= 0x00 && data <= 0x03 && data >= 0x08 && data <= 0xC0)
                     {
-                        ramBank = data;
+                        if (data >= 0x00 && data <= 0x03 && data >= 0x08 && data <= 0xC0)
+                        {
+                            ramBank = data;
+                        }
                     }
-                }
-                break;
+                    break;
 
                 case ushort _ when address < 0x8000:
-                {
-                    DateTime now = DateTime.Now;
-                    seconds = (byte)now.Second;
-                    minutes = (byte)now.Minute;
-                    hours = (byte)now.Hour;
-                }
-                break;
+                    {
+                        DateTime now = DateTime.Now;
+                        seconds = (byte)now.Second;
+                        minutes = (byte)now.Minute;
+                        hours = (byte)now.Hour;
+                    }
+                    break;
             }
         }
 
@@ -136,7 +136,7 @@ namespace Monoboy
 
             string save = path.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
 
-            if(File.Exists(save) == true)
+            if (File.Exists(save) == true)
             {
                 ram = File.ReadAllBytes(save);
             }

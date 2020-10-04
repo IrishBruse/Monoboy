@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 using OpenTK.Graphics.OpenGL;
 
-namespace ImGuiOpenTK
+namespace ImGuiNET.OpenTK
 {
     struct UniformFieldInfo
     {
@@ -95,8 +95,10 @@ namespace ImGuiOpenTK
                 Shaders[i] = CompileShader(name, shaderPaths[i].Type, shaderPaths[i].source);
             }
 
-            foreach (var shader in Shaders)
+            foreach (int shader in Shaders)
+            {
                 GL.AttachShader(Program, shader);
+            }
 
             GL.LinkProgram(Program);
 
@@ -107,7 +109,7 @@ namespace ImGuiOpenTK
                 Debug.WriteLine($"GL.LinkProgram had info log [{name}]:\n{Info}");
             }
 
-            foreach (var Shader in Shaders)
+            foreach (int Shader in Shaders)
             {
                 GL.DetachShader(Program, Shader);
                 GL.DeleteShader(Shader);

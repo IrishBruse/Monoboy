@@ -21,7 +21,7 @@ namespace Monoboy.Application
             NativeWindowSettings settings = new NativeWindowSettings
             {
                 API = OpenTK.Windowing.Common.ContextAPI.OpenGL,
-                APIVersion = new Version(3, 2),
+                APIVersion = new Version(3, 3),
                 Size = new OpenTK.Mathematics.Vector2i(1280, 720)
             };
 

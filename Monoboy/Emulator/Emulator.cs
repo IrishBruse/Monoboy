@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Drawing;
 using System.IO;
-using Monoboy.Constants;
-using Monoboy.Utility;
 
 namespace Monoboy
 {
@@ -31,7 +28,7 @@ namespace Monoboy
             cyclesRan += cycles;
 
             // Disable the bios in the bus
-            if(bus.biosEnabled == true && bus.register.PC >= 0x100)
+            if (bus.biosEnabled == true && bus.register.PC >= 0x100)
             {
                 bus.biosEnabled = false;
             }
@@ -53,7 +50,7 @@ namespace Monoboy
             paused = false;
 
             byte cartridgeType;
-            using(BinaryReader reader = new BinaryReader(new FileStream(openRom, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream(openRom, FileMode.Open)))
             {
                 reader.BaseStream.Seek(0x147, SeekOrigin.Begin);
                 cartridgeType = reader.ReadByte();
@@ -61,18 +58,18 @@ namespace Monoboy
 
             bus.memoryBankController = cartridgeType switch
             {
-                byte _ when(cartridgeType <= 00) => new MemoryBankController0(),
-                byte _ when(cartridgeType <= 03) => new MemoryBankController1(),
-                byte _ when(cartridgeType <= 06) => new MemoryBankController2(),
-                byte _ when(cartridgeType <= 19) => new MemoryBankController3(),
-                byte _ when(cartridgeType <= 27) => new MemoryBankController5(),
+                byte _ when (cartridgeType <= 00) => new MemoryBankController0(),
+                byte _ when (cartridgeType <= 03) => new MemoryBankController1(),
+                byte _ when (cartridgeType <= 06) => new MemoryBankController2(),
+                byte _ when (cartridgeType <= 19) => new MemoryBankController3(),
+                byte _ when (cartridgeType <= 27) => new MemoryBankController5(),
                 _ => throw new NotImplementedException()
             };
 
             bus.memoryBankController.Load(openRom);
 
             string saveFile = openRom.Replace("Roms", "Saves").Replace(".gb", ".sav");
-            if(File.Exists(saveFile) == true)
+            if (File.Exists(saveFile) == true)
             {
                 bus.memoryBankController.SetRam(File.ReadAllBytes(saveFile));
             }
@@ -83,9 +80,9 @@ namespace Monoboy
             bus.memory = new Memory();
             bus.register = new Register();
 
-            if(File.Exists("Data/dmg_boot.bin") == true)
+            if (File.Exists("Data/dmg_boot.bin") == true)
             {
-                if(skipBootRom == false)
+                if (skipBootRom == false)
                 {
                     bus.memory.boot = File.ReadAllBytes("Data/dmg_boot.bin");
                     bus.biosEnabled = true;

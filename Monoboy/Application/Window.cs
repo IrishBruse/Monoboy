@@ -1,6 +1,5 @@
-﻿using System;
-using ImGuiNET;
-using ImGuiOpenTK;
+﻿using ImGuiNET.OpenTK;
+
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -12,15 +11,11 @@ namespace Monoboy.Application
     {
         ImGuiController _controller;
 
-        public Window(GameWindowSettings gameWindow, NativeWindowSettings nativeWindow) : base(gameWindow, nativeWindow)
-        { }
+        public Window(GameWindowSettings gameWindow, NativeWindowSettings nativeWindow) : base(gameWindow, nativeWindow) { }
 
         protected override void OnLoad()
         {
             base.OnLoad();
-
-            // OpenTK-pre9.4 doesn't make the context current when loading so we do that here.
-            MakeCurrent();
 
             Title = "Monoboy";
 

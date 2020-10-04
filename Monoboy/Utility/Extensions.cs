@@ -25,7 +25,7 @@
         /// <returns></returns>
         public static byte SetBit(this byte data, byte bit, bool condition)
         {
-            if(condition == true)
+            if (condition == true)
             {
                 return data |= bit;
             }

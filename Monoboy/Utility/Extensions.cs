@@ -25,7 +25,7 @@
         /// <returns></returns>
         public static byte SetBit(this byte data, byte bit, bool condition)
         {
-            if (condition == true)
+            if(condition == true)
             {
                 return data |= bit;
             }
@@ -64,6 +64,17 @@
         public static byte GetBits(this byte data, byte bits)
         {
             return (byte)(data & bits);
+        }
+
+        /// <summary>
+        /// Combines the bytes into a ushort
+        /// </summary>
+        /// <param name="low">The lower byte to combine</param>
+        /// <param name="high">The higher byte to combine</param>
+        /// <returns></returns>
+        public static ushort Combine(this byte low, byte high)
+        {
+            return (ushort)(high << 8 | low);
         }
     }
 }

@@ -1,36 +1,65 @@
 ﻿using System;
 using System.IO;
 
+using Monoboy.Utility;
+
 namespace Monoboy
 {
     public class Emulator
     {
-        public Bus bus;
+        public const int CyclesPerFrame = 69905;
+        public static byte WindowWidth = 160;
+        public const byte WindowHeight = 144;
+
         public long cyclesRan;
         public bool paused = true;
+
         private string openRom;
         private bool skipBootRom = false;
 
+        public bool BackgroundEnabled = true;
+        public bool WindowEnabled = true;
+        public bool SpritesEnabled = true;
+        public bool WidescreenEnabled = false;
+
+        // Hardware
+        public Interrupt interrupt;
+        public Register register;
+        public Memory memory;
+        public IMemoryBankController memoryBankController;
+        public Cpu cpu;
+        public Ppu ppu;
+        public Joypad joypad;
+        public Timer timer;
+
+        public bool biosEnabled = false;
 
         public Emulator()
         {
-            bus = new Bus();
+            register = new Register();
+            memory = new Memory();
+
+            timer = new Timer(this);
+            cpu = new Cpu(this);
+            ppu = new Ppu(this);
+            joypad = new Joypad(this);
+            interrupt = new Interrupt(this);
         }
 
         public byte Step()
         {
-            byte cycles = bus.cpu.Step();
+            byte cycles = cpu.Step();
 
-            bus.timer.Step(cycles);
-            bus.gpu.Step(cycles);
-            bus.interrupt.HandleInterupts();
+            timer.Step(cycles);
+            ppu.Step(cycles);
+            interrupt.HandleInterupts();
 
             cyclesRan += cycles;
 
             // Disable the bios in the bus
-            if (bus.biosEnabled == true && bus.register.PC >= 0x100)
+            if(biosEnabled == true && register.PC >= 0x100)
             {
-                bus.biosEnabled = false;
+                biosEnabled = false;
             }
 
             return cycles;
@@ -50,42 +79,42 @@ namespace Monoboy
             paused = false;
 
             byte cartridgeType;
-            using (BinaryReader reader = new BinaryReader(new FileStream(openRom, FileMode.Open)))
+            using(BinaryReader reader = new BinaryReader(new FileStream(openRom, FileMode.Open)))
             {
                 reader.BaseStream.Seek(0x147, SeekOrigin.Begin);
                 cartridgeType = reader.ReadByte();
             }
 
-            bus.memoryBankController = cartridgeType switch
+            memoryBankController = cartridgeType switch
             {
-                byte _ when (cartridgeType <= 00) => new MemoryBankController0(),
-                byte _ when (cartridgeType <= 03) => new MemoryBankController1(),
-                byte _ when (cartridgeType <= 06) => new MemoryBankController2(),
-                byte _ when (cartridgeType <= 19) => new MemoryBankController3(),
-                byte _ when (cartridgeType <= 27) => new MemoryBankController5(),
+                byte _ when(cartridgeType <= 00) => new MemoryBankController0(),
+                byte _ when(cartridgeType <= 03) => new MemoryBankController1(),
+                byte _ when(cartridgeType <= 06) => new MemoryBankController2(),
+                byte _ when(cartridgeType <= 19) => new MemoryBankController3(),
+                byte _ when(cartridgeType <= 27) => new MemoryBankController5(),
                 _ => throw new NotImplementedException()
             };
 
-            bus.memoryBankController.Load(openRom);
+            memoryBankController.Load(openRom);
 
-            string saveFile = openRom.Replace("Roms", "Saves").Replace(".gb", ".sav");
-            if (File.Exists(saveFile) == true)
+            string saveFile = openRom.Replace(".gb", ".sav");
+            if(File.Exists(saveFile) == true)
             {
-                bus.memoryBankController.SetRam(File.ReadAllBytes(saveFile));
+                memoryBankController.SetRam(File.ReadAllBytes(saveFile));
             }
         }
 
         public void Reset()
         {
-            bus.memory = new Memory();
-            bus.register = new Register();
+            memory = new Memory();
+            register = new Register();
 
-            if (File.Exists("Data/dmg_boot.bin") == true)
+            if(File.Exists("Data/dmg_boot.bin") == true)
             {
-                if (skipBootRom == false)
+                if(skipBootRom == false)
                 {
-                    bus.memory.boot = File.ReadAllBytes("Data/dmg_boot.bin");
-                    bus.biosEnabled = true;
+                    memory.boot = File.ReadAllBytes("Data/dmg_boot.bin");
+                    biosEnabled = true;
                 }
                 else
                 {
@@ -100,44 +129,173 @@ namespace Monoboy
 
         public void SkipBootRom()
         {
-            bus.biosEnabled = false;
-            bus.register.AF = 0x01B0;
-            bus.register.BC = 0x0013;
-            bus.register.DE = 0x00D8;
-            bus.register.HL = 0x014D;
-            bus.register.SP = 0xFFFE;
-            bus.register.PC = 0x100;
-            bus.Write(0xFF05, 0x00);
-            bus.Write(0xFF06, 0x00);
-            bus.Write(0xFF07, 0x00);
-            bus.Write(0xFF10, 0x80);
-            bus.Write(0xFF11, 0xBF);
-            bus.Write(0xFF12, 0xF3);
-            bus.Write(0xFF14, 0xBF);
-            bus.Write(0xFF16, 0x3F);
-            bus.Write(0xFF17, 0x00);
-            bus.Write(0xFF19, 0xBF);
-            bus.Write(0xFF1A, 0x7F);
-            bus.Write(0xFF1B, 0xFF);
-            bus.Write(0xFF1C, 0x9F);
-            bus.Write(0xFF1E, 0xBF);
-            bus.Write(0xFF20, 0xFF);
-            bus.Write(0xFF21, 0x00);
-            bus.Write(0xFF22, 0x00);
-            bus.Write(0xFF23, 0xBF);
-            bus.Write(0xFF24, 0x77);
-            bus.Write(0xFF25, 0xF3);
-            bus.Write(0xFF26, 0xF1);
-            bus.Write(0xFF40, 0x91);
-            bus.Write(0xFF42, 0x00);
-            bus.Write(0xFF43, 0x00);
-            bus.Write(0xFF45, 0x00);
-            bus.Write(0xFF47, 0xFC);
-            bus.Write(0xFF48, 0xFF);
-            bus.Write(0xFF49, 0xFF);
-            bus.Write(0xFF4A, 0x00);
-            bus.Write(0xFF4B, 0x00);
-            bus.Write(0xFFFF, 0x00);
+            biosEnabled = false;
+            register.AF = 0x01B0;
+            register.BC = 0x0013;
+            register.DE = 0x00D8;
+            register.HL = 0x014D;
+            register.SP = 0xFFFE;
+            register.PC = 0x100;
+            Write(0xFF05, 0x00);
+            Write(0xFF06, 0x00);
+            Write(0xFF07, 0x00);
+            Write(0xFF10, 0x80);
+            Write(0xFF11, 0xBF);
+            Write(0xFF12, 0xF3);
+            Write(0xFF14, 0xBF);
+            Write(0xFF16, 0x3F);
+            Write(0xFF17, 0x00);
+            Write(0xFF19, 0xBF);
+            Write(0xFF1A, 0x7F);
+            Write(0xFF1B, 0xFF);
+            Write(0xFF1C, 0x9F);
+            Write(0xFF1E, 0xBF);
+            Write(0xFF20, 0xFF);
+            Write(0xFF21, 0x00);
+            Write(0xFF22, 0x00);
+            Write(0xFF23, 0xBF);
+            Write(0xFF24, 0x77);
+            Write(0xFF25, 0xF3);
+            Write(0xFF26, 0xF1);
+            Write(0xFF40, 0x91);
+            Write(0xFF42, 0x00);
+            Write(0xFF43, 0x00);
+            Write(0xFF45, 0x00);
+            Write(0xFF47, 0xFC);
+            Write(0xFF48, 0xFF);
+            Write(0xFF49, 0xFF);
+            Write(0xFF4A, 0x00);
+            Write(0xFF4B, 0x00);
+            Write(0xFFFF, 0x00);
         }
+
+        #region Settings
+
+        public void ToggleWidescreen()
+        {
+            if(WidescreenEnabled == true)
+            {
+                WindowWidth = 248;
+            }
+            else
+            {
+                WindowWidth = 160;
+            }
+            ppu.framebuffer = new Framebuffer(WindowWidth, WindowHeight);
+        }
+
+        #endregion
+
+        #region Bus
+
+        internal byte Read(ushort address)
+        {
+            return address switch
+            {
+                ushort _ when address <= 0x00FF && biosEnabled == true => memory.boot[address], // Boot rom only enabled while pc has not reached 0x100 yet
+                ushort _ when address <= 0x3FFF => memoryBankController.ReadBank00(address),    // 16KB ROM Bank = 00 (in cartridge, fixed at bank 00)
+                ushort _ when address <= 0x7FFF => memoryBankController.ReadBankNN(address),    // 16KB ROM Bank > 00 (in cartridge, every other bank)
+                ushort _ when address <= 0x9FFF => memory.vram[address - 0x8000],               // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+                ushort _ when address <= 0xBFFF => memoryBankController.ReadRam(address),       // 8KB External RAM (in cartridge, switchable bank, if any)
+                ushort _ when address <= 0xDFFF => memory.workram[address - 0xC000],            // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
+                ushort _ when address <= 0xFDFF => memory.workram[address - 0xE000],            // Same as C000-DDFF (ECHO) (typically not used)
+                ushort _ when address <= 0xFE9F => memory.oam[address - 0xFE00],                // Sprite Attribute Table (OAM)
+                ushort _ when address <= 0xFEFF => 0x00,                                        // Not Usable
+                ushort _ when address <= 0xFF7F => ReadIO(address),                             // I/O Ports
+                ushort _ when address <= 0xFFFF => memory.zp[address - 0xFF80],                 // Zero Page RAM
+                _ => 0xFF,
+            };
+        }
+
+        internal ushort ReadShort(ushort address)
+        {
+            return (ushort)(Read((ushort)(address + 1)) << 8 | Read(address));
+        }
+
+        internal void Write(ushort address, byte data)
+        {
+            switch(address)
+            {
+                case ushort _ when address <= 0x7FFF: memoryBankController.WriteBank(address, data); break;     // 16KB ROM Bank > 00 (in cartridge, every other bank)
+                case ushort _ when address <= 0x9FFF: memory.vram[address - 0x8000] = data; break;              // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+                case ushort _ when address <= 0xBFFF: memoryBankController.WriteRam(address, data); break;      // 8KB External RAM (in cartridge, switchable bank, if any)
+                case ushort _ when address <= 0xDFFF: memory.workram[address - 0xC000] = data; break;           // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
+                case ushort _ when address <= 0xFDFF: memory.workram[address - 0xE000] = data; break;           // Same as C000-DDFF (ECHO) (typically not used)
+                case ushort _ when address <= 0xFE9F: memory.oam[address - 0xFE00] = data; break;               // Sprite Attribute Table (OAM)
+                case ushort _ when address <= 0xFEFF: break;                                                    // Not Usable
+                case ushort _ when address <= 0xFF7F: WriteIO(address, data); break;                            // I/O Ports
+                case ushort _ when address <= 0xFFFF: memory.zp[address - 0xFF80] = data; break;                // Zero Page RAM
+            }
+        }
+
+        internal void WriteShort(ushort address, ushort data)
+        {
+            Write((ushort)(address + 1), (byte)(data >> 8));
+            Write(address, (byte)data);
+        }
+
+        private byte ReadIO(ushort address)
+        {
+            switch(address)
+            {
+                case 0xFF00:// JOYP
+                {
+                    return joypad.JOYP;
+                }
+
+                default:
+                {
+                    return memory.io[address - 0xFF00];
+                }
+            }
+
+        }
+
+        private void WriteIO(ushort address, byte data)
+        {
+            switch(address)
+            {
+                case 0xFF00:// JOYP
+                {
+                    joypad.JOYP = data;
+                }
+                break;
+
+                case 0xFF04:// DIV
+                {
+                    data = 0;
+                }
+                break;
+
+                case 0xFF44:// LY
+                {
+                    data = 0;
+                }
+                break;
+
+                case 0xFF46:
+                {
+                    ushort offset = (ushort)(data << 8);
+                    for(byte i = 0; i < memory.oam.Length; i++)
+                    {
+                        memory.oam[i] = Read((ushort)(offset + i));
+                    }
+                }
+                break;
+
+                //case 0xFF02:
+                //{
+                //    if(data == 0x81)
+                //    {
+                //        Debug.Write(Convert.ToChar(Read(0xFF01)));
+                //    }
+                //}
+                //break;
+            }
+
+            memory.io[address - 0xFF00] = data;
+        }
+
+        #endregion
     }
 }

@@ -4,16 +4,16 @@ namespace Monoboy
 {
     public class Interrupt
     {
-        private Bus bus;
+        private Emulator emulator;
         private bool IME;// Master interupt enabled
         private bool IMEDelay;// Master interupt enabled delay
 
-        public byte IE { get => bus.Read(0xFFFF); set => bus.Write(0xFFFF, value); }
-        public byte IF { get => bus.Read(0xFF0F); set => bus.Write(0xFF0F, value); }
+        public byte IE { get => emulator.Read(0xFFFF); set => emulator.Write(0xFFFF, value); }
+        public byte IF { get => emulator.Read(0xFF0F); set => emulator.Write(0xFF0F, value); }
 
-        public Interrupt(Bus bus)
+        public Interrupt(Emulator emulator)
         {
-            this.bus = bus;
+            this.emulator = emulator;
         }
 
         public void Disable()
@@ -28,16 +28,16 @@ namespace Monoboy
 
         public void Halt()
         {
-            if (IME == false)
+            if(IME == false)
             {
-                if ((IE & IF & 0b11111) == 0)
+                if((IE & IF & 0b11111) == 0)
                 {
-                    bus.cpu.halted = true;
-                    bus.register.PC--;
+                    emulator.cpu.halted = true;
+                    emulator.register.PC--;
                 }
                 else
                 {
-                    bus.cpu.haltBug = true;
+                    emulator.cpu.haltBug = true;
                 }
             }
         }
@@ -52,19 +52,19 @@ namespace Monoboy
             byte _ie = IE;
             byte _if = IF;
 
-            for (byte i = 0; i < 5; i++)
+            for(byte i = 0; i < 5; i++)
             {
-                if ((((_ie & _if) >> i) & 0b1) == 1)
+                if((((_ie & _if) >> i) & 0b1) == 1)
                 {
-                    if (bus.cpu.halted == true)
+                    if(emulator.cpu.halted == true)
                     {
-                        bus.register.PC++;
-                        bus.cpu.halted = false;
+                        emulator.register.PC++;
+                        emulator.cpu.halted = false;
                     }
-                    if (IME == true)
+                    if(IME == true)
                     {
-                        bus.cpu.Push(bus.register.PC);
-                        bus.register.PC = (ushort)(0b1000000 + (8 * i));
+                        emulator.cpu.Push(emulator.register.PC);
+                        emulator.register.PC = (ushort)(0b1000000 + (8 * i));
                         IME = false;
                         IF = IF.SetBit((byte)(1 << i), false);
                     }

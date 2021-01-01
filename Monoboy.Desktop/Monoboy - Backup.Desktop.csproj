@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<ApplicationIcon>Icon.ico</ApplicationIcon>
+		<NoWin32Manifest>true</NoWin32Manifest>
+
+		<TargetFramework>net5.0</TargetFramework>
+
+		<Authors>Ethan Conneely</Authors>
+		<Description>Gameboy Emulator</Description>
+
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<RuntimeIdentifiers>win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
+		<StartupObject>Monoboy.Gui.Entry</StartupObject>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="Icon.bmp" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Icon.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BigGustave" Version="1.0.2" />
+		<PackageReference Include="ImGui.NET" Version="1.78.0" />
+		<PackageReference Include="OpenTK" Version="4.4.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Monoboy\Monoboy.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Icon.bmp" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="TinyFileDialogs x64.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="TinyFileDialogs x86.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+</Project>

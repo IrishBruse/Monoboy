@@ -4,7 +4,6 @@ using Monoboy.Constants;
 using Monoboy.Utility;
 
 using static Monoboy.Constants.Bit;
-using static Monoboy.Utility.Helper;
 
 namespace Monoboy
 {
@@ -12,28 +11,28 @@ namespace Monoboy
     {
         public bool halted;
         public bool haltBug;
-        private Bus bus;
+        private Emulator emulator;
 
-        private Register Reg => bus.register;
+        private Register Reg => emulator.register;
 
         public byte opcode;
 
-        public Cpu(Bus bus)
+        public Cpu(Emulator emulator)
         {
-            this.bus = bus;
+            this.emulator = emulator;
         }
 
         public byte Step()
         {
             opcode = NextByte();
 
-            if (haltBug)
+            if(haltBug)
             {
                 haltBug = false;
                 Reg.PC--;
             }
 
-            switch (opcode)
+            switch(opcode)
             {
                 #region 8-Bit Loads
 
@@ -53,7 +52,7 @@ namespace Monoboy
                 case 0x7B: Reg.A = Reg.E; return 4;
                 case 0x7C: Reg.A = Reg.H; return 4;
                 case 0x7D: Reg.A = Reg.L; return 4;
-                case 0xFA: Reg.A = bus.Read(NextShort()); return 16;
+                case 0xFA: Reg.A = emulator.Read(NextShort()); return 16;
 
                 // LD B,r2
                 case 0x47: Reg.B = Reg.A; return 4;
@@ -63,7 +62,7 @@ namespace Monoboy
                 case 0x43: Reg.B = Reg.E; return 4;
                 case 0x44: Reg.B = Reg.H; return 4;
                 case 0x45: Reg.B = Reg.L; return 4;
-                case 0x46: Reg.B = bus.Read(Reg.HL); return 8;
+                case 0x46: Reg.B = emulator.Read(Reg.HL); return 8;
 
                 // LD C,r2
                 case 0x4F: Reg.C = Reg.A; return 4;
@@ -73,7 +72,7 @@ namespace Monoboy
                 case 0x4B: Reg.C = Reg.E; return 4;
                 case 0x4C: Reg.C = Reg.H; return 4;
                 case 0x4D: Reg.C = Reg.L; return 4;
-                case 0x4E: Reg.C = bus.Read(Reg.HL); return 8;
+                case 0x4E: Reg.C = emulator.Read(Reg.HL); return 8;
 
                 // LD D,r2
                 case 0x57: Reg.D = Reg.A; return 4;
@@ -83,7 +82,7 @@ namespace Monoboy
                 case 0x53: Reg.D = Reg.E; return 4;
                 case 0x54: Reg.D = Reg.H; return 4;
                 case 0x55: Reg.D = Reg.L; return 4;
-                case 0x56: Reg.D = bus.Read(Reg.HL); return 8;
+                case 0x56: Reg.D = emulator.Read(Reg.HL); return 8;
 
                 // LD E,r2
                 case 0x5F: Reg.E = Reg.A; return 4;
@@ -93,7 +92,7 @@ namespace Monoboy
                 case 0x5B: Reg.E = Reg.E; return 4;
                 case 0x5C: Reg.E = Reg.H; return 4;
                 case 0x5D: Reg.E = Reg.L; return 4;
-                case 0x5E: Reg.E = bus.Read(Reg.HL); return 8;
+                case 0x5E: Reg.E = emulator.Read(Reg.HL); return 8;
 
                 // LD H,r2
                 case 0x67: Reg.H = Reg.A; return 4;
@@ -103,7 +102,7 @@ namespace Monoboy
                 case 0x63: Reg.H = Reg.E; return 4;
                 case 0x64: Reg.H = Reg.H; return 4;
                 case 0x65: Reg.H = Reg.L; return 4;
-                case 0x66: Reg.H = bus.Read(Reg.HL); return 8;
+                case 0x66: Reg.H = emulator.Read(Reg.HL); return 8;
 
                 // LD L,r2
                 case 0x6F: Reg.L = Reg.A; return 4;
@@ -113,52 +112,52 @@ namespace Monoboy
                 case 0x6B: Reg.L = Reg.E; return 4;
                 case 0x6C: Reg.L = Reg.H; return 4;
                 case 0x6D: Reg.L = Reg.L; return 4;
-                case 0x6E: Reg.L = bus.Read(Reg.HL); return 8;
+                case 0x6E: Reg.L = emulator.Read(Reg.HL); return 8;
 
                 // LD (HL),r2
-                case 0x77: bus.Write(Reg.HL, Reg.A); return 8;
-                case 0x70: bus.Write(Reg.HL, Reg.B); return 8;
-                case 0x71: bus.Write(Reg.HL, Reg.C); return 8;
-                case 0x72: bus.Write(Reg.HL, Reg.D); return 8;
-                case 0x73: bus.Write(Reg.HL, Reg.E); return 8;
-                case 0x74: bus.Write(Reg.HL, Reg.H); return 8;
-                case 0x75: bus.Write(Reg.HL, Reg.L); return 8;
-                case 0x36: bus.Write(Reg.HL, NextByte()); return 12;
+                case 0x77: emulator.Write(Reg.HL, Reg.A); return 8;
+                case 0x70: emulator.Write(Reg.HL, Reg.B); return 8;
+                case 0x71: emulator.Write(Reg.HL, Reg.C); return 8;
+                case 0x72: emulator.Write(Reg.HL, Reg.D); return 8;
+                case 0x73: emulator.Write(Reg.HL, Reg.E); return 8;
+                case 0x74: emulator.Write(Reg.HL, Reg.H); return 8;
+                case 0x75: emulator.Write(Reg.HL, Reg.L); return 8;
+                case 0x36: emulator.Write(Reg.HL, NextByte()); return 12;
 
                 // LD A,n
-                case 0x0A: Reg.A = bus.Read(Reg.BC); return 8;
-                case 0x1A: Reg.A = bus.Read(Reg.DE); return 8;
-                case 0x7E: Reg.A = bus.Read(Reg.HL); return 8;
+                case 0x0A: Reg.A = emulator.Read(Reg.BC); return 8;
+                case 0x1A: Reg.A = emulator.Read(Reg.DE); return 8;
+                case 0x7E: Reg.A = emulator.Read(Reg.HL); return 8;
                 case 0x3E: Reg.A = NextByte(); return 8;
 
                 // LD n,A
-                case 0x02: bus.Write(Reg.BC, Reg.A); return 8;
-                case 0x12: bus.Write(Reg.DE, Reg.A); return 8;
-                case 0xEA: bus.Write(NextShort(), Reg.A); return 16;
+                case 0x02: emulator.Write(Reg.BC, Reg.A); return 8;
+                case 0x12: emulator.Write(Reg.DE, Reg.A); return 8;
+                case 0xEA: emulator.Write(NextShort(), Reg.A); return 16;
 
                 // LD A,(C)
-                case 0xF2: Reg.A = bus.Read((ushort)(0xFF00 + Reg.C)); return 8;
+                case 0xF2: Reg.A = emulator.Read((ushort)(0xFF00 + Reg.C)); return 8;
 
                 // LD (C),A
-                case 0xE2: bus.Write((ushort)(0xFF00 + Reg.C), Reg.A); return 8;
+                case 0xE2: emulator.Write((ushort)(0xFF00 + Reg.C), Reg.A); return 8;
 
                 // LD A,(HL-)
-                case 0x3A: Reg.A = bus.Read(Reg.HL--); return 8;
+                case 0x3A: Reg.A = emulator.Read(Reg.HL--); return 8;
 
                 // LD (HL-),A
-                case 0x32: bus.Write(Reg.HL--, Reg.A); return 8;
+                case 0x32: emulator.Write(Reg.HL--, Reg.A); return 8;
 
                 // LD A,(HL+)
-                case 0x2A: Reg.A = bus.Read(Reg.HL++); return 8;
+                case 0x2A: Reg.A = emulator.Read(Reg.HL++); return 8;
 
                 // LD (HL+),A
-                case 0x22: bus.Write(Reg.HL++, Reg.A); return 8;
+                case 0x22: emulator.Write(Reg.HL++, Reg.A); return 8;
 
                 // LDH (n),A
-                case 0xE0: bus.Write((ushort)(0xFF00 + NextByte()), Reg.A); return 12;
+                case 0xE0: emulator.Write((ushort)(0xFF00 + NextByte()), Reg.A); return 12;
 
                 // LDH A,(n)
-                case 0xF0: Reg.A = bus.Read((ushort)(0xFF00 + NextByte())); return 12;
+                case 0xF0: Reg.A = emulator.Read((ushort)(0xFF00 + NextByte())); return 12;
 
                 #endregion
 
@@ -177,7 +176,7 @@ namespace Monoboy
                 case 0xF8: Reg.HL = ADDS(Reg.SP); return 12;
 
                 // LD (nn),SP
-                case 0x08: bus.WriteShort(NextShort(), Reg.SP); return 20;
+                case 0x08: emulator.WriteShort(NextShort(), Reg.SP); return 20;
 
                 // Push nn
                 case 0xF5: Push(Reg.AF); return 16;
@@ -203,7 +202,7 @@ namespace Monoboy
                 case 0x83: ADD(Reg.E); return 4;
                 case 0x84: ADD(Reg.H); return 4;
                 case 0x85: ADD(Reg.L); return 4;
-                case 0x86: ADD(bus.Read(Reg.HL)); return 8;
+                case 0x86: ADD(emulator.Read(Reg.HL)); return 8;
                 case 0xC6: ADD(NextByte()); return 8;
 
                 // ADC A,n
@@ -214,7 +213,7 @@ namespace Monoboy
                 case 0x8B: ADC(Reg.E); return 4;
                 case 0x8C: ADC(Reg.H); return 4;
                 case 0x8D: ADC(Reg.L); return 4;
-                case 0x8E: ADC(bus.Read(Reg.HL)); return 8;
+                case 0x8E: ADC(emulator.Read(Reg.HL)); return 8;
                 case 0xCE: ADC(NextByte()); return 8;
 
                 // SUB A,n
@@ -225,7 +224,7 @@ namespace Monoboy
                 case 0x93: SUB(Reg.E); return 4;
                 case 0x94: SUB(Reg.H); return 4;
                 case 0x95: SUB(Reg.L); return 4;
-                case 0x96: SUB(bus.Read(Reg.HL)); return 8;
+                case 0x96: SUB(emulator.Read(Reg.HL)); return 8;
                 case 0xD6: SUB(NextByte()); return 8;
 
                 // SBC A,n
@@ -236,7 +235,7 @@ namespace Monoboy
                 case 0x9B: SBC(Reg.E); return 4;
                 case 0x9C: SBC(Reg.H); return 4;
                 case 0x9D: SBC(Reg.L); return 4;
-                case 0x9E: SBC(bus.Read(Reg.HL)); return 8;
+                case 0x9E: SBC(emulator.Read(Reg.HL)); return 8;
                 case 0xDE: SBC(NextByte()); return 8;
 
                 // AND n
@@ -247,7 +246,7 @@ namespace Monoboy
                 case 0xA3: AND(Reg.E); return 4;
                 case 0xA4: AND(Reg.H); return 4;
                 case 0xA5: AND(Reg.L); return 4;
-                case 0xA6: AND(bus.Read(Reg.HL)); return 8;
+                case 0xA6: AND(emulator.Read(Reg.HL)); return 8;
                 case 0xE6: AND(NextByte()); return 8;
 
                 // OR n
@@ -258,7 +257,7 @@ namespace Monoboy
                 case 0xB3: OR(Reg.E); return 4;
                 case 0xB4: OR(Reg.H); return 4;
                 case 0xB5: OR(Reg.L); return 4;
-                case 0xB6: OR(bus.Read(Reg.HL)); return 8;
+                case 0xB6: OR(emulator.Read(Reg.HL)); return 8;
                 case 0xF6: OR(NextByte()); return 8;
 
                 // XOR n
@@ -269,7 +268,7 @@ namespace Monoboy
                 case 0xAB: XOR(Reg.E); return 4;
                 case 0xAC: XOR(Reg.H); return 4;
                 case 0xAD: XOR(Reg.L); return 4;
-                case 0xAE: XOR(bus.Read(Reg.HL)); return 8;
+                case 0xAE: XOR(emulator.Read(Reg.HL)); return 8;
                 case 0xEE: XOR(NextByte()); return 8;
 
                 // CP n
@@ -280,7 +279,7 @@ namespace Monoboy
                 case 0xBB: CP(Reg.E); return 4;
                 case 0xBC: CP(Reg.H); return 4;
                 case 0xBD: CP(Reg.L); return 4;
-                case 0xBE: CP(bus.Read(Reg.HL)); return 8;
+                case 0xBE: CP(emulator.Read(Reg.HL)); return 8;
                 case 0xFE: CP(NextByte()); return 8;
 
                 // INC n
@@ -291,7 +290,7 @@ namespace Monoboy
                 case 0x1C: Reg.E = INC(Reg.E); return 4;
                 case 0x24: Reg.H = INC(Reg.H); return 4;
                 case 0x2C: Reg.L = INC(Reg.L); return 4;
-                case 0x34: bus.Write(Reg.HL, INC(bus.Read(Reg.HL))); return 12;
+                case 0x34: emulator.Write(Reg.HL, INC(emulator.Read(Reg.HL))); return 12;
 
                 // DEC n
                 case 0x3D: Reg.A = DEC(Reg.A); return 4;
@@ -301,7 +300,7 @@ namespace Monoboy
                 case 0x1D: Reg.E = DEC(Reg.E); return 4;
                 case 0x25: Reg.H = DEC(Reg.H); return 4;
                 case 0x2D: Reg.L = DEC(Reg.L); return 4;
-                case 0x35: bus.Write(Reg.HL, DEC(bus.Read(Reg.HL))); return 12;
+                case 0x35: emulator.Write(Reg.HL, DEC(emulator.Read(Reg.HL))); return 12;
 
                 #endregion
 
@@ -352,16 +351,16 @@ namespace Monoboy
                 case 0x00: return 4;
 
                 // HALT
-                case 0x76: bus.interrupt.Halt(); return 4;
+                case 0x76: emulator.interrupt.Halt(); return 4;
 
                 // STOP
                 case 0x10: return 4;
 
                 // DI
-                case 0xF3: bus.interrupt.Disable(); return 4;
+                case 0xF3: emulator.interrupt.Disable(); return 4;
 
                 // EI
-                case 0xFB: bus.interrupt.Enable(); return 4;
+                case 0xFB: emulator.interrupt.Enable(); return 4;
 
                 #endregion
 
@@ -429,7 +428,7 @@ namespace Monoboy
                 case 0xD8: return RET(Reg.GetFlag(Flag.C) == true);
 
                 // RETI
-                case 0xD9: RET(true); bus.interrupt.Enable(); return 16;
+                case 0xD9: RET(true); emulator.interrupt.Enable(); return 16;
 
                 #endregion
 
@@ -462,9 +461,9 @@ namespace Monoboy
                 case 0xF4: //Illegal Opcode
                 case 0xFC: //Illegal Opcode
                 case 0xFD: //Illegal Opcode
-                    throw new Exception("Illegal Instruction : " + opcode);
+                throw new Exception("Illegal Instruction : " + opcode);
 
-                    #endregion
+                #endregion
             }
         }
 
@@ -472,7 +471,7 @@ namespace Monoboy
         {
             opcode = NextByte();
 
-            switch (opcode)
+            switch(opcode)
             {
                 #region Miscellaneous
 
@@ -484,7 +483,7 @@ namespace Monoboy
                 case 0x33: Reg.E = SWAP(Reg.E); return 8;
                 case 0x34: Reg.H = SWAP(Reg.H); return 8;
                 case 0x35: Reg.L = SWAP(Reg.L); return 8;
-                case 0x36: bus.Write(Reg.HL, SWAP(bus.Read(Reg.HL))); return 16;
+                case 0x36: emulator.Write(Reg.HL, SWAP(emulator.Read(Reg.HL))); return 16;
 
                 #endregion
 
@@ -498,7 +497,7 @@ namespace Monoboy
                 case 0x03: Reg.E = RLC(Reg.E); return 8;
                 case 0x04: Reg.H = RLC(Reg.H); return 8;
                 case 0x05: Reg.L = RLC(Reg.L); return 8;
-                case 0x06: bus.Write(Reg.HL, RLC(bus.Read(Reg.HL))); return 16;
+                case 0x06: emulator.Write(Reg.HL, RLC(emulator.Read(Reg.HL))); return 16;
 
                 // RL n
                 case 0x17: Reg.A = RL(Reg.A); return 8;
@@ -508,7 +507,7 @@ namespace Monoboy
                 case 0x13: Reg.E = RL(Reg.E); return 8;
                 case 0x14: Reg.H = RL(Reg.H); return 8;
                 case 0x15: Reg.L = RL(Reg.L); return 8;
-                case 0x16: bus.Write(Reg.HL, RL(bus.Read(Reg.HL))); return 16;
+                case 0x16: emulator.Write(Reg.HL, RL(emulator.Read(Reg.HL))); return 16;
 
                 // RRC n
                 case 0x0F: Reg.A = RRC(Reg.A); return 8;
@@ -518,7 +517,7 @@ namespace Monoboy
                 case 0x0B: Reg.E = RRC(Reg.E); return 8;
                 case 0x0C: Reg.H = RRC(Reg.H); return 8;
                 case 0x0D: Reg.L = RRC(Reg.L); return 8;
-                case 0x0E: bus.Write(Reg.HL, RRC(bus.Read(Reg.HL))); return 16;
+                case 0x0E: emulator.Write(Reg.HL, RRC(emulator.Read(Reg.HL))); return 16;
 
                 // RR n
                 case 0x1F: Reg.A = RR(Reg.A); return 8;
@@ -528,7 +527,7 @@ namespace Monoboy
                 case 0x1B: Reg.E = RR(Reg.E); return 8;
                 case 0x1C: Reg.H = RR(Reg.H); return 8;
                 case 0x1D: Reg.L = RR(Reg.L); return 8;
-                case 0x1E: bus.Write(Reg.HL, RR(bus.Read(Reg.HL))); return 16;
+                case 0x1E: emulator.Write(Reg.HL, RR(emulator.Read(Reg.HL))); return 16;
 
                 // SLA n
                 case 0x27: Reg.A = SLA(Reg.A); return 8;
@@ -538,7 +537,7 @@ namespace Monoboy
                 case 0x23: Reg.E = SLA(Reg.E); return 8;
                 case 0x24: Reg.H = SLA(Reg.H); return 8;
                 case 0x25: Reg.L = SLA(Reg.L); return 8;
-                case 0x26: bus.Write(Reg.HL, SLA(bus.Read(Reg.HL))); return 16;
+                case 0x26: emulator.Write(Reg.HL, SLA(emulator.Read(Reg.HL))); return 16;
 
                 // SRA n
                 case 0x2F: Reg.A = SRA(Reg.A); return 8;
@@ -548,7 +547,7 @@ namespace Monoboy
                 case 0x2B: Reg.E = SRA(Reg.E); return 8;
                 case 0x2C: Reg.H = SRA(Reg.H); return 8;
                 case 0x2D: Reg.L = SRA(Reg.L); return 8;
-                case 0x2E: bus.Write(Reg.HL, SRA(bus.Read(Reg.HL))); return 16;
+                case 0x2E: emulator.Write(Reg.HL, SRA(emulator.Read(Reg.HL))); return 16;
 
                 // SRL
                 case 0x3F: Reg.A = SRL(Reg.A); return 8;
@@ -558,7 +557,7 @@ namespace Monoboy
                 case 0x3B: Reg.E = SRL(Reg.E); return 8;
                 case 0x3C: Reg.H = SRL(Reg.H); return 8;
                 case 0x3D: Reg.L = SRL(Reg.L); return 8;
-                case 0x3E: bus.Write(Reg.HL, SRL(bus.Read(Reg.HL))); return 16;
+                case 0x3E: emulator.Write(Reg.HL, SRL(emulator.Read(Reg.HL))); return 16;
 
                 #endregion
 
@@ -572,7 +571,7 @@ namespace Monoboy
                 case 0x43: BIT(Bit0, Reg.E); return 8;
                 case 0x44: BIT(Bit0, Reg.H); return 8;
                 case 0x45: BIT(Bit0, Reg.L); return 8;
-                case 0x46: BIT(Bit0, bus.Read(Reg.HL)); return 12;
+                case 0x46: BIT(Bit0, emulator.Read(Reg.HL)); return 12;
 
                 // BIT 1,r
                 case 0x4F: BIT(Bit1, Reg.A); return 8;
@@ -582,7 +581,7 @@ namespace Monoboy
                 case 0x4B: BIT(Bit1, Reg.E); return 8;
                 case 0x4C: BIT(Bit1, Reg.H); return 8;
                 case 0x4D: BIT(Bit1, Reg.L); return 8;
-                case 0x4E: BIT(Bit1, bus.Read(Reg.HL)); return 12;
+                case 0x4E: BIT(Bit1, emulator.Read(Reg.HL)); return 12;
 
                 // BIT 2,r
                 case 0x57: BIT(Bit2, Reg.A); return 8;
@@ -592,7 +591,7 @@ namespace Monoboy
                 case 0x53: BIT(Bit2, Reg.E); return 8;
                 case 0x54: BIT(Bit2, Reg.H); return 8;
                 case 0x55: BIT(Bit2, Reg.L); return 8;
-                case 0x56: BIT(Bit2, bus.Read(Reg.HL)); return 12;
+                case 0x56: BIT(Bit2, emulator.Read(Reg.HL)); return 12;
 
                 // BIT 3,r
                 case 0x5F: BIT(Bit3, Reg.A); return 8;
@@ -602,7 +601,7 @@ namespace Monoboy
                 case 0x5B: BIT(Bit3, Reg.E); return 8;
                 case 0x5C: BIT(Bit3, Reg.H); return 8;
                 case 0x5D: BIT(Bit3, Reg.L); return 8;
-                case 0x5E: BIT(Bit3, bus.Read(Reg.HL)); return 12;
+                case 0x5E: BIT(Bit3, emulator.Read(Reg.HL)); return 12;
 
                 // BIT 4,r
                 case 0x67: BIT(Bit4, Reg.A); return 8;
@@ -612,7 +611,7 @@ namespace Monoboy
                 case 0x63: BIT(Bit4, Reg.E); return 8;
                 case 0x64: BIT(Bit4, Reg.H); return 8;
                 case 0x65: BIT(Bit4, Reg.L); return 8;
-                case 0x66: BIT(Bit4, bus.Read(Reg.HL)); return 12;
+                case 0x66: BIT(Bit4, emulator.Read(Reg.HL)); return 12;
 
                 // BIT 5,r
                 case 0x6F: BIT(Bit5, Reg.A); return 8;
@@ -622,7 +621,7 @@ namespace Monoboy
                 case 0x6B: BIT(Bit5, Reg.E); return 8;
                 case 0x6C: BIT(Bit5, Reg.H); return 8;
                 case 0x6D: BIT(Bit5, Reg.L); return 8;
-                case 0x6E: BIT(Bit5, bus.Read(Reg.HL)); return 12;
+                case 0x6E: BIT(Bit5, emulator.Read(Reg.HL)); return 12;
 
                 // BIT 6,r
                 case 0x77: BIT(Bit6, Reg.A); return 8;
@@ -632,7 +631,7 @@ namespace Monoboy
                 case 0x73: BIT(Bit6, Reg.E); return 8;
                 case 0x74: BIT(Bit6, Reg.H); return 8;
                 case 0x75: BIT(Bit6, Reg.L); return 8;
-                case 0x76: BIT(Bit6, bus.Read(Reg.HL)); return 12;
+                case 0x76: BIT(Bit6, emulator.Read(Reg.HL)); return 12;
 
                 // BIT 7,r
                 case 0x7F: BIT(Bit7, Reg.A); return 8;
@@ -642,7 +641,7 @@ namespace Monoboy
                 case 0x7B: BIT(Bit7, Reg.E); return 8;
                 case 0x7C: BIT(Bit7, Reg.H); return 8;
                 case 0x7D: BIT(Bit7, Reg.L); return 8;
-                case 0x7E: BIT(Bit7, bus.Read(Reg.HL)); return 12;
+                case 0x7E: BIT(Bit7, emulator.Read(Reg.HL)); return 12;
 
                 // SET 0,r
                 case 0xC7: Reg.A = SET(Bit0, Reg.A); return 8;
@@ -652,7 +651,7 @@ namespace Monoboy
                 case 0xC3: Reg.E = SET(Bit0, Reg.E); return 8;
                 case 0xC4: Reg.H = SET(Bit0, Reg.H); return 8;
                 case 0xC5: Reg.L = SET(Bit0, Reg.L); return 8;
-                case 0xC6: bus.Write(Reg.HL, SET(Bit0, bus.Read(Reg.HL))); return 16;
+                case 0xC6: emulator.Write(Reg.HL, SET(Bit0, emulator.Read(Reg.HL))); return 16;
 
                 // SET 1,r
                 case 0xCF: Reg.A = SET(Bit1, Reg.A); return 8;
@@ -662,7 +661,7 @@ namespace Monoboy
                 case 0xCB: Reg.E = SET(Bit1, Reg.E); return 8;
                 case 0xCC: Reg.H = SET(Bit1, Reg.H); return 8;
                 case 0xCD: Reg.L = SET(Bit1, Reg.L); return 8;
-                case 0xCE: bus.Write(Reg.HL, SET(Bit1, bus.Read(Reg.HL))); return 16;
+                case 0xCE: emulator.Write(Reg.HL, SET(Bit1, emulator.Read(Reg.HL))); return 16;
 
                 // SET 2,r
                 case 0xD7: Reg.A = SET(Bit2, Reg.A); return 8;
@@ -672,7 +671,7 @@ namespace Monoboy
                 case 0xD3: Reg.E = SET(Bit2, Reg.E); return 8;
                 case 0xD4: Reg.H = SET(Bit2, Reg.H); return 8;
                 case 0xD5: Reg.L = SET(Bit2, Reg.L); return 8;
-                case 0xD6: bus.Write(Reg.HL, SET(Bit2, bus.Read(Reg.HL))); return 16;
+                case 0xD6: emulator.Write(Reg.HL, SET(Bit2, emulator.Read(Reg.HL))); return 16;
 
                 // SET 3,r
                 case 0xDF: Reg.A = SET(Bit3, Reg.A); return 8;
@@ -682,7 +681,7 @@ namespace Monoboy
                 case 0xDB: Reg.E = SET(Bit3, Reg.E); return 8;
                 case 0xDC: Reg.H = SET(Bit3, Reg.H); return 8;
                 case 0xDD: Reg.L = SET(Bit3, Reg.L); return 8;
-                case 0xDE: bus.Write(Reg.HL, SET(Bit3, bus.Read(Reg.HL))); return 16;
+                case 0xDE: emulator.Write(Reg.HL, SET(Bit3, emulator.Read(Reg.HL))); return 16;
 
                 // SET 4,r
                 case 0xE7: Reg.A = SET(Bit4, Reg.A); return 8;
@@ -692,7 +691,7 @@ namespace Monoboy
                 case 0xE3: Reg.E = SET(Bit4, Reg.E); return 8;
                 case 0xE4: Reg.H = SET(Bit4, Reg.H); return 8;
                 case 0xE5: Reg.L = SET(Bit4, Reg.L); return 8;
-                case 0xE6: bus.Write(Reg.HL, SET(Bit4, bus.Read(Reg.HL))); return 16;
+                case 0xE6: emulator.Write(Reg.HL, SET(Bit4, emulator.Read(Reg.HL))); return 16;
 
                 // SET 5,r
                 case 0xEF: Reg.A = SET(Bit5, Reg.A); return 8;
@@ -702,7 +701,7 @@ namespace Monoboy
                 case 0xEB: Reg.E = SET(Bit5, Reg.E); return 8;
                 case 0xEC: Reg.H = SET(Bit5, Reg.H); return 8;
                 case 0xED: Reg.L = SET(Bit5, Reg.L); return 8;
-                case 0xEE: bus.Write(Reg.HL, SET(Bit5, bus.Read(Reg.HL))); return 16;
+                case 0xEE: emulator.Write(Reg.HL, SET(Bit5, emulator.Read(Reg.HL))); return 16;
 
                 // SET 6,r
                 case 0xF7: Reg.A = SET(Bit6, Reg.A); return 8;
@@ -712,7 +711,7 @@ namespace Monoboy
                 case 0xF3: Reg.E = SET(Bit6, Reg.E); return 8;
                 case 0xF4: Reg.H = SET(Bit6, Reg.H); return 8;
                 case 0xF5: Reg.L = SET(Bit6, Reg.L); return 8;
-                case 0xF6: bus.Write(Reg.HL, SET(Bit6, bus.Read(Reg.HL))); return 16;
+                case 0xF6: emulator.Write(Reg.HL, SET(Bit6, emulator.Read(Reg.HL))); return 16;
 
                 // SET 7,r
                 case 0xFF: Reg.A = SET(Bit7, Reg.A); return 8;
@@ -722,7 +721,7 @@ namespace Monoboy
                 case 0xFB: Reg.E = SET(Bit7, Reg.E); return 8;
                 case 0xFC: Reg.H = SET(Bit7, Reg.H); return 8;
                 case 0xFD: Reg.L = SET(Bit7, Reg.L); return 8;
-                case 0xFE: bus.Write(Reg.HL, SET(Bit7, bus.Read(Reg.HL))); return 16;
+                case 0xFE: emulator.Write(Reg.HL, SET(Bit7, emulator.Read(Reg.HL))); return 16;
 
                 // RES 0,r
                 case 0x87: Reg.A = RES(Bit0, Reg.A); return 8;
@@ -732,7 +731,7 @@ namespace Monoboy
                 case 0x83: Reg.E = RES(Bit0, Reg.E); return 8;
                 case 0x84: Reg.H = RES(Bit0, Reg.H); return 8;
                 case 0x85: Reg.L = RES(Bit0, Reg.L); return 8;
-                case 0x86: bus.Write(Reg.HL, RES(Bit0, bus.Read(Reg.HL))); return 16;
+                case 0x86: emulator.Write(Reg.HL, RES(Bit0, emulator.Read(Reg.HL))); return 16;
 
                 // RES 1,r
                 case 0x8F: Reg.A = RES(Bit1, Reg.A); return 8;
@@ -742,7 +741,7 @@ namespace Monoboy
                 case 0x8B: Reg.E = RES(Bit1, Reg.E); return 8;
                 case 0x8C: Reg.H = RES(Bit1, Reg.H); return 8;
                 case 0x8D: Reg.L = RES(Bit1, Reg.L); return 8;
-                case 0x8E: bus.Write(Reg.HL, RES(Bit1, bus.Read(Reg.HL))); return 16;
+                case 0x8E: emulator.Write(Reg.HL, RES(Bit1, emulator.Read(Reg.HL))); return 16;
 
                 // RES 2,r
                 case 0x97: Reg.A = RES(Bit2, Reg.A); return 8;
@@ -752,7 +751,7 @@ namespace Monoboy
                 case 0x93: Reg.E = RES(Bit2, Reg.E); return 8;
                 case 0x94: Reg.H = RES(Bit2, Reg.H); return 8;
                 case 0x95: Reg.L = RES(Bit2, Reg.L); return 8;
-                case 0x96: bus.Write(Reg.HL, RES(Bit2, bus.Read(Reg.HL))); return 16;
+                case 0x96: emulator.Write(Reg.HL, RES(Bit2, emulator.Read(Reg.HL))); return 16;
 
                 // RES 3,r
                 case 0x9F: Reg.A = RES(Bit3, Reg.A); return 8;
@@ -762,7 +761,7 @@ namespace Monoboy
                 case 0x9B: Reg.E = RES(Bit3, Reg.E); return 8;
                 case 0x9C: Reg.H = RES(Bit3, Reg.H); return 8;
                 case 0x9D: Reg.L = RES(Bit3, Reg.L); return 8;
-                case 0x9E: bus.Write(Reg.HL, RES(Bit3, bus.Read(Reg.HL))); return 16;
+                case 0x9E: emulator.Write(Reg.HL, RES(Bit3, emulator.Read(Reg.HL))); return 16;
 
                 // RES 4,r
                 case 0xA7: Reg.A = RES(Bit4, Reg.A); return 8;
@@ -772,7 +771,7 @@ namespace Monoboy
                 case 0xA3: Reg.E = RES(Bit4, Reg.E); return 8;
                 case 0xA4: Reg.H = RES(Bit4, Reg.H); return 8;
                 case 0xA5: Reg.L = RES(Bit4, Reg.L); return 8;
-                case 0xA6: bus.Write(Reg.HL, RES(Bit4, bus.Read(Reg.HL))); return 16;
+                case 0xA6: emulator.Write(Reg.HL, RES(Bit4, emulator.Read(Reg.HL))); return 16;
 
                 // RES 5,r
                 case 0xAF: Reg.A = RES(Bit5, Reg.A); return 8;
@@ -782,7 +781,7 @@ namespace Monoboy
                 case 0xAB: Reg.E = RES(Bit5, Reg.E); return 8;
                 case 0xAC: Reg.H = RES(Bit5, Reg.H); return 8;
                 case 0xAD: Reg.L = RES(Bit5, Reg.L); return 8;
-                case 0xAE: bus.Write(Reg.HL, RES(Bit5, bus.Read(Reg.HL))); return 16;
+                case 0xAE: emulator.Write(Reg.HL, RES(Bit5, emulator.Read(Reg.HL))); return 16;
 
                 // RES 6,r
                 case 0xB7: Reg.A = RES(Bit6, Reg.A); return 8;
@@ -792,7 +791,7 @@ namespace Monoboy
                 case 0xB3: Reg.E = RES(Bit6, Reg.E); return 8;
                 case 0xB4: Reg.H = RES(Bit6, Reg.H); return 8;
                 case 0xB5: Reg.L = RES(Bit6, Reg.L); return 8;
-                case 0xB6: bus.Write(Reg.HL, RES(Bit6, bus.Read(Reg.HL))); return 16;
+                case 0xB6: emulator.Write(Reg.HL, RES(Bit6, emulator.Read(Reg.HL))); return 16;
 
                 // RES 7,r
                 case 0xBF: Reg.A = RES(Bit7, Reg.A); return 8;
@@ -802,38 +801,38 @@ namespace Monoboy
                 case 0xBB: Reg.E = RES(Bit7, Reg.E); return 8;
                 case 0xBC: Reg.H = RES(Bit7, Reg.H); return 8;
                 case 0xBD: Reg.L = RES(Bit7, Reg.L); return 8;
-                case 0xBE: bus.Write(Reg.HL, RES(Bit7, bus.Read(Reg.HL))); return 16;
+                case 0xBE: emulator.Write(Reg.HL, RES(Bit7, emulator.Read(Reg.HL))); return 16;
 
-                    #endregion
+                #endregion
             }
         }
 
         public void Push(ushort data)
         {
             Reg.SP--;
-            bus.Write(Reg.SP, data.High());
+            emulator.Write(Reg.SP, data.High());
             Reg.SP--;
-            bus.Write(Reg.SP, data.Low());
+            emulator.Write(Reg.SP, data.Low());
         }
 
         public ushort Pop()
         {
-            byte low = bus.Read(Reg.SP++);
-            byte high = bus.Read(Reg.SP++);
+            byte low = emulator.Read(Reg.SP++);
+            byte high = emulator.Read(Reg.SP++);
 
-            return Combine(low, high);
+            return low.Combine(high);
         }
 
         private byte NextByte()
         {
-            return bus.Read(Reg.PC++);
+            return emulator.Read(Reg.PC++);
         }
 
         private ushort NextShort()
         {
             byte low = NextByte();
             byte high = NextByte();
-            return Combine(low, high);
+            return low.Combine(high);
         }
 
         #region 8-Bit ALU
@@ -857,7 +856,7 @@ namespace Monoboy
 
             Reg.SetFlag(Flag.Z, (byte)result == 0);
             Reg.SetFlag(Flag.N, false);
-            if (Reg.GetFlag(Flag.C) == true)
+            if(Reg.GetFlag(Flag.C) == true)
             {
                 Reg.SetFlag(Flag.H, (Reg.A & 0xF) + (n & 0xF) >= 0xF);
             }
@@ -1029,25 +1028,25 @@ namespace Monoboy
 
         private void DAA()
         {
-            if (Reg.GetFlag(Flag.N) == true)
+            if(Reg.GetFlag(Flag.N) == true)
             {
-                if (Reg.GetFlag(Flag.C))
+                if(Reg.GetFlag(Flag.C))
                 {
                     Reg.A -= 0x60;
                 }
-                if (Reg.GetFlag(Flag.H))
+                if(Reg.GetFlag(Flag.H))
                 {
                     Reg.A -= 0x6;
                 }
             }
             else
             {
-                if (Reg.GetFlag(Flag.C) || (Reg.A > 0x99))
+                if(Reg.GetFlag(Flag.C) || (Reg.A > 0x99))
                 {
                     Reg.A += 0x60;
                     Reg.SetFlag(Flag.C, true);
                 }
-                if (Reg.GetFlag(Flag.H) || (Reg.A & 0xF) > 0x9)
+                if(Reg.GetFlag(Flag.H) || (Reg.A & 0xF) > 0x9)
                 {
                     Reg.A += 0x6;
                 }
@@ -1222,9 +1221,9 @@ namespace Monoboy
 
         private byte JP(bool condition)
         {
-            if (condition == true)
+            if(condition == true)
             {
-                Reg.PC = bus.ReadShort(Reg.PC);
+                Reg.PC = emulator.ReadShort(Reg.PC);
                 return 16;
             }
             else
@@ -1236,9 +1235,9 @@ namespace Monoboy
 
         private byte JR(bool condition)
         {
-            if (condition == true)
+            if(condition == true)
             {
-                JP((ushort)(Reg.PC + (sbyte)bus.Read(Reg.PC)));
+                JP((ushort)(Reg.PC + (sbyte)emulator.Read(Reg.PC)));
                 Reg.PC += 1;
                 return 12;
             }
@@ -1255,10 +1254,10 @@ namespace Monoboy
 
         public byte CALL(bool condition)
         {
-            if (condition == true)
+            if(condition == true)
             {
                 Push((ushort)(Reg.PC + 2));
-                JP(bus.ReadShort(Reg.PC));
+                JP(emulator.ReadShort(Reg.PC));
                 return 12;
             }
             else
@@ -1273,7 +1272,7 @@ namespace Monoboy
         #region Returns
         private byte RET(bool condition)
         {
-            if (condition == true)
+            if(condition == true)
             {
                 Reg.PC = Pop();
                 return 20;

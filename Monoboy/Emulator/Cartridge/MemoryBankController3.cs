@@ -13,11 +13,11 @@ namespace Monoboy
         public bool ramEnabled = false;
 
         // Timer
-        byte seconds;   // RTC S
-        byte minutes;   // RTC M
-        byte hours;     // RTC H
-        byte days;      // RTC DL
-        byte daysCarry; // RTC DH
+        private byte seconds;   // RTC S
+        private byte minutes;   // RTC M
+        private byte hours;     // RTC H
+        private byte days;      // RTC DL
+        private byte daysCarry; // RTC DH
 
         public byte ReadBank00(ushort address)
         {

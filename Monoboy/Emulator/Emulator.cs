@@ -15,12 +15,12 @@ namespace Monoboy
         public bool paused = true;
 
         private string openRom;
-        private bool skipBootRom = false;
 
         public bool BackgroundEnabled = true;
         public bool WindowEnabled = true;
         public bool SpritesEnabled = true;
         public bool WidescreenEnabled = false;
+        public bool ReadBootRom = false;
 
         // Hardware
         public Interrupt interrupt;
@@ -85,13 +85,16 @@ namespace Monoboy
                 cartridgeType = reader.ReadByte();
             }
 
+            Console.WriteLine(cartridgeType);
+
             memoryBankController = cartridgeType switch
             {
-                byte _ when(cartridgeType <= 00) => new MemoryBankController0(),
-                byte _ when(cartridgeType <= 03) => new MemoryBankController1(),
-                byte _ when(cartridgeType <= 06) => new MemoryBankController2(),
-                byte _ when(cartridgeType <= 19) => new MemoryBankController3(),
-                byte _ when(cartridgeType <= 27) => new MemoryBankController5(),
+                byte _ when(cartridgeType <= 0x00) => new MemoryBankController0(),
+                byte _ when(cartridgeType <= 0x03) => new MemoryBankController1(),
+                byte _ when(cartridgeType <= 0x06) => new MemoryBankController2(),
+                byte _ when(cartridgeType <= 0x13) => new MemoryBankController3(),
+                byte _ when(cartridgeType <= 0x1E) => new MemoryBankController5(),
+                byte _ when(cartridgeType <= 0x20) => new MemoryBankController6(),
                 _ => throw new NotImplementedException()
             };
 
@@ -109,17 +112,10 @@ namespace Monoboy
             memory = new Memory();
             register = new Register();
 
-            if(File.Exists("Data/dmg_boot.bin") == true)
+            if(File.Exists("dmg_boot.bin") == true && ReadBootRom == true)
             {
-                if(skipBootRom == false)
-                {
-                    memory.boot = File.ReadAllBytes("Data/dmg_boot.bin");
-                    biosEnabled = true;
-                }
-                else
-                {
-                    SkipBootRom();
-                }
+                memory.boot = File.ReadAllBytes("dmg_boot.bin");
+                biosEnabled = true;
             }
             else
             {
@@ -188,7 +184,7 @@ namespace Monoboy
 
         #region Bus
 
-        internal byte Read(ushort address)
+        public byte Read(ushort address)
         {
             return address switch
             {
@@ -202,17 +198,18 @@ namespace Monoboy
                 ushort _ when address <= 0xFE9F => memory.oam[address - 0xFE00],                // Sprite Attribute Table (OAM)
                 ushort _ when address <= 0xFEFF => 0x00,                                        // Not Usable
                 ushort _ when address <= 0xFF7F => ReadIO(address),                             // I/O Ports
-                ushort _ when address <= 0xFFFF => memory.zp[address - 0xFF80],                 // Zero Page RAM
+                ushort _ when address <= 0xFFFE => memory.zp[address - 0xFF80],                 // Zero Page RAM
+                ushort _ when address <= 0xFFFF => memory.ie,                                   // Interrupts Enable Register (IE)	
                 _ => 0xFF,
             };
         }
 
-        internal ushort ReadShort(ushort address)
+        public ushort ReadShort(ushort address)
         {
             return (ushort)(Read((ushort)(address + 1)) << 8 | Read(address));
         }
 
-        internal void Write(ushort address, byte data)
+        public void Write(ushort address, byte data)
         {
             switch(address)
             {
@@ -224,11 +221,12 @@ namespace Monoboy
                 case ushort _ when address <= 0xFE9F: memory.oam[address - 0xFE00] = data; break;               // Sprite Attribute Table (OAM)
                 case ushort _ when address <= 0xFEFF: break;                                                    // Not Usable
                 case ushort _ when address <= 0xFF7F: WriteIO(address, data); break;                            // I/O Ports
-                case ushort _ when address <= 0xFFFF: memory.zp[address - 0xFF80] = data; break;                // Zero Page RAM
+                case ushort _ when address <= 0xFFFE: memory.zp[address - 0xFF80] = data; break;                // Zero Page RAM
+                case ushort _ when address <= 0xFFFF: memory.ie = data; break;                                  // Zero Page RAM
             }
         }
 
-        internal void WriteShort(ushort address, ushort data)
+        public void WriteShort(ushort address, ushort data)
         {
             Write((ushort)(address + 1), (byte)(data >> 8));
             Write(address, (byte)data);

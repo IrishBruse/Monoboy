@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Numerics;
 
 using ImGuiNET;
@@ -28,11 +27,17 @@ namespace Monoboy.Gui
         private bool tilemapWindow = false;
         private string openRom;
 
+        IniFile configFile;
+
         public Application(GameWindowSettings gameWindow, NativeWindowSettings nativeWindow) : base(gameWindow, nativeWindow)
         {
+            configFile = new IniFile();
+
+            configFile.Load();
+
             emulator = new Emulator();
 
-            MakeCurrent();
+            //MakeCurrent();
 
             framebufferTexture = new Texture("FrameBuffer", Emulator.WindowWidth, Emulator.WindowHeight, emulator.ppu.framebuffer.Pixels);
             framebufferTexture.SetMagFilter(TextureMagFilter.Nearest);
@@ -93,7 +98,6 @@ namespace Monoboy.Gui
                 emulator.joypad.SetButton(Joypad.Button.Left, KeyboardState.IsKeyDown(Keys.A));
                 emulator.joypad.SetButton(Joypad.Button.Right, KeyboardState.IsKeyDown(Keys.D));
             }
-
         }
 
         protected override void OnJoystickConnected(JoystickEventArgs e)
@@ -150,11 +154,25 @@ namespace Monoboy.Gui
                     ImGui.EndMenu();
                 }
 
+
+                if(ImGui.BeginMenu("Config"))
+                {
+                    ImGui.MenuItem("Use boot rom", null, ref emulator.ReadBootRom);
+                    if(ImGui.MenuItem("Widescreen", null, ref emulator.WidescreenEnabled))
+                    {
+                        emulator.ToggleWidescreen();
+                        framebufferTexture = new Texture("FrameBuffer", Emulator.WindowWidth, Emulator.WindowHeight, emulator.ppu.framebuffer.Pixels);
+                        framebufferTexture.SetMagFilter(TextureMagFilter.Nearest);
+                    }
+
+                    ImGui.EndMenu();
+                }
+
                 if(ImGui.BeginMenu("Debug"))
                 {
-                    if(ImGui.MenuItem("Background Toggle", null, ref emulator.BackgroundEnabled)) { }
-                    if(ImGui.MenuItem("Window Toggle", null, ref emulator.WindowEnabled)) { }
-                    if(ImGui.MenuItem("Sprites Toggle", null, ref emulator.SpritesEnabled)) { }
+                    ImGui.MenuItem("Background Toggle", null, ref emulator.BackgroundEnabled);
+                    ImGui.MenuItem("Window Toggle", null, ref emulator.WindowEnabled);
+                    ImGui.MenuItem("Sprites Toggle", null, ref emulator.SpritesEnabled);
                     //if(ImGui.MenuItem("Screenshot", null))
                     //{
                     //    var builder = PngBuilder.Create(256, 256, false);
@@ -175,12 +193,6 @@ namespace Monoboy.Gui
 
                 if(ImGui.BeginMenu("Windows"))
                 {
-                    if(ImGui.MenuItem("Widescreen", null, ref emulator.WidescreenEnabled))
-                    {
-                        emulator.ToggleWidescreen();
-                        framebufferTexture = new Texture("FrameBuffer", Emulator.WindowWidth, Emulator.WindowHeight, emulator.ppu.framebuffer.Pixels);
-                        framebufferTexture.SetMagFilter(TextureMagFilter.Nearest);
-                    }
                     if(ImGui.MenuItem("Background", null, ref backgroundWindow)) { }
                     if(ImGui.MenuItem("Tilemap", null, ref tilemapWindow)) { }
                     ImGui.EndMenu();

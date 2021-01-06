@@ -8,6 +8,7 @@
 
 	<ItemGroup>
 		<None Update="$(ProjectDir)Roms\**" CopyToOutputDirectory="Always" />
+		<None Update="$(ProjectDir)Tests\**" CopyToOutputDirectory="Always" />
 	</ItemGroup>
 
 </Project>

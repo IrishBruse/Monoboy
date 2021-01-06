@@ -63,25 +63,28 @@ namespace Monoboy.Utility
 
         public void Load(string filepath = "Config.ini")
         {
-            string currentSection = GlobalSection;
-            string[] lines = File.ReadAllLines(filepath);
-
             sections.Add(GlobalSection, new Section(GlobalSection));
+            string currentSection = GlobalSection;
 
-            for(int i = 0; i < lines.Length; i++)
+            if(File.Exists(filepath))
             {
-                // Section Header
-                if(lines[i].StartsWith("[") && lines[i].EndsWith("]"))
+                string[] lines = File.ReadAllLines(filepath);
+
+                for(int i = 0; i < lines.Length; i++)
                 {
-                    currentSection = lines[i].Replace("[", "").Replace("]", "");
-                    sections.Add(currentSection, new Section(currentSection));
-                }
-                else if(!lines[i].StartsWith("#") && !lines[i].StartsWith(";") && lines[i] != "")
-                {
-                    string[] valuePairs = lines[i].Split('=');
-                    string key = valuePairs[0];
-                    string value = valuePairs[1];
-                    sections[currentSection].SetValue(key, value);
+                    // Section Header
+                    if(lines[i].StartsWith("[") && lines[i].EndsWith("]"))
+                    {
+                        currentSection = lines[i].Replace("[", "").Replace("]", "");
+                        sections.Add(currentSection, new Section(currentSection));
+                    }
+                    else if(!lines[i].StartsWith("#") && !lines[i].StartsWith(";") && lines[i] != "")
+                    {
+                        string[] valuePairs = lines[i].Split('=');
+                        string key = valuePairs[0];
+                        string value = valuePairs[1];
+                        sections[currentSection].SetValue(key, value);
+                    }
                 }
             }
         }

@@ -26,7 +26,7 @@ namespace Monoboy
 
         public byte ReadRam(ushort address)
         {
-            if (ramEnabled == true)
+            if(ramEnabled == true)
             {
                 return ram[(0x2000 * ramBank) + (address & 0x1FFF)];
             }
@@ -38,7 +38,7 @@ namespace Monoboy
 
         public void WriteRam(ushort address, byte data)
         {
-            if (ramEnabled == true)
+            if(ramEnabled == true)
             {
                 ram[(0x2000 * ramBank) + (address & 0x1FFF)] = data;
             }
@@ -46,56 +46,56 @@ namespace Monoboy
 
         public void WriteBank(ushort address, byte data)
         {
-            switch (address)
+            switch(address)
             {
                 case ushort _ when address < 0x2000:
-                    {
-                        ramEnabled = data == 0x0A;
-                    }
-                    break;
+                {
+                    ramEnabled = data == 0x0A;
+                }
+                break;
 
                 case ushort _ when address < 0x4000:
+                {
+                    byte bank = (byte)(data & 0b00011111);
+                    romBank = (byte)((romBank & 0b11100000) | bank);
+                    if(romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
                     {
-                        byte bank = (byte)(data & 0b00011111);
-                        romBank = (byte)((romBank & 0b11100000) | bank);
-                        if (romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
-                        {
-                            romBank += 1;
-                        }
+                        romBank += 1;
                     }
-                    break;
+                }
+                break;
 
                 case ushort _ when address < 0x6000:
-                    {
-                        byte bank = (byte)(data & 0b11);
+                {
+                    byte bank = (byte)(data & 0b11);
 
-                        if (bankingMode == BankingMode.Rom)
+                    if(bankingMode == BankingMode.Rom)
+                    {
+                        romBank = (byte)(romBank | (bank << 5));
+                        if(romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
                         {
-                            romBank = (byte)(romBank | (bank << 5));
-                            if (romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
-                            {
-                                romBank++;
-                            }
-                        }
-                        else
-                        {
-                            ramBank = bank;
+                            romBank++;
                         }
                     }
-                    break;
+                    else
+                    {
+                        ramBank = bank;
+                    }
+                }
+                break;
 
                 case ushort _ when address < 0x8000:
+                {
+                    if((data & 1) == 0)
                     {
-                        if ((data & 1) == 0)
-                        {
-                            bankingMode = BankingMode.Rom;
-                        }
-                        else
-                        {
-                            bankingMode = BankingMode.Ram;
-                        }
+                        bankingMode = BankingMode.Rom;
                     }
-                    break;
+                    else
+                    {
+                        bankingMode = BankingMode.Ram;
+                    }
+                }
+                break;
             }
         }
 
@@ -103,9 +103,9 @@ namespace Monoboy
         {
             rom = File.ReadAllBytes(path);
 
-            string save = path.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
+            string save = path.Replace(".gb", ".sav", true, null);
 
-            if (File.Exists(save) == true)
+            if(File.Exists(save) == true)
             {
                 ram = File.ReadAllBytes(save);
             }

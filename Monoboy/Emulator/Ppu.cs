@@ -23,7 +23,6 @@ namespace Monoboy
         public int cycles;
 
         private Emulator emulator;
-        private bool[] backgroundPriority;
 
         public Framebuffer framebuffer;
 
@@ -135,8 +134,6 @@ namespace Monoboy
         #region Drawing
         private void DrawScanline()
         {
-            backgroundPriority = new bool[Emulator.WindowWidth];
-
             if(LCDC.GetBit(LCDCBit.BackgroundEnabled) == true)
             {
                 DrawBackground();
@@ -177,7 +174,6 @@ namespace Monoboy
                 byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
                 byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
                 byte colorIndex = (byte)((BGP >> palletIndex * 2) & 0b11);
-                backgroundPriority[i] = colorIndex != 0;
 
                 if(emulator.BackgroundEnabled == true)
                 {
@@ -215,7 +211,6 @@ namespace Monoboy
                 byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
                 byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
                 byte colorIndex = (byte)((BGP >> palletIndex * 2) & 0b11);
-                backgroundPriority[i] = colorIndex != 0;
 
                 if(emulator.WindowEnabled == true)
                 {

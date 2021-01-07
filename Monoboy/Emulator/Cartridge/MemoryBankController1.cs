@@ -5,7 +5,7 @@ namespace Monoboy
     public class MemoryBankController1 : IMemoryBankController
     {
         public byte[] rom;
-        public byte[] ram = new byte[32768];
+        public byte[] ram = new byte[0x8000];
 
         public byte romBank = 1;
         public byte ramBank = 0;
@@ -21,6 +21,7 @@ namespace Monoboy
         public byte ReadBankNN(ushort address)
         {
             int offset = (0x4000 * romBank) + (address & 0x3FFF);
+
             return rom[offset];
         }
 
@@ -56,11 +57,10 @@ namespace Monoboy
 
                 case ushort _ when address < 0x4000:
                 {
-                    byte bank = (byte)(data & 0b00011111);
-                    romBank = (byte)((romBank & 0b11100000) | bank);
+                    romBank = (byte)(data & 0b11111);
                     if(romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
                     {
-                        romBank += 1;
+                        romBank++;
                     }
                 }
                 break;
@@ -71,7 +71,7 @@ namespace Monoboy
 
                     if(bankingMode == BankingMode.Rom)
                     {
-                        romBank = (byte)(romBank | (bank << 5));
+                        romBank = (byte)(romBank | bank);
                         if(romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
                         {
                             romBank++;

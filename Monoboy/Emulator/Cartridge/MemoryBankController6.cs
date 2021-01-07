@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace Monoboy
+﻿namespace Monoboy
 {
     public class MemoryBankController6 : IMemoryBankController
     {

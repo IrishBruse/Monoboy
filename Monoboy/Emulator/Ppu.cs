@@ -1,4 +1,6 @@
-﻿using Monoboy.Constants;
+﻿using System;
+
+using Monoboy.Constants;
 using Monoboy.Utility;
 
 namespace Monoboy
@@ -20,13 +22,18 @@ namespace Monoboy
         public byte OBP0 { get => emulator.memory.io[0x0048]; set => emulator.memory.io[0x0048] = value; }
         public byte OBP1 { get => emulator.memory.io[0x0049]; set => emulator.memory.io[0x0049] = value; }
 
+        private const int ScanLineCycles = 456;
+        private const int HBlankCycles = 204;
+        private const int OamCycles = 80;
+        private const int VRamCycles = 172;
+
         public int cycles;
 
         private Emulator emulator;
 
         public Framebuffer framebuffer;
 
-        public System.Action DrawFrame;
+        public Action DrawFrame;
 
         public Ppu(Emulator emulator)
         {
@@ -36,6 +43,8 @@ namespace Monoboy
 
         public void Step(int ticks)
         {
+            cycles += ticks;
+
             if(LCDC.GetBit(LCDCBit.LCDEnabled) == false)
             {
                 LY = 0;
@@ -44,20 +53,18 @@ namespace Monoboy
                 return;
             }
 
-            cycles += ticks;
-
             switch(StatMode)
             {
                 case Mode.Hblank:
-                if(cycles >= 204)
+                if(cycles >= HBlankCycles)
                 {
-                    cycles -= 204;
+                    cycles -= HBlankCycles;
                     LY++;
 
-                    if(LY == 144)
+                    if(LY == Emulator.WindowHeight)
                     {
                         HandleModeChange(Mode.Vblank);
-                        emulator.interrupt.InterruptRequest(InterruptFlag.VBlank);
+                        emulator.interrupt.RequestInterrupt(InterruptFlag.VBlank);
                         DrawFrame?.Invoke();
                     }
                     else
@@ -68,9 +75,9 @@ namespace Monoboy
                 break;
 
                 case Mode.Vblank:
-                if(cycles >= 456)
+                if(cycles >= ScanLineCycles)
                 {
-                    cycles -= 456;
+                    cycles -= ScanLineCycles;
                     LY++;
 
                     if(LY == 154)
@@ -82,17 +89,17 @@ namespace Monoboy
                 break;
 
                 case Mode.OAM:
-                if(cycles >= 80)
+                if(cycles >= OamCycles)
                 {
-                    cycles -= 80;
+                    cycles -= OamCycles;
                     HandleModeChange(Mode.VRAM);
                 }
                 break;
 
                 case Mode.VRAM:
-                if(cycles >= 172)
+                if(cycles >= VRamCycles)
                 {
-                    cycles -= 172;
+                    cycles -= VRamCycles;
                     DrawScanline();
                     HandleModeChange(Mode.Hblank);
                 }
@@ -104,7 +111,7 @@ namespace Monoboy
                 Stat.SetBit(Bit.Bit2, true);
                 if(Stat.GetBit(Bit.Bit6) == true)
                 {
-                    emulator.interrupt.InterruptRequest(InterruptFlag.LCDStat);
+                    emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
                 }
             }
             else
@@ -113,21 +120,26 @@ namespace Monoboy
             }
         }
 
+        internal void Reset()
+        {
+            cycles = 0;
+        }
+
         private void HandleModeChange(byte newMode)
         {
             StatMode = newMode;
 
             if(newMode == 2 && Stat.GetBit(Bit.Bit5) == true)
             {
-                emulator.interrupt.InterruptRequest(InterruptFlag.LCDStat);
+                emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
             }
             else if(newMode == 0 && Stat.GetBit(Bit.Bit3))
             {
-                emulator.interrupt.InterruptRequest(InterruptFlag.LCDStat);
+                emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
             }
             else if(newMode == 1 && Stat.GetBit(Bit.Bit4))
             {
-                emulator.interrupt.InterruptRequest(InterruptFlag.LCDStat);
+                emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
             }
         }
 

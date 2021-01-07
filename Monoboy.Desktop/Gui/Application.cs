@@ -157,7 +157,7 @@ namespace Monoboy.Gui
 
                 if(ImGui.BeginMenu("Config"))
                 {
-                    ImGui.MenuItem("Use boot rom", null, ref emulator.ReadBootRom);
+                    ImGui.MenuItem("Use boot rom", null, ref emulator.UseBootRom);
                     if(ImGui.MenuItem("Widescreen", null, ref emulator.WidescreenEnabled))
                     {
                         emulator.ToggleWidescreen();

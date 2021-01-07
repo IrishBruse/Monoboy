@@ -1294,5 +1294,11 @@ namespace Monoboy
         }
 
         #endregion
+
+        internal void Reset()
+        {
+            halted = false;
+            haltBug = false;
+        }
     }
 }

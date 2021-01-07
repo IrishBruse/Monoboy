@@ -1,4 +1,5 @@
-﻿using Monoboy.Constants;
+﻿
+using Monoboy.Constants;
 using Monoboy.Utility;
 
 namespace Monoboy
@@ -6,8 +7,12 @@ namespace Monoboy
     public class Joypad
     {
         private bool readPad;
-        private byte joyp = 0b110000;
 
+        public byte buttonState;
+        public byte padState;
+        private Emulator emulator;
+
+        private byte joyp = 0b110000;
         public byte JOYP
         {
             get
@@ -36,10 +41,6 @@ namespace Monoboy
             }
         }
 
-        public byte buttonState;
-        public byte padState;
-        private Emulator emulator;
-
         public Joypad(Emulator emulator)
         {
             this.emulator = emulator;
@@ -56,7 +57,7 @@ namespace Monoboy
                 if(state == true)
                 {
                     buttonState |= key;
-                    emulator.interrupt.InterruptRequest(InterruptFlag.Joypad);
+                    emulator.interrupt.RequestInterrupt(InterruptFlag.Joypad);
                 }
                 else
                 {
@@ -68,7 +69,7 @@ namespace Monoboy
                 if(state == true)
                 {
                     padState |= key;
-                    emulator.interrupt.InterruptRequest(InterruptFlag.Joypad);
+                    emulator.interrupt.RequestInterrupt(InterruptFlag.Joypad);
                 }
                 else
                 {
@@ -84,10 +85,19 @@ namespace Monoboy
             Up = 0b00000100,
             Down = 0b00001000,
 
+            // Shifted right 4
             A = 0b00010000,
             B = 0b00100000,
             Select = 0b01000000,
             Start = 0b10000000,
+        }
+
+        internal void Reset()
+        {
+            readPad = false;
+            joyp = 0b110000;
+            buttonState = 0;
+            padState = 0;
         }
     }
 }

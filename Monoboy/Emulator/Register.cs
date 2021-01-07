@@ -13,17 +13,9 @@ namespace Monoboy
         public byte H { get; set; }
         public byte L { get; set; }
 
-        public ushort SP
-        {
-            get;
-            set;
-        }
+        public ushort SP { get; set; }
 
-        public ushort PC
-        {
-            get;
-            set;
-        }
+        public ushort PC { get; set; }
 
         public ushort AF
         {
@@ -67,7 +59,7 @@ namespace Monoboy
 
         public void SetFlag(byte flag, bool condition)
         {
-            if (condition == true)
+            if(condition == true)
             {
                 F |= flag;
             }
@@ -80,6 +72,21 @@ namespace Monoboy
         public bool GetFlag(byte flag)
         {
             return (F & flag) != 0;
+        }
+
+        internal void Reset()
+        {
+            A = 0;
+            F = 0;
+            B = 0;
+            C = 0;
+            D = 0;
+            E = 0;
+            H = 0;
+            L = 0;
+
+            SP = 0;
+            PC = 0;
         }
     }
 }

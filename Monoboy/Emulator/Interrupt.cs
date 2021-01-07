@@ -1,4 +1,5 @@
-﻿using Monoboy.Utility;
+﻿
+using Monoboy.Utility;
 
 namespace Monoboy
 {
@@ -42,19 +43,16 @@ namespace Monoboy
             }
         }
 
-        public void InterruptRequest(byte interrupt)
+        public void RequestInterrupt(byte bit)
         {
-            IF = IF.SetBit(interrupt, true);
+            IF = IF.SetBit(bit, true);
         }
 
         public void HandleInterupts()
         {
-            byte _ie = IE;
-            byte _if = IF;
-
             for(byte i = 0; i < 5; i++)
             {
-                if((((_ie & _if) >> i) & 0b1) == 1)
+                if((((IE & IF) >> i) & 0x1) == 1)
                 {
                     if(emulator.cpu.halted == true)
                     {
@@ -64,14 +62,20 @@ namespace Monoboy
                     if(IME == true)
                     {
                         emulator.cpu.Push(emulator.register.PC);
-                        emulator.register.PC = (ushort)(0b1000000 + (8 * i));
+                        emulator.register.PC = (ushort)(64 + (8 * i));
                         IME = false;
-                        IF = IF.SetBit((byte)(1 << i), false);
+                        IF = IF.SetBit((byte)(0b1 << i), false);
                     }
                 }
             }
 
             IME |= IMEDelay;
+            IMEDelay = false;
+        }
+
+        internal void Reset()
+        {
+            IME = false;
             IMEDelay = false;
         }
     }

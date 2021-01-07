@@ -11,4 +11,13 @@
 		<None Update="$(ProjectDir)Tests\**" CopyToOutputDirectory="Always" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="dmg_boot.bin">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Empty.bin">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
 </Project>

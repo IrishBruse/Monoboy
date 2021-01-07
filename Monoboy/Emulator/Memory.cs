@@ -17,6 +17,11 @@
 
         public Memory()
         {
+            Reset();
+        }
+
+        internal void Reset()
+        {
             vram = new byte[8196];
             workram = new byte[8192];
             oam = new byte[160];

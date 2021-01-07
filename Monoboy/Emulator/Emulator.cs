@@ -7,6 +7,7 @@ namespace Monoboy
 {
     public class Emulator
     {
+        public const int CpuCyclesPerSecond = 4194304;
         public const int CyclesPerFrame = 69905;
         public static byte WindowWidth = 160;
         public const byte WindowHeight = 144;
@@ -20,7 +21,7 @@ namespace Monoboy
         public bool WindowEnabled = true;
         public bool SpritesEnabled = true;
         public bool WidescreenEnabled = false;
-        public bool ReadBootRom = false;
+        public bool UseBootRom = false;
 
         // Hardware
         public Interrupt interrupt;
@@ -31,8 +32,7 @@ namespace Monoboy
         public Ppu ppu;
         public Joypad joypad;
         public Timer timer;
-
-        public bool biosEnabled = false;
+        private bool biosEnabled = false;
 
         public Emulator()
         {
@@ -44,17 +44,19 @@ namespace Monoboy
             ppu = new Ppu(this);
             joypad = new Joypad(this);
             interrupt = new Interrupt(this);
+
+            Reset();
         }
 
         public byte Step()
         {
             byte cycles = cpu.Step();
+            cyclesRan += cycles;
 
             timer.Step(cycles);
             ppu.Step(cycles);
-            interrupt.HandleInterupts();
 
-            cyclesRan += cycles;
+            interrupt.HandleInterupts();
 
             // Disable the bios in the bus
             if(biosEnabled == true && register.PC >= 0x100)
@@ -109,10 +111,16 @@ namespace Monoboy
 
         public void Reset()
         {
-            memory = new Memory();
-            register = new Register();
+            register.Reset();
+            memory.Reset();
 
-            if(File.Exists("dmg_boot.bin") == true && ReadBootRom == true)
+            timer.Reset();
+            cpu.Reset();
+            ppu.Reset();
+            joypad.Reset();
+            interrupt.Reset();
+
+            if(File.Exists("dmg_boot.bin") == true && UseBootRom == true)
             {
                 memory.boot = File.ReadAllBytes("dmg_boot.bin");
                 biosEnabled = true;
@@ -241,12 +249,16 @@ namespace Monoboy
                     return joypad.JOYP;
                 }
 
+                case 0xFF04:// DIV
+                {
+                    return timer.DIV;
+                }
+
                 default:
                 {
                     return memory.io[address - 0xFF00];
                 }
             }
-
         }
 
         private void WriteIO(ushort address, byte data)
@@ -261,7 +273,7 @@ namespace Monoboy
 
                 case 0xFF04:// DIV
                 {
-                    data = 0;
+                    timer.DIV = data;// is set to zero
                 }
                 break;
 

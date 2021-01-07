@@ -8,7 +8,7 @@ namespace Monoboy
         public void BootRom()
         {
             Emulator emulator = new Emulator();
-            emulator.Open("Tests/daa.gb");
+            emulator.Open("Empty.bin");
 
             while(emulator.register.PC != 0x100)
             {

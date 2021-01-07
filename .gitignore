@@ -4,7 +4,9 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 *.gb
-*.bin
+*.gba
+*.gbc
+*.sym
 
 # User-specific files
 *.rsuser
@@ -355,3 +357,4 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 Monoboy/GlobalSuppressions.cs
+Monoboy/dmg_boot.bin

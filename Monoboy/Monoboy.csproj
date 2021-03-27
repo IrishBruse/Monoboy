@@ -9,9 +9,6 @@
 	<ItemGroup>
 		<Content Include="$(ProjectDir)Roms\**" ExcludeFromSingleFile="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never" />
 		<Content Include="$(ProjectDir)Tests\**"  ExcludeFromSingleFile="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never"  />
-
-		<Content Include="dmg_boot.bin" ExcludeFromSingleFile="true" CopyToOutputDirectory="Always"/>
-
 	</ItemGroup>
 
 </Project>

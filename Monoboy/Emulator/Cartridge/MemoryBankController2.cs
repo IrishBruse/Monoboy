@@ -8,7 +8,7 @@ namespace Monoboy
         public byte[] ram = new byte[512];
 
         public byte romBank = 1;
-        public bool ramEnabled = false;
+        public bool ramEnabled;
 
         public byte ReadBank00(ushort address)
         {
@@ -23,7 +23,7 @@ namespace Monoboy
 
         public byte ReadRam(ushort address)
         {
-            if(ramEnabled == true)
+            if (ramEnabled == true)
             {
                 return ram[address & 0x1FFF];
             }
@@ -35,24 +35,26 @@ namespace Monoboy
 
         public void WriteBank(ushort address, byte data)
         {
-            switch(address)
+            switch (address)
             {
                 case ushort _ when address < 0x2000:
-                {
-                    ramEnabled = (data & 0b1) == 0;
-                }
-                break;
+                    {
+                        ramEnabled = (data & 0b1) == 0;
+                    }
+                    break;
                 case ushort _ when address < 0x4000:
-                {
-                    romBank = (byte)(data & 0xF);
-                }
-                break;
+                    {
+                        romBank = (byte)(data & 0xF);
+                    }
+                    break;
+                default:
+                    break;
             }
         }
 
         public void WriteRam(ushort address, byte data)
         {
-            if(ramEnabled == true)
+            if (ramEnabled == true)
             {
                 ram[address & 0x1FFF] = data;
             }
@@ -64,7 +66,7 @@ namespace Monoboy
 
             string save = path.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
 
-            if(File.Exists(save) == true)
+            if (File.Exists(save) == true)
             {
                 ram = File.ReadAllBytes(save);
             }

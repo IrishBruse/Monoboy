@@ -6,57 +6,31 @@ namespace Monoboy.Utility
     internal class TinyFileDialog
     {
 #pragma warning disable IDE1006 // Naming Styles
-#if x86
+#pragma warning disable CA2101 // Naming StylesCA2101
         // cross platform UTF8
-        [DllImport("TinyFileDialogs x86.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("TinyFileDialogs.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void tinyfd_beep();
 
-        [DllImport("TinyFileDialogs x86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("TinyFileDialogs.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tinyfd_notifyPopup(string aTitle, string aMessage, string aIconType);
 
-        [DllImport("TinyFileDialogs x86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("TinyFileDialogs.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern int tinyfd_messageBox(string aTitle, string aMessage, string aDialogTyle, string aIconType, int aDefaultButton);
 
-        [DllImport("TinyFileDialogs x86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("TinyFileDialogs.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_inputBox(string aTitle, string aMessage, string aDefaultInput);
 
-        [DllImport("TinyFileDialogs x86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("TinyFileDialogs.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_saveFileDialog(string aTitle, string aDefaultPathAndFile, int aNumOfFilterPatterns, string[] aFilterPatterns, string aSingleFilterDescription);
 
-        [DllImport("TinyFileDialogs x86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("TinyFileDialogs.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_openFileDialog(string aTitle, string aDefaultPathAndFile, int aNumOfFilterPatterns, string[] aFilterPatterns, string aSingleFilterDescription, int aAllowMultipleSelects);
 
-        [DllImport("TinyFileDialogs x86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("TinyFileDialogs.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_selectFolderDialog(string aTitle, string aDefaultPathAndFile);
 
-        [DllImport("TinyFileDialogs x86.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr tinyfd_colorChooser(string aTitle, string aDefaultHexRGB, byte[] aDefaultRGB, byte[] aoResultRGB);      
-#else
-        // cross platform UTF8
-        [DllImport("TinyFileDialogs x64.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void tinyfd_beep();
-
-        [DllImport("TinyFileDialogs x64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int tinyfd_notifyPopup(string aTitle, string aMessage, string aIconType);
-
-        [DllImport("TinyFileDialogs x64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int tinyfd_messageBox(string aTitle, string aMessage, string aDialogTyle, string aIconType, int aDefaultButton);
-
-        [DllImport("TinyFileDialogs x64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr tinyfd_inputBox(string aTitle, string aMessage, string aDefaultInput);
-
-        [DllImport("TinyFileDialogs x64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr tinyfd_saveFileDialog(string aTitle, string aDefaultPathAndFile, int aNumOfFilterPatterns, string[] aFilterPatterns, string aSingleFilterDescription);
-
-        [DllImport("TinyFileDialogs x64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr tinyfd_openFileDialog(string aTitle, string aDefaultPathAndFile, int aNumOfFilterPatterns, string[] aFilterPatterns, string aSingleFilterDescription, int aAllowMultipleSelects);
-
-        [DllImport("TinyFileDialogs x64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr tinyfd_selectFolderDialog(string aTitle, string aDefaultPathAndFile);
-
-        [DllImport("TinyFileDialogs x64.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("TinyFileDialogs.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr tinyfd_colorChooser(string aTitle, string aDefaultHexRGB, byte[] aDefaultRGB, byte[] aoResultRGB);
-#endif
 #pragma warning restore IDE1006 // Naming Styles
 
         /// <summary>

@@ -10,7 +10,7 @@ namespace Monoboy
         public bool TacEnabled => (emulator.memory.io[0x07] & 0b100) != 0;
         public byte TacFrequancy => (byte)(emulator.memory.io[0x07] & 0b011);
 
-        private Emulator emulator;
+        private readonly Emulator emulator;
 
         private readonly ushort[] TimerFrequancy = { 1024, 16, 64, 256 };
 
@@ -27,18 +27,18 @@ namespace Monoboy
         {
             SystemInternalClock += (ushort)ticks;
 
-            if(TacEnabled == true)
+            if (TacEnabled == true)
             {
                 timerCounter += (ushort)ticks;
 
-                while(timerCounter >= TimerFrequancy[TacFrequancy])
+                while (timerCounter >= TimerFrequancy[TacFrequancy])
                 {
                     TIMA++;
                     timerCounter -= TimerFrequancy[TacFrequancy];
                 }
 
                 // Overflow occured
-                if(TIMA == 0xFF)
+                if (TIMA == 0xFF)
                 {
                     emulator.interrupt.RequestInterrupt(InterruptFlag.Timer);
                     TIMA = TMA;

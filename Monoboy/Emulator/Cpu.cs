@@ -11,7 +11,7 @@ namespace Monoboy
     {
         public bool halted;
         public bool haltBug;
-        private Emulator emulator;
+        private readonly Emulator emulator;
 
         private Register Reg => emulator.register;
 
@@ -26,13 +26,13 @@ namespace Monoboy
         {
             opcode = NextByte();
 
-            if(haltBug)
+            if (haltBug)
             {
                 haltBug = false;
                 Reg.PC--;
             }
 
-            switch(opcode)
+            switch (opcode)
             {
                 #region 8-Bit Loads
 
@@ -461,9 +461,11 @@ namespace Monoboy
                 case 0xF4: //Illegal Opcode
                 case 0xFC: //Illegal Opcode
                 case 0xFD: //Illegal Opcode
-                throw new Exception("Illegal Instruction : " + opcode);
+                    {
+                        throw new Exception("Illegal Instruction : " + opcode);
+                    }
 
-                #endregion
+                    #endregion
             }
         }
 
@@ -471,7 +473,7 @@ namespace Monoboy
         {
             opcode = NextByte();
 
-            switch(opcode)
+            switch (opcode)
             {
                 #region Miscellaneous
 
@@ -803,7 +805,7 @@ namespace Monoboy
                 case 0xBD: Reg.L = RES(Bit7, Reg.L); return 8;
                 case 0xBE: emulator.Write(Reg.HL, RES(Bit7, emulator.Read(Reg.HL))); return 16;
 
-                #endregion
+                    #endregion
             }
         }
 
@@ -856,7 +858,7 @@ namespace Monoboy
 
             Reg.SetFlag(Flag.Z, (byte)result == 0);
             Reg.SetFlag(Flag.N, false);
-            if(Reg.GetFlag(Flag.C) == true)
+            if (Reg.GetFlag(Flag.C) == true)
             {
                 Reg.SetFlag(Flag.H, (Reg.A & 0xF) + (n & 0xF) >= 0xF);
             }
@@ -1028,25 +1030,25 @@ namespace Monoboy
 
         private void DAA()
         {
-            if(Reg.GetFlag(Flag.N) == true)
+            if (Reg.GetFlag(Flag.N) == true)
             {
-                if(Reg.GetFlag(Flag.C))
+                if (Reg.GetFlag(Flag.C))
                 {
                     Reg.A -= 0x60;
                 }
-                if(Reg.GetFlag(Flag.H))
+                if (Reg.GetFlag(Flag.H))
                 {
                     Reg.A -= 0x6;
                 }
             }
             else
             {
-                if(Reg.GetFlag(Flag.C) || (Reg.A > 0x99))
+                if (Reg.GetFlag(Flag.C) || (Reg.A > 0x99))
                 {
                     Reg.A += 0x60;
                     Reg.SetFlag(Flag.C, true);
                 }
-                if(Reg.GetFlag(Flag.H) || (Reg.A & 0xF) > 0x9)
+                if (Reg.GetFlag(Flag.H) || (Reg.A & 0xF) > 0x9)
                 {
                     Reg.A += 0x6;
                 }
@@ -1221,7 +1223,7 @@ namespace Monoboy
 
         private byte JP(bool condition)
         {
-            if(condition == true)
+            if (condition == true)
             {
                 Reg.PC = emulator.ReadShort(Reg.PC);
                 return 16;
@@ -1235,7 +1237,7 @@ namespace Monoboy
 
         private byte JR(bool condition)
         {
-            if(condition == true)
+            if (condition == true)
             {
                 JP((ushort)(Reg.PC + (sbyte)emulator.Read(Reg.PC)));
                 Reg.PC += 1;
@@ -1254,7 +1256,7 @@ namespace Monoboy
 
         public byte CALL(bool condition)
         {
-            if(condition == true)
+            if (condition == true)
             {
                 Push((ushort)(Reg.PC + 2));
                 JP(emulator.ReadShort(Reg.PC));
@@ -1272,7 +1274,7 @@ namespace Monoboy
         #region Returns
         private byte RET(bool condition)
         {
-            if(condition == true)
+            if (condition == true)
             {
                 Reg.PC = Pop();
                 return 20;

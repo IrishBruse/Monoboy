@@ -137,7 +137,7 @@ void main()
         public void RecreateFontDeviceTexture()
         {
             ImGuiIOPtr io = ImGui.GetIO();
-            io.Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int width, out int height, out int bytesPerPixel);
+            io.Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int width, out int height, out _);
 
             _fontTexture = new Texture("ImGui Text Atlas", width, height, pixels);
             _fontTexture.SetMagFilter(TextureMagFilter.Linear);
@@ -156,7 +156,7 @@ void main()
         /// </summary>
         public void Render()
         {
-            if(_frameBegun)
+            if (_frameBegun)
             {
                 _frameBegun = false;
                 ImGui.Render();
@@ -169,7 +169,7 @@ void main()
         /// </summary>
         public void Update(GameWindow wnd, float deltaSeconds)
         {
-            if(_frameBegun)
+            if (_frameBegun)
             {
                 ImGui.Render();
             }
@@ -195,8 +195,6 @@ void main()
             io.DeltaTime = deltaSeconds; // DeltaTime is in seconds.
         }
 
-        private MouseState PrevMouseState;
-        private KeyboardState PrevKeyboardState;
         private readonly List<char> PressedChars = new List<char>();
 
         private void UpdateImGuiInput(GameWindow wnd)
@@ -214,16 +212,16 @@ void main()
             Vector2i point = screenPoint;
             io.MousePos = new System.Numerics.Vector2(point.X, point.Y);
 
-            foreach(Keys key in Enum.GetValues(typeof(Keys)))
+            foreach (Keys key in Enum.GetValues(typeof(Keys)))
             {
-                if(key == Keys.Unknown)
+                if (key == Keys.Unknown)
                 {
                     continue;
                 }
                 io.KeysDown[(int)key] = KeyboardState.IsKeyDown(key);
             }
 
-            foreach(char c in PressedChars)
+            foreach (char c in PressedChars)
             {
                 io.AddInputCharacter(c);
             }
@@ -233,9 +231,6 @@ void main()
             io.KeyAlt = KeyboardState.IsKeyDown(Keys.LeftAlt) || KeyboardState.IsKeyDown(Keys.RightAlt);
             io.KeyShift = KeyboardState.IsKeyDown(Keys.LeftShift) || KeyboardState.IsKeyDown(Keys.RightShift);
             io.KeySuper = KeyboardState.IsKeyDown(Keys.LeftSuper) || KeyboardState.IsKeyDown(Keys.RightSuper);
-
-            PrevMouseState = MouseState;
-            PrevKeyboardState = KeyboardState;
         }
 
 
@@ -244,7 +239,7 @@ void main()
             PressedChars.Add(keyChar);
         }
 
-        internal void MouseScroll(Vector2 offset)
+        internal static void MouseScroll(Vector2 offset)
         {
             ImGuiIOPtr io = ImGui.GetIO();
 
@@ -278,17 +273,17 @@ void main()
 
         private void RenderImDrawData(ImDrawDataPtr draw_data)
         {
-            if(draw_data.CmdListsCount == 0)
+            if (draw_data.CmdListsCount == 0)
             {
                 return;
             }
 
-            for(int i = 0; i < draw_data.CmdListsCount; i++)
+            for (int i = 0; i < draw_data.CmdListsCount; i++)
             {
                 ImDrawListPtr cmd_list = draw_data.CmdListsRange[i];
 
                 int vertexSize = cmd_list.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>();
-                if(vertexSize > _vertexBufferSize)
+                if (vertexSize > _vertexBufferSize)
                 {
                     int newSize = (int)Math.Max(_vertexBufferSize * 1.5f, vertexSize);
                     GL.NamedBufferData(_vertexBuffer, newSize, IntPtr.Zero, BufferUsageHint.DynamicDraw);
@@ -298,7 +293,7 @@ void main()
                 }
 
                 int indexSize = cmd_list.IdxBuffer.Size * sizeof(ushort);
-                if(indexSize > _indexBufferSize)
+                if (indexSize > _indexBufferSize)
                 {
                     int newSize = (int)Math.Max(_indexBufferSize * 1.5f, indexSize);
                     GL.NamedBufferData(_indexBuffer, newSize, IntPtr.Zero, BufferUsageHint.DynamicDraw);
@@ -336,7 +331,7 @@ void main()
             GL.Disable(EnableCap.DepthTest);
 
             // Render command lists
-            for(int n = 0; n < draw_data.CmdListsCount; n++)
+            for (int n = 0; n < draw_data.CmdListsCount; n++)
             {
                 ImDrawListPtr cmd_list = draw_data.CmdListsRange[n];
 
@@ -349,10 +344,10 @@ void main()
                 int vtx_offset = 0;
                 int idx_offset = 0;
 
-                for(int cmd_i = 0; cmd_i < cmd_list.CmdBuffer.Size; cmd_i++)
+                for (int cmd_i = 0; cmd_i < cmd_list.CmdBuffer.Size; cmd_i++)
                 {
                     ImDrawCmdPtr pcmd = cmd_list.CmdBuffer[cmd_i];
-                    if(pcmd.UserCallback != IntPtr.Zero)
+                    if (pcmd.UserCallback != IntPtr.Zero)
                     {
                         throw new NotImplementedException();
                     }
@@ -367,7 +362,7 @@ void main()
                         GL.Scissor((int)clip.X, _windowHeight - (int)clip.W, (int)(clip.Z - clip.X), (int)(clip.W - clip.Y));
                         Util.CheckGLError("Scissor");
 
-                        if((io.BackendFlags & ImGuiBackendFlags.RendererHasVtxOffset) != 0)
+                        if ((io.BackendFlags & ImGuiBackendFlags.RendererHasVtxOffset) != 0)
                         {
                             GL.DrawElementsBaseVertex(PrimitiveType.Triangles, (int)pcmd.ElemCount, DrawElementsType.UnsignedShort, (IntPtr)(idx_offset * sizeof(ushort)), vtx_offset);
                         }
@@ -380,7 +375,6 @@ void main()
 
                     idx_offset += (int)pcmd.ElemCount;
                 }
-                vtx_offset += cmd_list.VtxBuffer.Size;
             }
 
             GL.Disable(EnableCap.Blend);
@@ -392,6 +386,7 @@ void main()
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             _fontTexture.Dispose();
             _shader.Dispose();
         }

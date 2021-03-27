@@ -8,9 +8,9 @@ namespace Monoboy
         public void BootRom()
         {
             Emulator emulator = new Emulator();
-            emulator.Open("Empty.bin");
+            emulator.Reset();
 
-            while(emulator.register.PC != 0x100)
+            while (emulator.register.PC != 0x100)
             {
                 emulator.Step();
             }

@@ -8,6 +8,8 @@
 *.gbc
 *.sym
 
+imgui.ini
+
 # User-specific files
 *.rsuser
 *.suo

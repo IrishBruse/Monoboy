@@ -6,10 +6,8 @@
         public byte[] ram = new byte[32768];
 
         public byte romBank = 1;
-        public byte ramBank = 0;
-        public bool ramEnabled = false;
-
-        private BankingMode bankingMode = BankingMode.Rom;
+        public byte ramBank;
+        public bool ramEnabled;
 
         public byte ReadBank00(ushort address)
         {

@@ -5,7 +5,7 @@ namespace Monoboy
 {
     public class Interrupt
     {
-        private Emulator emulator;
+        private readonly Emulator emulator;
         private bool IME;// Master interupt enabled
         private bool IMEDelay;// Master interupt enabled delay
 
@@ -29,9 +29,9 @@ namespace Monoboy
 
         public void Halt()
         {
-            if(IME == false)
+            if (IME == false)
             {
-                if((IE & IF & 0b11111) == 0)
+                if ((IE & IF & 0b11111) == 0)
                 {
                     emulator.cpu.halted = true;
                     emulator.register.PC--;
@@ -50,16 +50,16 @@ namespace Monoboy
 
         public void HandleInterupts()
         {
-            for(byte i = 0; i < 5; i++)
+            for (byte i = 0; i < 5; i++)
             {
-                if((((IE & IF) >> i) & 0x1) == 1)
+                if ((((IE & IF) >> i) & 0x1) == 1)
                 {
-                    if(emulator.cpu.halted == true)
+                    if (emulator.cpu.halted == true)
                     {
                         emulator.register.PC++;
                         emulator.cpu.halted = false;
                     }
-                    if(IME == true)
+                    if (IME == true)
                     {
                         emulator.cpu.Push(emulator.register.PC);
                         emulator.register.PC = (ushort)(64 + (8 * i));

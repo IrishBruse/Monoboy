@@ -10,7 +10,7 @@ namespace Monoboy
 
         public byte buttonState;
         public byte padState;
-        private Emulator emulator;
+        private readonly Emulator emulator;
 
         private byte joyp = 0b110000;
         public byte JOYP
@@ -18,7 +18,7 @@ namespace Monoboy
             get
             {
                 byte result = (byte)(joyp & 0b110000);
-                if(readPad == true)
+                if (readPad == true)
                 {
                     return (byte)(result | (~padState & 0b1111));
                 }
@@ -30,11 +30,11 @@ namespace Monoboy
             set
             {
                 joyp = value;
-                if(value.GetBit(Bit.Bit4) == false)
+                if (value.GetBit(Bit.Bit4) == false)
                 {
                     readPad = true;
                 }
-                if(value.GetBit(Bit.Bit5) == false)
+                if (value.GetBit(Bit.Bit5) == false)
                 {
                     readPad = false;
                 }
@@ -50,11 +50,11 @@ namespace Monoboy
         {
             byte key = (byte)button;
 
-            if(key > 0b1000)
+            if (key > 0b1000)
             {
                 key = (byte)(key >> 4);
 
-                if(state == true)
+                if (state == true)
                 {
                     buttonState |= key;
                     emulator.interrupt.RequestInterrupt(InterruptFlag.Joypad);
@@ -66,7 +66,7 @@ namespace Monoboy
             }
             else
             {
-                if(state == true)
+                if (state == true)
                 {
                     padState |= key;
                     emulator.interrupt.RequestInterrupt(InterruptFlag.Joypad);

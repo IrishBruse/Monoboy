@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Numerics;
 
 using ImGuiNET;
@@ -17,19 +18,18 @@ namespace Monoboy.Gui
     public class Application : Window
     {
         private Texture framebufferTexture;
-        private Framebuffer backgroundBuffer;
-        private Texture backgroundTexture;
-        private Framebuffer tilemapBuffer;
-        private Texture tilemapTexture;
-        private Emulator emulator;
+        private readonly Framebuffer backgroundBuffer;
+        private readonly Texture backgroundTexture;
+        private readonly Framebuffer tilemapBuffer;
+        private readonly Texture tilemapTexture;
+        private readonly Emulator emulator;
 
-        private bool backgroundWindow = false;
-        private bool tilemapWindow = false;
+        private bool backgroundWindow;
+        private bool tilemapWindow;
         private string openRom;
+        private readonly IniFile configFile;
 
-        IniFile configFile;
-
-        public Application(GameWindowSettings gameWindow, NativeWindowSettings nativeWindow) : base(gameWindow, nativeWindow)
+        public Application(GameWindowSettings gameWindow, NativeWindowSettings nativeWindow, string[] args) : base(gameWindow, nativeWindow)
         {
             configFile = new IniFile();
 
@@ -37,7 +37,10 @@ namespace Monoboy.Gui
 
             emulator = new Emulator();
 
-            //MakeCurrent();
+            if (args.Length == 1 && File.Exists(args[0]))
+            {
+                emulator.Open(args[0]);
+            }
 
             framebufferTexture = new Texture("FrameBuffer", Emulator.WindowWidth, Emulator.WindowHeight, emulator.ppu.framebuffer.Pixels);
             framebufferTexture.SetMagFilter(TextureMagFilter.Nearest);
@@ -59,10 +62,10 @@ namespace Monoboy.Gui
 
             UpdateJoypad();
 
-            if(emulator.paused == false)
+            if (emulator.paused == false)
             {
                 int cycles = 0;
-                while(cycles < Emulator.CyclesPerFrame)
+                while (cycles < Emulator.CyclesPerFrame)
                 {
                     cycles += emulator.Step();
                 }
@@ -72,7 +75,7 @@ namespace Monoboy.Gui
         private void UpdateJoypad()
         {
             JoystickState joystick = JoystickStates[0];
-            if(joystick != null)
+            if (joystick != null)
             {
                 emulator.joypad.SetButton(Joypad.Button.A, KeyboardState.IsKeyDown(Keys.Space) || joystick.IsButtonDown(0));
                 emulator.joypad.SetButton(Joypad.Button.B, KeyboardState.IsKeyDown(Keys.LeftShift) || joystick.IsButtonDown(1));
@@ -127,27 +130,27 @@ namespace Monoboy.Gui
             windowFlags |= ImGuiWindowFlags.NoBringToFrontOnFocus;
             windowFlags |= ImGuiWindowFlags.AlwaysAutoResize;
 
-            if(ImGui.Begin("Monoboy", windowFlags) == false)
+            if (ImGui.Begin("Monoboy", windowFlags) == false)
             {
                 ImGui.End();
                 return;
             }
 
             // Menubar
-            if(ImGui.BeginMenuBar())
+            if (ImGui.BeginMenuBar())
             {
-                if(ImGui.BeginMenu("File"))
+                if (ImGui.BeginMenu("File"))
                 {
-                    if(ImGui.MenuItem("Open", "Ctrl+O"))
+                    if (ImGui.MenuItem("Open", "Ctrl+O"))
                     {
-                        openRom = TinyFileDialog.OpenFileDialog("Open Rom", "", new string[] { "*.gb", "*.gbc" }, "Rom (.gb,.gbc)", false);
+                        openRom = TinyFileDialog.OpenFileDialog("Open Rom", "./", new string[] { "*.gb", "*.gbc" }, "Rom (.gb,.gbc)", false);
 
-                        if(string.IsNullOrEmpty(openRom) == false)
+                        if (string.IsNullOrEmpty(openRom) == false)
                         {
                             emulator.Open(openRom);
                         }
                     }
-                    if(ImGui.MenuItem("Quit", "Alt+F4"))
+                    if (ImGui.MenuItem("Quit", "Alt+F4"))
                     {
                         Close();
                     }
@@ -155,10 +158,10 @@ namespace Monoboy.Gui
                 }
 
 
-                if(ImGui.BeginMenu("Config"))
+                if (ImGui.BeginMenu("Config"))
                 {
                     ImGui.MenuItem("Use boot rom", null, ref emulator.UseBootRom);
-                    if(ImGui.MenuItem("Widescreen", null, ref emulator.WidescreenEnabled))
+                    if (ImGui.MenuItem("Widescreen", null, ref emulator.WidescreenEnabled))
                     {
                         emulator.ToggleWidescreen();
                         framebufferTexture = new Texture("FrameBuffer", Emulator.WindowWidth, Emulator.WindowHeight, emulator.ppu.framebuffer.Pixels);
@@ -168,7 +171,7 @@ namespace Monoboy.Gui
                     ImGui.EndMenu();
                 }
 
-                if(ImGui.BeginMenu("Debug"))
+                if (ImGui.BeginMenu("Debug"))
                 {
                     ImGui.MenuItem("Background Toggle", null, ref emulator.BackgroundEnabled);
                     ImGui.MenuItem("Window Toggle", null, ref emulator.WindowEnabled);
@@ -191,10 +194,10 @@ namespace Monoboy.Gui
                     ImGui.EndMenu();
                 }
 
-                if(ImGui.BeginMenu("Windows"))
+                if (ImGui.BeginMenu("Windows"))
                 {
-                    if(ImGui.MenuItem("Background", null, ref backgroundWindow)) { }
-                    if(ImGui.MenuItem("Tilemap", null, ref tilemapWindow)) { }
+                    if (ImGui.MenuItem("Background", null, ref backgroundWindow)) { }
+                    if (ImGui.MenuItem("Tilemap", null, ref tilemapWindow)) { }
                     ImGui.EndMenu();
                 }
 
@@ -222,7 +225,7 @@ namespace Monoboy.Gui
 
         private void BackgroundWindow()
         {
-            if(backgroundWindow == true)
+            if (backgroundWindow)
             {
                 uint[] palette = { 0xD0D058, 0xA0A840, 0x708028, 0x405010 };
 
@@ -232,11 +235,11 @@ namespace Monoboy.Gui
                 ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x1000);
                 ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
 
-                for(int y = 0; y < 256; y++)
+                for (int y = 0; y < 256; y++)
                 {
                     ushort row = (ushort)(y / 8);
 
-                    for(int x = 0; x < 256; x++)
+                    for (int x = 0; x < 256; x++)
                     {
                         ushort colum = (ushort)(x / 8);
 
@@ -250,7 +253,7 @@ namespace Monoboy.Gui
 
                         byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
                         byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-                        byte colorIndex = (byte)((emulator.ppu.BGP >> palletIndex * 2) & 0b11);
+                        byte colorIndex = (byte)((emulator.ppu.BGP >> (palletIndex * 2)) & 0b11);
                         backgroundBuffer.SetPixel(x, y, palette[colorIndex]);
                     }
                 }
@@ -270,15 +273,15 @@ namespace Monoboy.Gui
 
         private void TilemapWindow()
         {
-            if(tilemapWindow == true)
+            if (tilemapWindow)
             {
                 uint[] palette = { 0xD0D058, 0xA0A840, 0x708028, 0x405010 };
 
-                for(int y = 0; y < 192; y++)
+                for (int y = 0; y < 192; y++)
                 {
                     ushort row = (ushort)(y / 8);
 
-                    for(int x = 0; x < 128; x++)
+                    for (int x = 0; x < 128; x++)
                     {
                         ushort colum = (ushort)(x / 8);
 
@@ -292,14 +295,14 @@ namespace Monoboy.Gui
 
                         byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
                         byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-                        byte colorIndex = (byte)((emulator.ppu.BGP >> palletIndex * 2) & 0b11);
+                        byte colorIndex = (byte)((emulator.ppu.BGP >> (palletIndex * 2)) & 0b11);
                         tilemapBuffer.SetPixel(x, y, palette[colorIndex]);
                     }
                 }
 
                 tilemapTexture.Update(tilemapBuffer.Pixels);
 
-                ImGui.Begin("Tilemap Window", ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar);
+                _ = ImGui.Begin("Tilemap Window", ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar);
                 {
                     ImGui.SetWindowSize(tilemapBuffer.Size);
                     ImGui.SetCursorPos(Vector2.Zero);

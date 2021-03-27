@@ -28,12 +28,12 @@ namespace Monoboy.Gui
 
             Vector2i windowSize = ClientSize;
 
-            if(windowSize.X < Emulator.WindowWidth)
+            if (windowSize.X < Emulator.WindowWidth)
             {
                 windowSize.X = Emulator.WindowWidth;
             }
 
-            if(windowSize.Y < Emulator.WindowHeight)
+            if (windowSize.Y < Emulator.WindowHeight)
             {
                 windowSize.Y = Emulator.WindowHeight;
             }
@@ -47,11 +47,11 @@ namespace Monoboy.Gui
             Size = windowSize;
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e)
+        protected override void OnRenderFrame(FrameEventArgs args)
         {
-            base.OnRenderFrame(e);
+            base.OnRenderFrame(args);
 
-            imGuiController.Update(this, (float)e.Time);
+            imGuiController.Update(this, (float)args.Time);
 
             GL.ClearColor(new Color4(0, 32, 48, 255));
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
@@ -75,7 +75,7 @@ namespace Monoboy.Gui
         {
             base.OnMouseWheel(e);
 
-            imGuiController.MouseScroll(e.Offset);
+            ImGuiController.MouseScroll(e.Offset);
         }
         public virtual void DrawImGui()
         {

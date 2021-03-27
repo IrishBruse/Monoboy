@@ -19,9 +19,9 @@ namespace ImGuiNET.OpenTK
         public readonly string Name;
         public int Program { get; private set; }
         private readonly Dictionary<string, int> UniformToLocation = new Dictionary<string, int>();
-        private bool Initialized = false;
+        private bool Initialized;
 
-        private (ShaderType Type, string Path)[] Files;
+        private readonly (ShaderType Type, string Path)[] Files;
 
         public Shader(string name, string vertexShader, string fragmentShader)
         {

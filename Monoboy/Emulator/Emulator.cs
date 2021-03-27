@@ -9,7 +9,7 @@ namespace Monoboy
     {
         public const int CpuCyclesPerSecond = 4194304;
         public const int CyclesPerFrame = 69905;
-        public static byte WindowWidth = 160;
+        public const byte WindowWidth = 160;
         public const byte WindowHeight = 144;
 
         public long cyclesRan;
@@ -20,8 +20,8 @@ namespace Monoboy
         public bool BackgroundEnabled = true;
         public bool WindowEnabled = true;
         public bool SpritesEnabled = true;
-        public bool WidescreenEnabled = false;
-        public bool UseBootRom = false;
+        public bool WidescreenEnabled;
+        public bool UseBootRom;
 
         // Hardware
         public Interrupt interrupt;
@@ -32,7 +32,7 @@ namespace Monoboy
         public Ppu ppu;
         public Joypad joypad;
         public Timer timer;
-        private bool biosEnabled = false;
+        private bool biosEnabled;
 
         public Emulator()
         {
@@ -59,7 +59,7 @@ namespace Monoboy
             interrupt.HandleInterupts();
 
             // Disable the bios in the bus
-            if(biosEnabled == true && register.PC >= 0x100)
+            if (biosEnabled == true && register.PC >= 0x100)
             {
                 biosEnabled = false;
             }
@@ -81,7 +81,7 @@ namespace Monoboy
             paused = false;
 
             byte cartridgeType;
-            using(BinaryReader reader = new BinaryReader(new FileStream(openRom, FileMode.Open)))
+            using (BinaryReader reader = new BinaryReader(new FileStream(openRom, FileMode.Open)))
             {
                 reader.BaseStream.Seek(0x147, SeekOrigin.Begin);
                 cartridgeType = reader.ReadByte();
@@ -91,19 +91,19 @@ namespace Monoboy
 
             memoryBankController = cartridgeType switch
             {
-                byte _ when(cartridgeType <= 0x00) => new MemoryBankController0(),
-                byte _ when(cartridgeType <= 0x03) => new MemoryBankController1(),
-                byte _ when(cartridgeType <= 0x06) => new MemoryBankController2(),
-                byte _ when(cartridgeType <= 0x13) => new MemoryBankController3(),
-                byte _ when(cartridgeType <= 0x1E) => new MemoryBankController5(),
-                byte _ when(cartridgeType <= 0x20) => new MemoryBankController6(),
+                byte _ when cartridgeType <= 0x00 => new MemoryBankController0(),
+                byte _ when cartridgeType <= 0x03 => new MemoryBankController1(),
+                byte _ when cartridgeType <= 0x06 => new MemoryBankController2(),
+                byte _ when cartridgeType <= 0x13 => new MemoryBankController3(),
+                byte _ when cartridgeType <= 0x1E => new MemoryBankController5(),
+                byte _ when cartridgeType <= 0x20 => new MemoryBankController6(),
                 _ => throw new NotImplementedException()
             };
 
             memoryBankController.Load(openRom);
 
             string saveFile = openRom.Replace(".gb", ".sav");
-            if(File.Exists(saveFile) == true)
+            if (File.Exists(saveFile) == true)
             {
                 memoryBankController.SetRam(File.ReadAllBytes(saveFile));
             }
@@ -120,7 +120,7 @@ namespace Monoboy
             joypad.Reset();
             interrupt.Reset();
 
-            if(File.Exists("dmg_boot.bin") == true && UseBootRom == true)
+            if (File.Exists("dmg_boot.bin") == true && UseBootRom == true)
             {
                 memory.boot = File.ReadAllBytes("dmg_boot.bin");
                 biosEnabled = true;
@@ -177,15 +177,16 @@ namespace Monoboy
 
         public void ToggleWidescreen()
         {
-            if(WidescreenEnabled == true)
-            {
-                WindowWidth = 248;
-            }
-            else
-            {
-                WindowWidth = 160;
-            }
-            ppu.framebuffer = new Framebuffer(WindowWidth, WindowHeight);
+            throw new NotImplementedException();
+            // if (WidescreenEnabled == true)
+            // {
+            //     WindowWidth = 248;
+            // }
+            // else
+            // {
+            //     WindowWidth = 160;
+            // }
+            // ppu.framebuffer = new Framebuffer(WindowWidth, WindowHeight);
         }
 
         #endregion
@@ -219,7 +220,7 @@ namespace Monoboy
 
         public void Write(ushort address, byte data)
         {
-            switch(address)
+            switch (address)
             {
                 case ushort _ when address <= 0x7FFF: memoryBankController.WriteBank(address, data); break;     // 16KB ROM Bank > 00 (in cartridge, every other bank)
                 case ushort _ when address <= 0x9FFF: memory.vram[address - 0x8000] = data; break;              // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
@@ -231,6 +232,8 @@ namespace Monoboy
                 case ushort _ when address <= 0xFF7F: WriteIO(address, data); break;                            // I/O Ports
                 case ushort _ when address <= 0xFFFE: memory.zp[address - 0xFF80] = data; break;                // Zero Page RAM
                 case ushort _ when address <= 0xFFFF: memory.ie = data; break;                                  // Zero Page RAM
+                default:
+                    break;
             }
         }
 
@@ -242,65 +245,67 @@ namespace Monoboy
 
         private byte ReadIO(ushort address)
         {
-            switch(address)
+            switch (address)
             {
                 case 0xFF00:// JOYP
-                {
-                    return joypad.JOYP;
-                }
+                    {
+                        return joypad.JOYP;
+                    }
 
                 case 0xFF04:// DIV
-                {
-                    return timer.DIV;
-                }
+                    {
+                        return timer.DIV;
+                    }
 
                 default:
-                {
-                    return memory.io[address - 0xFF00];
-                }
+                    {
+                        return memory.io[address - 0xFF00];
+                    }
             }
         }
 
         private void WriteIO(ushort address, byte data)
         {
-            switch(address)
+            switch (address)
             {
                 case 0xFF00:// JOYP
-                {
-                    joypad.JOYP = data;
-                }
-                break;
+                    {
+                        joypad.JOYP = data;
+                    }
+                    break;
 
                 case 0xFF04:// DIV
-                {
-                    timer.DIV = data;// is set to zero
-                }
-                break;
+                    {
+                        timer.DIV = data;// is set to zero
+                    }
+                    break;
 
                 case 0xFF44:// LY
-                {
-                    data = 0;
-                }
-                break;
+                    {
+                        data = 0;
+                    }
+                    break;
 
                 case 0xFF46:
-                {
-                    ushort offset = (ushort)(data << 8);
-                    for(byte i = 0; i < memory.oam.Length; i++)
                     {
-                        memory.oam[i] = Read((ushort)(offset + i));
+                        ushort offset = (ushort)(data << 8);
+                        for (byte i = 0; i < memory.oam.Length; i++)
+                        {
+                            memory.oam[i] = Read((ushort)(offset + i));
+                        }
                     }
-                }
-                break;
+                    break;
+                default:
+                    break;
 
-                //case 0xFF02:
-                //{
-                //    if(data == 0x81)
-                //    {
-                //        Debug.Write(Convert.ToChar(Read(0xFF01)));
-                //    }
-                //}
-                //break;
+                    //case 0xFF02:
+                    //{
+                    //    if(data == 0x81)
+                    //    {
+                    //        Debug.Write(Convert.ToChar(Read(0xFF01)));
+                    //    }
+                    //}
+                    //break;
             }
 
             memory.io[address - 0xFF00] = data;

@@ -8,8 +8,8 @@ namespace Monoboy
         public byte[] ram = new byte[0x8000];
 
         public byte romBank = 1;
-        public byte ramBank = 0;
-        public bool ramEnabled = false;
+        public byte ramBank;
+        public bool ramEnabled;
 
         private BankingMode bankingMode = BankingMode.Rom;
 
@@ -27,7 +27,7 @@ namespace Monoboy
 
         public byte ReadRam(ushort address)
         {
-            if(ramEnabled == true)
+            if (ramEnabled == true)
             {
                 return ram[(0x2000 * ramBank) + (address & 0x1FFF)];
             }
@@ -39,7 +39,7 @@ namespace Monoboy
 
         public void WriteRam(ushort address, byte data)
         {
-            if(ramEnabled == true)
+            if (ramEnabled == true)
             {
                 ram[(0x2000 * ramBank) + (address & 0x1FFF)] = data;
             }
@@ -47,55 +47,57 @@ namespace Monoboy
 
         public void WriteBank(ushort address, byte data)
         {
-            switch(address)
+            switch (address)
             {
                 case ushort _ when address < 0x2000:
-                {
-                    ramEnabled = data == 0x0A;
-                }
-                break;
+                    {
+                        ramEnabled = data == 0x0A;
+                    }
+                    break;
 
                 case ushort _ when address < 0x4000:
-                {
-                    romBank = (byte)(data & 0b11111);
-                    if(romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
                     {
-                        romBank++;
-                    }
-                }
-                break;
-
-                case ushort _ when address < 0x6000:
-                {
-                    byte bank = (byte)(data & 0b11);
-
-                    if(bankingMode == BankingMode.Rom)
-                    {
-                        romBank = (byte)(romBank | bank);
-                        if(romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
+                        romBank = (byte)(data & 0b11111);
+                        if (romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
                         {
                             romBank++;
                         }
                     }
-                    else
+                    break;
+
+                case ushort _ when address < 0x6000:
                     {
-                        ramBank = bank;
+                        byte bank = (byte)(data & 0b11);
+
+                        if (bankingMode == BankingMode.Rom)
+                        {
+                            romBank = (byte)(romBank | bank);
+                            if (romBank == 0x00 || romBank == 0x20 || romBank == 0x40 || romBank == 0x60)
+                            {
+                                romBank++;
+                            }
+                        }
+                        else
+                        {
+                            ramBank = bank;
+                        }
                     }
-                }
-                break;
+                    break;
 
                 case ushort _ when address < 0x8000:
-                {
-                    if((data & 1) == 0)
                     {
-                        bankingMode = BankingMode.Rom;
+                        if ((data & 1) == 0)
+                        {
+                            bankingMode = BankingMode.Rom;
+                        }
+                        else
+                        {
+                            bankingMode = BankingMode.Ram;
+                        }
                     }
-                    else
-                    {
-                        bankingMode = BankingMode.Ram;
-                    }
-                }
-                break;
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -105,7 +107,7 @@ namespace Monoboy
 
             string save = path.Replace(".gb", ".sav", true, null);
 
-            if(File.Exists(save) == true)
+            if (File.Exists(save) == true)
             {
                 ram = File.ReadAllBytes(save);
             }

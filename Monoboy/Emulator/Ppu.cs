@@ -29,7 +29,7 @@ namespace Monoboy
 
         public int cycles;
 
-        private Emulator emulator;
+        private readonly Emulator emulator;
 
         public Framebuffer framebuffer;
 
@@ -45,7 +45,7 @@ namespace Monoboy
         {
             cycles += ticks;
 
-            if(LCDC.GetBit(LCDCBit.LCDEnabled) == false)
+            if (LCDC.GetBit(LCDCBit.LCDEnabled) == false)
             {
                 LY = 0;
                 cycles = 0;
@@ -53,63 +53,65 @@ namespace Monoboy
                 return;
             }
 
-            switch(StatMode)
+            switch (StatMode)
             {
                 case Mode.Hblank:
-                if(cycles >= HBlankCycles)
-                {
-                    cycles -= HBlankCycles;
-                    LY++;
+                    if (cycles >= HBlankCycles)
+                    {
+                        cycles -= HBlankCycles;
+                        LY++;
 
-                    if(LY == Emulator.WindowHeight)
-                    {
-                        HandleModeChange(Mode.Vblank);
-                        emulator.interrupt.RequestInterrupt(InterruptFlag.VBlank);
-                        DrawFrame?.Invoke();
+                        if (LY == Emulator.WindowHeight)
+                        {
+                            HandleModeChange(Mode.Vblank);
+                            emulator.interrupt.RequestInterrupt(InterruptFlag.VBlank);
+                            DrawFrame?.Invoke();
+                        }
+                        else
+                        {
+                            HandleModeChange(Mode.OAM);
+                        }
                     }
-                    else
-                    {
-                        HandleModeChange(Mode.OAM);
-                    }
-                }
-                break;
+                    break;
 
                 case Mode.Vblank:
-                if(cycles >= ScanLineCycles)
-                {
-                    cycles -= ScanLineCycles;
-                    LY++;
-
-                    if(LY == 154)
+                    if (cycles >= ScanLineCycles)
                     {
-                        HandleModeChange(Mode.OAM);
-                        LY = 0;
+                        cycles -= ScanLineCycles;
+                        LY++;
+
+                        if (LY == 154)
+                        {
+                            HandleModeChange(Mode.OAM);
+                            LY = 0;
+                        }
                     }
-                }
-                break;
+                    break;
 
                 case Mode.OAM:
-                if(cycles >= OamCycles)
-                {
-                    cycles -= OamCycles;
-                    HandleModeChange(Mode.VRAM);
-                }
-                break;
+                    if (cycles >= OamCycles)
+                    {
+                        cycles -= OamCycles;
+                        HandleModeChange(Mode.VRAM);
+                    }
+                    break;
 
                 case Mode.VRAM:
-                if(cycles >= VRamCycles)
-                {
-                    cycles -= VRamCycles;
-                    DrawScanline();
-                    HandleModeChange(Mode.Hblank);
-                }
-                break;
+                    if (cycles >= VRamCycles)
+                    {
+                        cycles -= VRamCycles;
+                        DrawScanline();
+                        HandleModeChange(Mode.Hblank);
+                    }
+                    break;
+                default:
+                    break;
             }
 
-            if(LY == LYC)
+            if (LY == LYC)
             {
                 Stat.SetBit(Bit.Bit2, true);
-                if(Stat.GetBit(Bit.Bit6) == true)
+                if (Stat.GetBit(Bit.Bit6) == true)
                 {
                     emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
                 }
@@ -129,15 +131,15 @@ namespace Monoboy
         {
             StatMode = newMode;
 
-            if(newMode == 2 && Stat.GetBit(Bit.Bit5) == true)
+            if (newMode == 2 && Stat.GetBit(Bit.Bit5) == true)
             {
                 emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
             }
-            else if(newMode == 0 && Stat.GetBit(Bit.Bit3))
+            else if (newMode == 0 && Stat.GetBit(Bit.Bit3))
             {
                 emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
             }
-            else if(newMode == 1 && Stat.GetBit(Bit.Bit4))
+            else if (newMode == 1 && Stat.GetBit(Bit.Bit4))
             {
                 emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
             }
@@ -146,17 +148,17 @@ namespace Monoboy
         #region Drawing
         private void DrawScanline()
         {
-            if(LCDC.GetBit(LCDCBit.BackgroundEnabled) == true)
+            if (LCDC.GetBit(LCDCBit.BackgroundEnabled) == true)
             {
                 DrawBackground();
             }
 
-            if(LCDC.GetBit(LCDCBit.WindowEnabled) == true)
+            if (LCDC.GetBit(LCDCBit.WindowEnabled) == true)
             {
                 DrawWindow();
             }
 
-            if(LCDC.GetBit(LCDCBit.SpritesEnabled) == true)
+            if (LCDC.GetBit(LCDCBit.SpritesEnabled) == true)
             {
                 DrawSprites();
             }
@@ -171,7 +173,7 @@ namespace Monoboy
             byte y = (byte)(LY + SCY);
             int row = y / 8;
 
-            for(byte i = 0; i < Emulator.WindowWidth; i++)
+            for (byte i = 0; i < Emulator.WindowWidth; i++)
             {
                 byte x = (byte)(i + SCX);
                 int colum = x / 8;
@@ -187,7 +189,7 @@ namespace Monoboy
                 byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
                 byte colorIndex = (byte)((BGP >> palletIndex * 2) & 0b11);
 
-                if(emulator.BackgroundEnabled == true)
+                if (emulator.BackgroundEnabled == true)
                 {
                     framebuffer.SetPixel(i, LY, Pallet.GetColor(colorIndex));
                 }
@@ -204,10 +206,10 @@ namespace Monoboy
             byte y = (byte)(LY - WY);
             int row = y / 8;
 
-            for(byte i = WX; i < Emulator.WindowWidth; i++)
+            for (byte i = WX; i < Emulator.WindowWidth; i++)
             {
                 byte x = (byte)(i + SCX);
-                if(x >= WX)
+                if (x >= WX)
                 {
                     x = (byte)(i - WX);
                 }
@@ -224,7 +226,7 @@ namespace Monoboy
                 byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
                 byte colorIndex = (byte)((BGP >> palletIndex * 2) & 0b11);
 
-                if(emulator.WindowEnabled == true)
+                if (emulator.WindowEnabled == true)
                 {
                     framebuffer.SetPixel(i, LY, Pallet.GetColor(colorIndex));
                 }
@@ -235,7 +237,7 @@ namespace Monoboy
         {
             int spriteSize = LCDC.GetBit(LCDCBit.SpritesSize) ? 16 : 8;
 
-            for(int i = 64; i >= 0; i--)
+            for (int i = 64; i >= 0; i--)
             {
                 ushort offset = (ushort)(0xFE00 + (i * 4));
 
@@ -249,7 +251,7 @@ namespace Monoboy
                 bool mirrorY = flags.GetBit(Bit.Bit6);
                 bool aboveBG = flags.GetBit(Bit.Bit7);
 
-                if(LY >= y && LY < y + spriteSize)
+                if (LY >= y && LY < y + spriteSize)
                 {
                     int row = mirrorY ? spriteSize - 1 - (LY - y) : LY - y;
 
@@ -257,7 +259,7 @@ namespace Monoboy
                     byte data1 = emulator.Read((ushort)(vramAddress + 0));
                     byte data2 = emulator.Read((ushort)(vramAddress + 1));
 
-                    for(int r = 0; r < 8; r++)
+                    for (int r = 0; r < 8; r++)
                     {
                         int pixelBit = mirrorX ? r : 7 - r;
 
@@ -266,9 +268,9 @@ namespace Monoboy
                         byte palletIndex = (byte)(hi << 1 | lo);
                         byte palletColor = (byte)((obp >> palletIndex * 2) & 0b11);
 
-                        if(x + r >= 0 && x + r < Emulator.WindowWidth)
+                        if (x + r >= 0 && x + r < Emulator.WindowWidth)
                         {
-                            if(palletIndex != 0 && (aboveBG == false || framebuffer.GetPixel(x - r, LY) == Pallet.GetColor((byte)(BGP & 0b11))))
+                            if (palletIndex != 0 && (aboveBG == false || framebuffer.GetPixel(x - r, LY) == Pallet.GetColor((byte)(BGP & 0b11))))
                             {
                                 framebuffer.SetPixel(x + r, LY, Pallet.GetColor(palletColor));
                             }

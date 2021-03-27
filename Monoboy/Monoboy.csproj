@@ -3,21 +3,15 @@
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
 		<TargetFramework>net5.0</TargetFramework>
-		<Platforms>x64;x86</Platforms>
+		<Platforms>x86;x64</Platforms>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Update="$(ProjectDir)Roms\**" CopyToOutputDirectory="Always" />
-		<None Update="$(ProjectDir)Tests\**" CopyToOutputDirectory="Always" />
-	</ItemGroup>
+		<Content Include="$(ProjectDir)Roms\**" ExcludeFromSingleFile="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never" />
+		<Content Include="$(ProjectDir)Tests\**"  ExcludeFromSingleFile="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never"  />
 
-	<ItemGroup>
-	  <None Update="dmg_boot.bin">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	  <None Update="Empty.bin">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+		<Content Include="dmg_boot.bin" ExcludeFromSingleFile="true" CopyToOutputDirectory="Always"/>
+
 	</ItemGroup>
 
 </Project>

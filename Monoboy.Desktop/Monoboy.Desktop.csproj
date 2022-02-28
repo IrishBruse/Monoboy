@@ -1,40 +1,40 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<OutputType>WinExe</OutputType>
-		<ApplicationIcon>Icon.ico</ApplicationIcon>
-		<TargetFramework>net5.0</TargetFramework>
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <ApplicationIcon>Icon.ico</ApplicationIcon>
+        <TargetFramework>net6.0</TargetFramework>
 
-		<RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64</RuntimeIdentifiers>  
+        <RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64</RuntimeIdentifiers>
 
-    	<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+        <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
 
-		<Authors>Ethan Conneely</Authors>
-		<Description>Gameboy Emulator</Description>
-	</PropertyGroup>
+        <Authors>Ethan Conneely</Authors>
+        <Description>Gameboy Emulator</Description>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="ImGui.NET" Version="1.78.0" />
-		<PackageReference Include="OpenTK" Version="4.6.3" />
-	</ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="ImGui.NET" Version="1.78.0" />
+        <PackageReference Include="OpenTK" Version="4.6.3" />
+    </ItemGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\Monoboy\Monoboy.csproj" />
-		<EmbeddedResource Include="Icon.bmp"/>
-	</ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Monoboy\Monoboy.csproj" />
+        <EmbeddedResource Include="Icon.bmp" />
+    </ItemGroup>
 
-	<ItemGroup Condition="'$(Platform)' == 'x64'">
-		<Content Include="TinyFileDialogs x64.dll">
-			<Link>TinyFileDialogs.dll</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-	</ItemGroup>
+    <ItemGroup Condition="'$(Platform)' == 'x64'">
+        <Content Include="TinyFileDialogs x64.dll">
+            <Link>TinyFileDialogs.dll</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 
-	<ItemGroup Condition="'$(Platform)' == 'x86'">
-		<Content Include="TinyFileDialogs x86.dll">
-			<Link>TinyFileDialogs.dll</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-	</ItemGroup>
+    <ItemGroup Condition="'$(Platform)' == 'x86'">
+        <Content Include="TinyFileDialogs x86.dll">
+            <Link>TinyFileDialogs.dll</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 
 </Project>

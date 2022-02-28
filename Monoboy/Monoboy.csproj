@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<OutputType>Library</OutputType>
-		<TargetFramework>net5.0</TargetFramework>
-		<IsPublishable>false</IsPublishable>
-	</PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <IsPublishable>false</IsPublishable>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<Content Include="$(ProjectDir)Roms\**" ExcludeFromSingleFile="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never" />
-		<Content Include="$(ProjectDir)Tests\**"  ExcludeFromSingleFile="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never"  />
-	</ItemGroup>
+    <ItemGroup>
+        <Content Include="$(ProjectDir)Roms\**" ExcludeFromSingleFile="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never" />
+        <Content Include="$(ProjectDir)Tests\**" ExcludeFromSingleFile="true" CopyToOutputDirectory="Always" CopyToPublishDirectory="Never" />
+    </ItemGroup>
 
 </Project>

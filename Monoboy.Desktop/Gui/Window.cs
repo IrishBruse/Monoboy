@@ -1,85 +1,85 @@
-﻿using ImGuiNET.OpenTK;
+﻿namespace Monoboy.Desktop.Gui;
+
+using ImGuiNET.OpenTK;
 
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using Monoboy.Emulator;
 
-namespace Monoboy.Gui
+public class Window : GameWindow
 {
-    public class Window : GameWindow
+    ImGuiController imGuiController;
+
+    public Window(GameWindowSettings gameWindow, NativeWindowSettings nativeWindow) : base(gameWindow, nativeWindow) { }
+
+    protected override void OnLoad()
     {
-        private ImGuiController imGuiController;
+        base.OnLoad();
 
-        public Window(GameWindowSettings gameWindow, NativeWindowSettings nativeWindow) : base(gameWindow, nativeWindow) { }
+        Title = "Monoboy";
 
-        protected override void OnLoad()
+        imGuiController = new ImGuiController(ClientSize.X, ClientSize.Y);
+    }
+
+    protected override void OnResize(ResizeEventArgs e)
+    {
+        base.OnResize(e);
+
+        Vector2i windowSize = ClientSize;
+
+        if (windowSize.X < Emulator.WindowWidth)
         {
-            base.OnLoad();
-
-            Title = "Monoboy";
-
-            imGuiController = new ImGuiController(ClientSize.X, ClientSize.Y);
+            windowSize.X = Emulator.WindowWidth;
         }
 
-        protected override void OnResize(ResizeEventArgs e)
+        if (windowSize.Y < Emulator.WindowHeight)
         {
-            base.OnResize(e);
-
-            Vector2i windowSize = ClientSize;
-
-            if (windowSize.X < Emulator.WindowWidth)
-            {
-                windowSize.X = Emulator.WindowWidth;
-            }
-
-            if (windowSize.Y < Emulator.WindowHeight)
-            {
-                windowSize.Y = Emulator.WindowHeight;
-            }
-
-            // Update the opengl viewport
-            GL.Viewport(0, 0, windowSize.X, windowSize.Y);
-
-            // Tell ImGui of the new size
-            imGuiController.WindowResized(windowSize.X, windowSize.Y);
-
-            Size = windowSize;
+            windowSize.Y = Emulator.WindowHeight;
         }
 
-        protected override void OnRenderFrame(FrameEventArgs args)
-        {
-            base.OnRenderFrame(args);
+        // Update the opengl viewport
+        GL.Viewport(0, 0, windowSize.X, windowSize.Y);
 
-            imGuiController.Update(this, (float)args.Time);
+        // Tell ImGui of the new size
+        imGuiController.WindowResized(windowSize.X, windowSize.Y);
 
-            GL.ClearColor(new Color4(0, 32, 48, 255));
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+        Size = windowSize;
+    }
 
-            DrawImGui();
+    protected override void OnRenderFrame(FrameEventArgs args)
+    {
+        base.OnRenderFrame(args);
 
-            imGuiController.Render();
+        imGuiController.Update(this, (float)args.Time);
 
-            Util.CheckGLError("End of frame");
+        GL.ClearColor(new Color4(0, 32, 48, 255));
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
 
-            SwapBuffers();
-        }
+        DrawImGui();
 
-        protected override void OnTextInput(TextInputEventArgs e)
-        {
-            base.OnTextInput(e);
-            imGuiController.PressChar((char)e.Unicode);
-        }
+        imGuiController.Render();
 
-        protected override void OnMouseWheel(MouseWheelEventArgs e)
-        {
-            base.OnMouseWheel(e);
+        Util.CheckGLError("End of frame");
 
-            ImGuiController.MouseScroll(e.Offset);
-        }
-        public virtual void DrawImGui()
-        {
+        SwapBuffers();
+    }
 
-        }
+    protected override void OnTextInput(TextInputEventArgs e)
+    {
+        base.OnTextInput(e);
+        imGuiController.PressChar((char)e.Unicode);
+    }
+
+    protected override void OnMouseWheel(MouseWheelEventArgs e)
+    {
+        base.OnMouseWheel(e);
+
+        ImGuiController.MouseScroll(e.Offset);
+    }
+    public virtual void DrawImGui()
+    {
+
     }
 }

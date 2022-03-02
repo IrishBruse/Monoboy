@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <ApplicationIcon>Icon.ico</ApplicationIcon>
+        <TargetFramework>net6.0</TargetFramework>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Monoboy\Monoboy.csproj" />
+        <EmbeddedResource Include="Icon.bmp" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Pastel" Version="3.0.0" />
+    </ItemGroup>
+
+</Project>

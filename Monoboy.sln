@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monoboy", "Monoboy\Monoboy.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monoboy.Tests", "Monoboy.Tests\Monoboy.Tests.csproj", "{2DA67FDD-4E4F-4730-89B9-2365DAE8D613}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monoboy.Desktop", "Monoboy.Desktop\Monoboy.Desktop.csproj", "{DDEBA78F-D6A5-4F6C-B6E6-9981ED90A9EB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monoboy.Terminal", "Monoboy.Terminal\Monoboy.Terminal.csproj", "{E69BFE5D-69C3-4239-B88A-2348B4AAD7AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,5 +44,13 @@ Global
 		{DDEBA78F-D6A5-4F6C-B6E6-9981ED90A9EB}.Release|x64.Build.0 = Release|x64
 		{DDEBA78F-D6A5-4F6C-B6E6-9981ED90A9EB}.Release|x86.ActiveCfg = Release|x86
 		{DDEBA78F-D6A5-4F6C-B6E6-9981ED90A9EB}.Release|x86.Build.0 = Release|x86
+		{E69BFE5D-69C3-4239-B88A-2348B4AAD7AD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E69BFE5D-69C3-4239-B88A-2348B4AAD7AD}.Debug|x64.Build.0 = Debug|Any CPU
+		{E69BFE5D-69C3-4239-B88A-2348B4AAD7AD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E69BFE5D-69C3-4239-B88A-2348B4AAD7AD}.Debug|x86.Build.0 = Debug|Any CPU
+		{E69BFE5D-69C3-4239-B88A-2348B4AAD7AD}.Release|x64.ActiveCfg = Release|Any CPU
+		{E69BFE5D-69C3-4239-B88A-2348B4AAD7AD}.Release|x64.Build.0 = Release|Any CPU
+		{E69BFE5D-69C3-4239-B88A-2348B4AAD7AD}.Release|x86.ActiveCfg = Release|Any CPU
+		{E69BFE5D-69C3-4239-B88A-2348B4AAD7AD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

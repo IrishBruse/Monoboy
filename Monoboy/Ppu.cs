@@ -174,14 +174,14 @@ public class Ppu
 
     readonly Emulator emulator;
 
-    public Framebuffer framebuffer;
+    public byte[,] framebuffer;
 
     public Action DrawFrame;
 
     public Ppu(Emulator emulator)
     {
         this.emulator = emulator;
-        framebuffer = new Framebuffer(Emulator.WindowWidth, Emulator.WindowHeight);
+        framebuffer = new byte[Emulator.WindowWidth, Emulator.WindowHeight];
     }
 
     public void Step(int ticks)
@@ -332,9 +332,9 @@ public class Ppu
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
             byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & 0b11);
 
-            if (emulator.BackgroundEnabled == true)
+            if (emulator.BackgroundEnabled)
             {
-                framebuffer.SetPixel(i, LY, Pallet.GetColor(colorIndex));
+                framebuffer[i, LY] = colorIndex;
             }
         }
     }
@@ -369,9 +369,9 @@ public class Ppu
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
             byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & 0b11);
 
-            if (emulator.WindowEnabled == true)
+            if (emulator.WindowEnabled)
             {
-                framebuffer.SetPixel(i, LY, Pallet.GetColor(colorIndex));
+                framebuffer[i, LY] = colorIndex;
             }
         }
     }
@@ -413,9 +413,9 @@ public class Ppu
 
                     if (x + r >= 0 && x + r < Emulator.WindowWidth)
                     {
-                        if (palletIndex != 0 && (aboveBG == false || framebuffer.GetPixel(x - r, LY) == Pallet.GetColor((byte)(BGP & 0b11))))
+                        if (palletIndex != 0 && (aboveBG == false || framebuffer[x - r, LY] == ((byte)(BGP & 0b11))))
                         {
-                            framebuffer.SetPixel(x + r, LY, Pallet.GetColor(palletColor));
+                            framebuffer[i, LY] = palletColor;
                         }
                     }
                 }

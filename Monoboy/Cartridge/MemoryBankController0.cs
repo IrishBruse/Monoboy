@@ -4,16 +4,16 @@ using System.IO;
 
 public class MemoryBankController0 : IMemoryBankController
 {
-    public byte[] rom;
+    public byte[] Rom { get; set; }
 
     public byte ReadBank00(ushort address)
     {
-        return rom[address];
+        return Rom[address];
     }
 
     public byte ReadBankNN(ushort address)
     {
-        return rom[address];
+        return Rom[address];
     }
 
     public byte ReadRam(ushort address)
@@ -33,7 +33,7 @@ public class MemoryBankController0 : IMemoryBankController
 
     public void Load(string path)
     {
-        rom = File.ReadAllBytes(path);
+        Rom = File.ReadAllBytes(path);
     }
 
     public byte[] GetRam()

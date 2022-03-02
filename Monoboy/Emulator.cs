@@ -86,7 +86,7 @@ public class Emulator
             cartridgeType = reader.ReadByte();
         }
 
-        Console.WriteLine(cartridgeType);
+        // Console.WriteLine(cartridgeType);
 
         memoryBankController = cartridgeType switch
         {

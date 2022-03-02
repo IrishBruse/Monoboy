@@ -2,26 +2,30 @@
     "version": "0.2.0",
     "configurations": [
         {
-            // Use IntelliSense to find out which attributes exist for C# debugging
-            // Use hover for the description of the existing attributes
-            // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
-            "name": ".NET Core Launch (console)",
+            "name": "Terminal",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Monoboy.Desktop/bin/x64/Debug/net5.0/Monoboy.Desktop.dll",
+            "program": "${workspaceFolder}/Monoboy.Terminal/bin/Debug/net6.0/Monoboy.Terminal.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/Monoboy.Desktop",
+            "cwd": "${workspaceFolder}/Monoboy.Terminal",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
-            "console": "internalConsole",
+            "console": "externalTerminal",
             "stopAtEntry": false
         },
         {
-            "name": ".NET Core Attach",
+            "name": "Desktop",
             "type": "coreclr",
-            "request": "attach",
-            "processId": "${command:pickProcess}"
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Monoboy.Desktop/bin/x64/Debug/net6.0/Monoboy.Desktop.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/Monoboy.Desktop",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "externalTerminal",
+            "stopAtEntry": false
         }
     ]
 }

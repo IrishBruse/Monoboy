@@ -1,6 +1,5 @@
 namespace Monoboy.Tests;
 
-using Monoboy.Emulator;
 using Xunit;
 
 public class Tests

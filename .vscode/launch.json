@@ -20,11 +20,11 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Monoboy.Desktop/bin/x64/Debug/net6.0/Monoboy.Desktop.dll",
+            "program": "${workspaceFolder}/Monoboy.Desktop/bin/Debug/net6.0/Monoboy.Desktop.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Monoboy.Desktop",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
-            "console": "externalTerminal",
+            "console": "integratedTerminal",
             "stopAtEntry": false
         }
     ]

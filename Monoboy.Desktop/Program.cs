@@ -1,42 +1,66 @@
 ﻿namespace Monoboy.Desktop;
+
 using System.Numerics;
 using Raylib_cs;
 
 static class Program
 {
-    const int Width = 1280;
-    const int Height = 720;
-
     static Texture2D texture;
     static Image screen;
-
     static Emulator emulator;
 
-    public static unsafe void Main()
+    public static void Main(string[] args)
     {
+        int scale = 4;
+
         emulator = new();
-        emulator.Open("/home/econn/Downloads/Tetris.gb");
+        emulator.Open("C:\\Users\\Econn\\Desktop\\Tetris.gb");
+        // emulator.Open("/home/econn/Downloads/Tetris.gb");
         emulator.ppu.DrawFrame += () => Render();
 
-        Raylib.InitWindow(Width, Height, "Monoboy");
+
+        Raylib.InitWindow(Emulator.WindowWidth * scale, Emulator.WindowHeight * scale, "Monoboy");
 
         screen = Raylib.GenImageColor(Emulator.WindowWidth, Emulator.WindowHeight, Color.GREEN);
         texture = Raylib.LoadTextureFromImage(screen);
 
+        Raylib.SetTargetFPS(60);
 
-        while (!Raylib.WindowShouldClose())
+        while (!(Raylib.WindowShouldClose() && !Raylib.IsKeyDown(KeyboardKey.KEY_ESCAPE)))
         {
-            int cycles = 0;
-            while (cycles < Emulator.CyclesPerFrame)
+            emulator.BackgroundEnabled |= Raylib.IsKeyPressed(KeyboardKey.KEY_F1);
+            emulator.WindowEnabled |= Raylib.IsKeyPressed(KeyboardKey.KEY_F2);
+            emulator.SpritesEnabled |= Raylib.IsKeyPressed(KeyboardKey.KEY_F3);
+
+            if (Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_CONTROL) && Raylib.IsKeyPressed(KeyboardKey.KEY_EQUAL))
             {
-                cycles += emulator.Step();
+                scale++;
+                scale = Math.Min(scale, 7);
+                Raylib.SetWindowSize(Emulator.WindowWidth * scale, Emulator.WindowHeight * scale);
             }
+
+            if (Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_CONTROL) && Raylib.IsKeyPressed(KeyboardKey.KEY_MINUS))
+            {
+                scale--;
+                scale = Math.Max(scale, 1);
+                Raylib.SetWindowSize(Emulator.WindowWidth * scale, Emulator.WindowHeight * scale);
+            }
+
+            emulator.joypad.SetButton(Joypad.Button.A, Raylib.IsKeyDown(KeyboardKey.KEY_SPACE));
+            emulator.joypad.SetButton(Joypad.Button.B, Raylib.IsKeyDown(KeyboardKey.KEY_LEFT_SHIFT));
+            emulator.joypad.SetButton(Joypad.Button.Select, Raylib.IsKeyDown(KeyboardKey.KEY_ESCAPE));
+            emulator.joypad.SetButton(Joypad.Button.Start, Raylib.IsKeyDown(KeyboardKey.KEY_ENTER));
+            emulator.joypad.SetButton(Joypad.Button.Up, Raylib.IsKeyDown(KeyboardKey.KEY_W));
+            emulator.joypad.SetButton(Joypad.Button.Down, Raylib.IsKeyDown(KeyboardKey.KEY_S));
+            emulator.joypad.SetButton(Joypad.Button.Left, Raylib.IsKeyDown(KeyboardKey.KEY_A));
+            emulator.joypad.SetButton(Joypad.Button.Right, Raylib.IsKeyDown(KeyboardKey.KEY_D));
+            emulator.RunFrame();
 
             Raylib.BeginDrawing();
             Raylib.ClearBackground(Color.BLACK);
 
-
-            Raylib.DrawTextureEx(texture, new Vector2((Width / 2) - (screen.width / 2 * 2), (Height / 2) - (screen.height / 2 * 2)), 0, 2, Color.WHITE);
+            Raylib.DrawTextureEx(texture, new Vector2((Raylib.GetScreenWidth() / 2) - (screen.width / 2 * scale), (Raylib.GetScreenHeight() / 2) - (screen.height / 2 * scale)), 0, scale, Color.WHITE);
+            Raylib.DrawFPS(0, 0);
 
             Raylib.EndDrawing();
         }
@@ -44,10 +68,8 @@ static class Program
         Raylib.CloseWindow();
     }
 
-    static unsafe void Render()
+    static void Render()
     {
-        Console.WriteLine("Render");
-
         for (int x = 0; x < Emulator.WindowWidth; x++)
         {
             for (int y = 0; y < Emulator.WindowHeight; y++)
@@ -64,6 +86,6 @@ static class Program
             }
         }
 
-        Raylib.UpdateTexture(texture, screen.data);
+        RaylibSafe.UpdateTexture(texture, screen);
     }
 }

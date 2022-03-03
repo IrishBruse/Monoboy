@@ -12,8 +12,4 @@
         <EmbeddedResource Include="Icon.bmp" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Pastel" Version="3.0.0" />
-    </ItemGroup>
-
 </Project>

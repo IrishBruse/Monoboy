@@ -32,6 +32,7 @@ public class Emulator
     public Joypad joypad;
     public Timer timer;
     bool biosEnabled;
+    int cycles;
 
     public Emulator()
     {
@@ -64,6 +65,15 @@ public class Emulator
         }
 
         return cycles;
+    }
+
+    public void RunFrame()
+    {
+        while (cycles < CyclesPerFrame)
+        {
+            cycles += Step();
+        }
+        cycles -= CyclesPerFrame;
     }
 
     public void Open()
@@ -119,9 +129,9 @@ public class Emulator
         joypad.Reset();
         interrupt.Reset();
 
-        if (File.Exists("dmg_boot.bin") && UseBootRom)
+        if (File.Exists("./dmg.boot") && UseBootRom)
         {
-            memory.boot = File.ReadAllBytes("dmg_boot.bin");
+            memory.boot = File.ReadAllBytes("./dmg.boot");
             biosEnabled = true;
         }
         else

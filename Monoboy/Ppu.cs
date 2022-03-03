@@ -415,7 +415,7 @@ public class Ppu
                     {
                         if (palletIndex != 0 && (aboveBG == false || framebuffer[x - r, LY] == ((byte)(BGP & 0b11))))
                         {
-                            framebuffer[i, LY] = palletColor;
+                            framebuffer[x + r, LY] = palletColor;
                         }
                     }
                 }

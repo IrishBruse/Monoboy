@@ -2,30 +2,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Terminal",
+            "name": "Monoboy.Desktop",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
-            // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Monoboy.Terminal/bin/Debug/net6.0/Monoboy.Terminal.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/Monoboy.Terminal",
-            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
-            "console": "externalTerminal",
-            "stopAtEntry": false
-        },
-        {
-            "name": "Desktop",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            // If you have changed target frameworks, make sure to update the program path.
+            "preLaunchTask": "Build Monoboy.Desktop",
             "program": "${workspaceFolder}/Monoboy.Desktop/bin/Debug/net6.0/Monoboy.Desktop.dll",
-            "args": [],
             "cwd": "${workspaceFolder}/Monoboy.Desktop",
-            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "integratedTerminal",
-            "stopAtEntry": false
+            "internalConsoleOptions": "neverOpen"
         }
     ]
 }

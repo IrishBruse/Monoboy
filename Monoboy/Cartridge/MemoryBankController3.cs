@@ -40,25 +40,25 @@ public class MemoryBankController3 : IMemoryBankController
             switch (RamBank)
             {
                 case byte when address < 0x3:
-                    return Ram[(0x2000 * RamBank) + (address & 0x1FFF)];
+                return Ram[(0x2000 * RamBank) + (address & 0x1FFF)];
 
                 // Timer
                 case 0x8:
-                    return seconds;
+                return seconds;
 
                 case 0x9:
-                    return minutes;
+                return minutes;
 
                 case 0xA:
-                    return hours;
+                return hours;
 
                 case 0xB:
-                    return days;
+                return days;
 
                 case 0xC:
-                    return daysCarry;
+                return daysCarry;
                 default:
-                    break;
+                break;
             }
         }
 
@@ -72,27 +72,27 @@ public class MemoryBankController3 : IMemoryBankController
             switch (RamBank)
             {
                 case byte when address < 0x3:
-                    Ram[(0x2000 * RamBank) + (address & 0x1FFF)] = data;
-                    break;
+                Ram[(0x2000 * RamBank) + (address & 0x1FFF)] = data;
+                break;
 
                 // Timer
                 case 0x8:
-                    seconds = data;
-                    break;
+                seconds = data;
+                break;
                 case 0x9:
-                    minutes = data;
-                    break;
+                minutes = data;
+                break;
                 case 0xA:
-                    hours = data;
-                    break;
+                hours = data;
+                break;
                 case 0xB:
-                    days = data;
-                    break;
+                days = data;
+                break;
                 case 0xC:
-                    daysCarry = data;
-                    break;
+                daysCarry = data;
+                break;
                 default:
-                    break;
+                break;
             }
         }
     }
@@ -135,7 +135,7 @@ public class MemoryBankController3 : IMemoryBankController
             }
             break;
             default:
-                break;
+            break;
         }
     }
 

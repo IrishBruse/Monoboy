@@ -5,18 +5,53 @@ using System;
 using Monoboy.Constants;
 using Monoboy.Utility;
 
-using static Monoboy.Constants.Bit;
-
 public class Cpu
 {
-    public bool halted;
-    public bool haltBug;
-    public byte opcode;
+    public bool Halted { get; set; }
+    public bool HaltBug { get; set; }
+    public byte Opcode { get; set; }
 
-    readonly Emulator emulator;
+    private readonly Emulator emulator;
 
-    Register Reg => emulator.register;
+    private Register Reg => emulator.register;
 
+    private readonly byte[] mainTimes = {
+        1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,
+        0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,
+        2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,
+        2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        2, 2, 2, 2, 2, 2, 0, 2, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+        2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 0, 3, 6, 2, 4,
+        2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4,
+        3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4,
+        3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4,
+    };
+
+    private readonly byte[] cbTimes = {
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
+    };
 
     public Cpu(Emulator emulator)
     {
@@ -25,310 +60,312 @@ public class Cpu
 
     public byte Step()
     {
-        opcode = NextByte();
+        Opcode = NextByte();
 
-        if (haltBug)
+        if (HaltBug)
         {
-            haltBug = false;
+            HaltBug = false;
             Reg.PC--;
         }
 
-        switch (opcode)
+        byte conditionalCycles = 0;
+
+        switch (Opcode)
         {
             #region 8-Bit Loads
 
             // LD nn,n
             case 0x06:
-                Reg.B = NextByte();
-                return 8;
+            Reg.B = NextByte();
+            break;
             case 0x0E:
-                Reg.C = NextByte();
-                return 8;
+            Reg.C = NextByte();
+            break;
             case 0x16:
-                Reg.D = NextByte();
-                return 8;
+            Reg.D = NextByte();
+            break;
             case 0x1E:
-                Reg.E = NextByte();
-                return 8;
+            Reg.E = NextByte();
+            break;
             case 0x26:
-                Reg.H = NextByte();
-                return 8;
+            Reg.H = NextByte();
+            break;
             case 0x2E:
-                Reg.L = NextByte();
-                return 8;
+            Reg.L = NextByte();
+            break;
 
             // LD A,r2
             case 0x7F:
-                Reg.A = Reg.A;
-                return 4;
+            Reg.A = Reg.A;
+            break;
             case 0x78:
-                Reg.A = Reg.B;
-                return 4;
+            Reg.A = Reg.B;
+            break;
             case 0x79:
-                Reg.A = Reg.C;
-                return 4;
+            Reg.A = Reg.C;
+            break;
             case 0x7A:
-                Reg.A = Reg.D;
-                return 4;
+            Reg.A = Reg.D;
+            break;
             case 0x7B:
-                Reg.A = Reg.E;
-                return 4;
+            Reg.A = Reg.E;
+            break;
             case 0x7C:
-                Reg.A = Reg.H;
-                return 4;
+            Reg.A = Reg.H;
+            break;
             case 0x7D:
-                Reg.A = Reg.L;
-                return 4;
+            Reg.A = Reg.L;
+            break;
             case 0xFA:
-                Reg.A = emulator.Read(NextShort());
-                return 16;
+            Reg.A = emulator.Read(NextShort());
+            break;
 
             // LD B,r2
             case 0x47:
-                Reg.B = Reg.A;
-                return 4;
+            Reg.B = Reg.A;
+            break;
             case 0x40:
-                Reg.B = Reg.B;
-                return 4;
+            Reg.B = Reg.B;
+            break;
             case 0x41:
-                Reg.B = Reg.C;
-                return 4;
+            Reg.B = Reg.C;
+            break;
             case 0x42:
-                Reg.B = Reg.D;
-                return 4;
+            Reg.B = Reg.D;
+            break;
             case 0x43:
-                Reg.B = Reg.E;
-                return 4;
+            Reg.B = Reg.E;
+            break;
             case 0x44:
-                Reg.B = Reg.H;
-                return 4;
+            Reg.B = Reg.H;
+            break;
             case 0x45:
-                Reg.B = Reg.L;
-                return 4;
+            Reg.B = Reg.L;
+            break;
             case 0x46:
-                Reg.B = emulator.Read(Reg.HL);
-                return 8;
+            Reg.B = emulator.Read(Reg.HL);
+            break;
 
             // LD C,r2
             case 0x4F:
-                Reg.C = Reg.A;
-                return 4;
+            Reg.C = Reg.A;
+            break;
             case 0x48:
-                Reg.C = Reg.B;
-                return 4;
+            Reg.C = Reg.B;
+            break;
             case 0x49:
-                Reg.C = Reg.C;
-                return 4;
+            Reg.C = Reg.C;
+            break;
             case 0x4A:
-                Reg.C = Reg.D;
-                return 4;
+            Reg.C = Reg.D;
+            break;
             case 0x4B:
-                Reg.C = Reg.E;
-                return 4;
+            Reg.C = Reg.E;
+            break;
             case 0x4C:
-                Reg.C = Reg.H;
-                return 4;
+            Reg.C = Reg.H;
+            break;
             case 0x4D:
-                Reg.C = Reg.L;
-                return 4;
+            Reg.C = Reg.L;
+            break;
             case 0x4E:
-                Reg.C = emulator.Read(Reg.HL);
-                return 8;
+            Reg.C = emulator.Read(Reg.HL);
+            break;
 
             // LD D,r2
             case 0x57:
-                Reg.D = Reg.A;
-                return 4;
+            Reg.D = Reg.A;
+            break;
             case 0x50:
-                Reg.D = Reg.B;
-                return 4;
+            Reg.D = Reg.B;
+            break;
             case 0x51:
-                Reg.D = Reg.C;
-                return 4;
+            Reg.D = Reg.C;
+            break;
             case 0x52:
-                Reg.D = Reg.D;
-                return 4;
+            Reg.D = Reg.D;
+            break;
             case 0x53:
-                Reg.D = Reg.E;
-                return 4;
+            Reg.D = Reg.E;
+            break;
             case 0x54:
-                Reg.D = Reg.H;
-                return 4;
+            Reg.D = Reg.H;
+            break;
             case 0x55:
-                Reg.D = Reg.L;
-                return 4;
+            Reg.D = Reg.L;
+            break;
             case 0x56:
-                Reg.D = emulator.Read(Reg.HL);
-                return 8;
+            Reg.D = emulator.Read(Reg.HL);
+            break;
 
             // LD E,r2
             case 0x5F:
-                Reg.E = Reg.A;
-                return 4;
+            Reg.E = Reg.A;
+            break;
             case 0x58:
-                Reg.E = Reg.B;
-                return 4;
+            Reg.E = Reg.B;
+            break;
             case 0x59:
-                Reg.E = Reg.C;
-                return 4;
+            Reg.E = Reg.C;
+            break;
             case 0x5A:
-                Reg.E = Reg.D;
-                return 4;
+            Reg.E = Reg.D;
+            break;
             case 0x5B:
-                Reg.E = Reg.E;
-                return 4;
+            Reg.E = Reg.E;
+            break;
             case 0x5C:
-                Reg.E = Reg.H;
-                return 4;
+            Reg.E = Reg.H;
+            break;
             case 0x5D:
-                Reg.E = Reg.L;
-                return 4;
+            Reg.E = Reg.L;
+            break;
             case 0x5E:
-                Reg.E = emulator.Read(Reg.HL);
-                return 8;
+            Reg.E = emulator.Read(Reg.HL);
+            break;
 
             // LD H,r2
             case 0x67:
-                Reg.H = Reg.A;
-                return 4;
+            Reg.H = Reg.A;
+            break;
             case 0x60:
-                Reg.H = Reg.B;
-                return 4;
+            Reg.H = Reg.B;
+            break;
             case 0x61:
-                Reg.H = Reg.C;
-                return 4;
+            Reg.H = Reg.C;
+            break;
             case 0x62:
-                Reg.H = Reg.D;
-                return 4;
+            Reg.H = Reg.D;
+            break;
             case 0x63:
-                Reg.H = Reg.E;
-                return 4;
+            Reg.H = Reg.E;
+            break;
             case 0x64:
-                Reg.H = Reg.H;
-                return 4;
+            Reg.H = Reg.H;
+            break;
             case 0x65:
-                Reg.H = Reg.L;
-                return 4;
+            Reg.H = Reg.L;
+            break;
             case 0x66:
-                Reg.H = emulator.Read(Reg.HL);
-                return 8;
+            Reg.H = emulator.Read(Reg.HL);
+            break;
 
             // LD L,r2
             case 0x6F:
-                Reg.L = Reg.A;
-                return 4;
+            Reg.L = Reg.A;
+            break;
             case 0x68:
-                Reg.L = Reg.B;
-                return 4;
+            Reg.L = Reg.B;
+            break;
             case 0x69:
-                Reg.L = Reg.C;
-                return 4;
+            Reg.L = Reg.C;
+            break;
             case 0x6A:
-                Reg.L = Reg.D;
-                return 4;
+            Reg.L = Reg.D;
+            break;
             case 0x6B:
-                Reg.L = Reg.E;
-                return 4;
+            Reg.L = Reg.E;
+            break;
             case 0x6C:
-                Reg.L = Reg.H;
-                return 4;
+            Reg.L = Reg.H;
+            break;
             case 0x6D:
-                Reg.L = Reg.L;
-                return 4;
+            Reg.L = Reg.L;
+            break;
             case 0x6E:
-                Reg.L = emulator.Read(Reg.HL);
-                return 8;
+            Reg.L = emulator.Read(Reg.HL);
+            break;
 
             // LD (HL),r2
             case 0x77:
-                emulator.Write(Reg.HL, Reg.A);
-                return 8;
+            emulator.Write(Reg.HL, Reg.A);
+            break;
             case 0x70:
-                emulator.Write(Reg.HL, Reg.B);
-                return 8;
+            emulator.Write(Reg.HL, Reg.B);
+            break;
             case 0x71:
-                emulator.Write(Reg.HL, Reg.C);
-                return 8;
+            emulator.Write(Reg.HL, Reg.C);
+            break;
             case 0x72:
-                emulator.Write(Reg.HL, Reg.D);
-                return 8;
+            emulator.Write(Reg.HL, Reg.D);
+            break;
             case 0x73:
-                emulator.Write(Reg.HL, Reg.E);
-                return 8;
+            emulator.Write(Reg.HL, Reg.E);
+            break;
             case 0x74:
-                emulator.Write(Reg.HL, Reg.H);
-                return 8;
+            emulator.Write(Reg.HL, Reg.H);
+            break;
             case 0x75:
-                emulator.Write(Reg.HL, Reg.L);
-                return 8;
+            emulator.Write(Reg.HL, Reg.L);
+            break;
             case 0x36:
-                emulator.Write(Reg.HL, NextByte());
-                return 12;
+            emulator.Write(Reg.HL, NextByte());
+            break;
 
             // LD A,n
             case 0x0A:
-                Reg.A = emulator.Read(Reg.BC);
-                return 8;
+            Reg.A = emulator.Read(Reg.BC);
+            break;
             case 0x1A:
-                Reg.A = emulator.Read(Reg.DE);
-                return 8;
+            Reg.A = emulator.Read(Reg.DE);
+            break;
             case 0x7E:
-                Reg.A = emulator.Read(Reg.HL);
-                return 8;
+            Reg.A = emulator.Read(Reg.HL);
+            break;
             case 0x3E:
-                Reg.A = NextByte();
-                return 8;
+            Reg.A = NextByte();
+            break;
 
             // LD n,A
             case 0x02:
-                emulator.Write(Reg.BC, Reg.A);
-                return 8;
+            emulator.Write(Reg.BC, Reg.A);
+            break;
             case 0x12:
-                emulator.Write(Reg.DE, Reg.A);
-                return 8;
+            emulator.Write(Reg.DE, Reg.A);
+            break;
             case 0xEA:
-                emulator.Write(NextShort(), Reg.A);
-                return 16;
+            emulator.Write(NextShort(), Reg.A);
+            break;
 
             // LD A,(C)
             case 0xF2:
-                Reg.A = emulator.Read((ushort)(0xFF00 + Reg.C));
-                return 8;
+            Reg.A = emulator.Read((ushort)(0xFF00 + Reg.C));
+            break;
 
             // LD (C),A
             case 0xE2:
-                emulator.Write((ushort)(0xFF00 + Reg.C), Reg.A);
-                return 8;
+            emulator.Write((ushort)(0xFF00 + Reg.C), Reg.A);
+            break;
 
             // LD A,(HL-)
             case 0x3A:
-                Reg.A = emulator.Read(Reg.HL--);
-                return 8;
+            Reg.A = emulator.Read(Reg.HL--);
+            break;
 
             // LD (HL-),A
             case 0x32:
-                emulator.Write(Reg.HL--, Reg.A);
-                return 8;
+            emulator.Write(Reg.HL--, Reg.A);
+            break;
 
             // LD A,(HL+)
             case 0x2A:
-                Reg.A = emulator.Read(Reg.HL++);
-                return 8;
+            Reg.A = emulator.Read(Reg.HL++);
+            break;
 
             // LD (HL+),A
             case 0x22:
-                emulator.Write(Reg.HL++, Reg.A);
-                return 8;
+            emulator.Write(Reg.HL++, Reg.A);
+            break;
 
             // LDH (n),A
             case 0xE0:
-                emulator.Write((ushort)(0xFF00 + NextByte()), Reg.A);
-                return 12;
+            emulator.Write((ushort)(0xFF00 + NextByte()), Reg.A);
+            break;
 
             // LDH A,(n)
             case 0xF0:
-                Reg.A = emulator.Read((ushort)(0xFF00 + NextByte()));
-                return 12;
+            Reg.A = emulator.Read((ushort)(0xFF00 + NextByte()));
+            break;
 
             #endregion
 
@@ -336,60 +373,60 @@ public class Cpu
 
             // LD n,nn
             case 0x01:
-                Reg.BC = NextShort();
-                return 12;
+            Reg.BC = NextShort();
+            break;
             case 0x11:
-                Reg.DE = NextShort();
-                return 12;
+            Reg.DE = NextShort();
+            break;
             case 0x21:
-                Reg.HL = NextShort();
-                return 12;
+            Reg.HL = NextShort();
+            break;
             case 0x31:
-                Reg.SP = NextShort();
-                return 12;
+            Reg.SP = NextShort();
+            break;
 
             // LD SP,HL
             case 0xF9:
-                Reg.SP = Reg.HL;
-                return 8;
+            Reg.SP = Reg.HL;
+            break;
 
             // LD HL,SP+n
             case 0xF8:
-                Reg.HL = ADDS(Reg.SP);
-                return 12;
+            Reg.HL = ADDS(Reg.SP);
+            break;
 
             // LD (nn),SP
             case 0x08:
-                emulator.WriteShort(NextShort(), Reg.SP);
-                return 20;
+            emulator.WriteShort(NextShort(), Reg.SP);
+            break;
 
             // Push nn
             case 0xF5:
-                Push(Reg.AF);
-                return 16;
+            Push(Reg.AF);
+            break;
             case 0xC5:
-                Push(Reg.BC);
-                return 16;
+            Push(Reg.BC);
+            break;
             case 0xD5:
-                Push(Reg.DE);
-                return 16;
+            Push(Reg.DE);
+            break;
             case 0xE5:
-                Push(Reg.HL);
-                return 16;
+            Push(Reg.HL);
+            break;
 
             // Pop nn
             case 0xF1:
-                Reg.AF = Pop();
-                return 12;
+            Reg.AF = Pop();
+            break;
             case 0xC1:
-                Reg.BC = Pop();
-                return 12;
+            Reg.BC = Pop();
+            break;
             case 0xD1:
-                Reg.DE = Pop();
-                return 12;
+            Reg.DE = Pop();
+            break;
             case 0xE1:
-                Reg.HL = Pop();
-                return 12;
+            Reg.HL = Pop();
+            break;
 
             #endregion
 
@@ -397,287 +434,287 @@ public class Cpu
 
             // ADD A,n
             case 0x87:
-                ADD(Reg.A);
-                return 4;
+            ADD(Reg.A);
+            break;
             case 0x80:
-                ADD(Reg.B);
-                return 4;
+            ADD(Reg.B);
+            break;
             case 0x81:
-                ADD(Reg.C);
-                return 4;
+            ADD(Reg.C);
+            break;
             case 0x82:
-                ADD(Reg.D);
-                return 4;
+            ADD(Reg.D);
+            break;
             case 0x83:
-                ADD(Reg.E);
-                return 4;
+            ADD(Reg.E);
+            break;
             case 0x84:
-                ADD(Reg.H);
-                return 4;
+            ADD(Reg.H);
+            break;
             case 0x85:
-                ADD(Reg.L);
-                return 4;
+            ADD(Reg.L);
+            break;
             case 0x86:
-                ADD(emulator.Read(Reg.HL));
-                return 8;
+            ADD(emulator.Read(Reg.HL));
+            break;
             case 0xC6:
-                ADD(NextByte());
-                return 8;
+            ADD(NextByte());
+            break;
 
             // ADC A,n
             case 0x8F:
-                ADC(Reg.A);
-                return 4;
+            ADC(Reg.A);
+            break;
             case 0x88:
-                ADC(Reg.B);
-                return 4;
+            ADC(Reg.B);
+            break;
             case 0x89:
-                ADC(Reg.C);
-                return 4;
+            ADC(Reg.C);
+            break;
             case 0x8A:
-                ADC(Reg.D);
-                return 4;
+            ADC(Reg.D);
+            break;
             case 0x8B:
-                ADC(Reg.E);
-                return 4;
+            ADC(Reg.E);
+            break;
             case 0x8C:
-                ADC(Reg.H);
-                return 4;
+            ADC(Reg.H);
+            break;
             case 0x8D:
-                ADC(Reg.L);
-                return 4;
+            ADC(Reg.L);
+            break;
             case 0x8E:
-                ADC(emulator.Read(Reg.HL));
-                return 8;
+            ADC(emulator.Read(Reg.HL));
+            break;
             case 0xCE:
-                ADC(NextByte());
-                return 8;
+            ADC(NextByte());
+            break;
 
             // SUB A,n
             case 0x97:
-                SUB(Reg.A);
-                return 4;
+            SUB(Reg.A);
+            break;
             case 0x90:
-                SUB(Reg.B);
-                return 4;
+            SUB(Reg.B);
+            break;
             case 0x91:
-                SUB(Reg.C);
-                return 4;
+            SUB(Reg.C);
+            break;
             case 0x92:
-                SUB(Reg.D);
-                return 4;
+            SUB(Reg.D);
+            break;
             case 0x93:
-                SUB(Reg.E);
-                return 4;
+            SUB(Reg.E);
+            break;
             case 0x94:
-                SUB(Reg.H);
-                return 4;
+            SUB(Reg.H);
+            break;
             case 0x95:
-                SUB(Reg.L);
-                return 4;
+            SUB(Reg.L);
+            break;
             case 0x96:
-                SUB(emulator.Read(Reg.HL));
-                return 8;
+            SUB(emulator.Read(Reg.HL));
+            break;
             case 0xD6:
-                SUB(NextByte());
-                return 8;
+            SUB(NextByte());
+            break;
 
             // SBC A,n
             case 0x9F:
-                SBC(Reg.A);
-                return 4;
+            SBC(Reg.A);
+            break;
             case 0x98:
-                SBC(Reg.B);
-                return 4;
+            SBC(Reg.B);
+            break;
             case 0x99:
-                SBC(Reg.C);
-                return 4;
+            SBC(Reg.C);
+            break;
             case 0x9A:
-                SBC(Reg.D);
-                return 4;
+            SBC(Reg.D);
+            break;
             case 0x9B:
-                SBC(Reg.E);
-                return 4;
+            SBC(Reg.E);
+            break;
             case 0x9C:
-                SBC(Reg.H);
-                return 4;
+            SBC(Reg.H);
+            break;
             case 0x9D:
-                SBC(Reg.L);
-                return 4;
+            SBC(Reg.L);
+            break;
             case 0x9E:
-                SBC(emulator.Read(Reg.HL));
-                return 8;
+            SBC(emulator.Read(Reg.HL));
+            break;
             case 0xDE:
-                SBC(NextByte());
-                return 8;
+            SBC(NextByte());
+            break;
 
             // AND n
             case 0xA7:
-                AND(Reg.A);
-                return 4;
+            AND(Reg.A);
+            break;
             case 0xA0:
-                AND(Reg.B);
-                return 4;
+            AND(Reg.B);
+            break;
             case 0xA1:
-                AND(Reg.C);
-                return 4;
+            AND(Reg.C);
+            break;
             case 0xA2:
-                AND(Reg.D);
-                return 4;
+            AND(Reg.D);
+            break;
             case 0xA3:
-                AND(Reg.E);
-                return 4;
+            AND(Reg.E);
+            break;
             case 0xA4:
-                AND(Reg.H);
-                return 4;
+            AND(Reg.H);
+            break;
             case 0xA5:
-                AND(Reg.L);
-                return 4;
+            AND(Reg.L);
+            break;
             case 0xA6:
-                AND(emulator.Read(Reg.HL));
-                return 8;
+            AND(emulator.Read(Reg.HL));
+            break;
             case 0xE6:
-                AND(NextByte());
-                return 8;
+            AND(NextByte());
+            break;
 
             // OR n
             case 0xB7:
-                OR(Reg.A);
-                return 4;
+            OR(Reg.A);
+            break;
             case 0xB0:
-                OR(Reg.B);
-                return 4;
+            OR(Reg.B);
+            break;
             case 0xB1:
-                OR(Reg.C);
-                return 4;
+            OR(Reg.C);
+            break;
             case 0xB2:
-                OR(Reg.D);
-                return 4;
+            OR(Reg.D);
+            break;
             case 0xB3:
-                OR(Reg.E);
-                return 4;
+            OR(Reg.E);
+            break;
             case 0xB4:
-                OR(Reg.H);
-                return 4;
+            OR(Reg.H);
+            break;
             case 0xB5:
-                OR(Reg.L);
-                return 4;
+            OR(Reg.L);
+            break;
             case 0xB6:
-                OR(emulator.Read(Reg.HL));
-                return 8;
+            OR(emulator.Read(Reg.HL));
+            break;
             case 0xF6:
-                OR(NextByte());
-                return 8;
+            OR(NextByte());
+            break;
 
             // XOR n
             case 0xAF:
-                XOR(Reg.A);
-                return 4;
+            XOR(Reg.A);
+            break;
             case 0xA8:
-                XOR(Reg.B);
-                return 4;
+            XOR(Reg.B);
+            break;
             case 0xA9:
-                XOR(Reg.C);
-                return 4;
+            XOR(Reg.C);
+            break;
             case 0xAA:
-                XOR(Reg.D);
-                return 4;
+            XOR(Reg.D);
+            break;
             case 0xAB:
-                XOR(Reg.E);
-                return 4;
+            XOR(Reg.E);
+            break;
             case 0xAC:
-                XOR(Reg.H);
-                return 4;
+            XOR(Reg.H);
+            break;
             case 0xAD:
-                XOR(Reg.L);
-                return 4;
+            XOR(Reg.L);
+            break;
             case 0xAE:
-                XOR(emulator.Read(Reg.HL));
-                return 8;
+            XOR(emulator.Read(Reg.HL));
+            break;
             case 0xEE:
-                XOR(NextByte());
-                return 8;
+            XOR(NextByte());
+            break;
 
             // CP n
             case 0xBF:
-                CP(Reg.A);
-                return 4;
+            CP(Reg.A);
+            break;
             case 0xB8:
-                CP(Reg.B);
-                return 4;
+            CP(Reg.B);
+            break;
             case 0xB9:
-                CP(Reg.C);
-                return 4;
+            CP(Reg.C);
+            break;
             case 0xBA:
-                CP(Reg.D);
-                return 4;
+            CP(Reg.D);
+            break;
             case 0xBB:
-                CP(Reg.E);
-                return 4;
+            CP(Reg.E);
+            break;
             case 0xBC:
-                CP(Reg.H);
-                return 4;
+            CP(Reg.H);
+            break;
             case 0xBD:
-                CP(Reg.L);
-                return 4;
+            CP(Reg.L);
+            break;
             case 0xBE:
-                CP(emulator.Read(Reg.HL));
-                return 8;
+            CP(emulator.Read(Reg.HL));
+            break;
             case 0xFE:
-                CP(NextByte());
-                return 8;
+            CP(NextByte());
+            break;
 
             // INC n
             case 0x3C:
-                Reg.A = INC(Reg.A);
-                return 4;
+            Reg.A = INC(Reg.A);
+            break;
             case 0x04:
-                Reg.B = INC(Reg.B);
-                return 4;
+            Reg.B = INC(Reg.B);
+            break;
             case 0x0C:
-                Reg.C = INC(Reg.C);
-                return 4;
+            Reg.C = INC(Reg.C);
+            break;
             case 0x14:
-                Reg.D = INC(Reg.D);
-                return 4;
+            Reg.D = INC(Reg.D);
+            break;
             case 0x1C:
-                Reg.E = INC(Reg.E);
-                return 4;
+            Reg.E = INC(Reg.E);
+            break;
             case 0x24:
-                Reg.H = INC(Reg.H);
-                return 4;
+            Reg.H = INC(Reg.H);
+            break;
             case 0x2C:
-                Reg.L = INC(Reg.L);
-                return 4;
+            Reg.L = INC(Reg.L);
+            break;
             case 0x34:
-                emulator.Write(Reg.HL, INC(emulator.Read(Reg.HL)));
-                return 12;
+            emulator.Write(Reg.HL, INC(emulator.Read(Reg.HL)));
+            break;
 
             // DEC n
             case 0x3D:
-                Reg.A = DEC(Reg.A);
-                return 4;
+            Reg.A = DEC(Reg.A);
+            break;
             case 0x05:
-                Reg.B = DEC(Reg.B);
-                return 4;
+            Reg.B = DEC(Reg.B);
+            break;
             case 0x0D:
-                Reg.C = DEC(Reg.C);
-                return 4;
+            Reg.C = DEC(Reg.C);
+            break;
             case 0x15:
-                Reg.D = DEC(Reg.D);
-                return 4;
+            Reg.D = DEC(Reg.D);
+            break;
             case 0x1D:
-                Reg.E = DEC(Reg.E);
-                return 4;
+            Reg.E = DEC(Reg.E);
+            break;
             case 0x25:
-                Reg.H = DEC(Reg.H);
-                return 4;
+            Reg.H = DEC(Reg.H);
+            break;
             case 0x2D:
-                Reg.L = DEC(Reg.L);
-                return 4;
+            Reg.L = DEC(Reg.L);
+            break;
             case 0x35:
-                emulator.Write(Reg.HL, DEC(emulator.Read(Reg.HL)));
-                return 12;
+            emulator.Write(Reg.HL, DEC(emulator.Read(Reg.HL)));
+            break;
 
             #endregion
 
@@ -685,51 +722,51 @@ public class Cpu
 
             // ADD HL,n
             case 0x09:
-                ADD(Reg.BC);
-                return 8;
+            ADD(Reg.BC);
+            break;
             case 0x19:
-                ADD(Reg.DE);
-                return 8;
+            ADD(Reg.DE);
+            break;
             case 0x29:
-                ADD(Reg.HL);
-                return 8;
+            ADD(Reg.HL);
+            break;
             case 0x39:
-                ADD(Reg.SP);
-                return 8;
+            ADD(Reg.SP);
+            break;
 
 
             // ADD SP,n
             case 0xE8:
-                Reg.SP = ADDS(Reg.SP);
-                return 16;
+            Reg.SP = ADDS(Reg.SP);
+            break;
 
             // INC nn
             case 0x03:
-                Reg.BC++;
-                return 8;
+            Reg.BC++;
+            break;
             case 0x13:
-                Reg.DE++;
-                return 8;
+            Reg.DE++;
+            break;
             case 0x23:
-                Reg.HL++;
-                return 8;
+            Reg.HL++;
+            break;
             case 0x33:
-                Reg.SP++;
-                return 8;
+            Reg.SP++;
+            break;
 
             // DEC nn
             case 0x0B:
-                Reg.BC--;
-                return 8;
+            Reg.BC--;
+            break;
             case 0x1B:
-                Reg.DE--;
-                return 8;
+            Reg.DE--;
+            break;
             case 0x2B:
-                Reg.HL--;
-                return 8;
+            Reg.HL--;
+            break;
             case 0x3B:
-                Reg.SP--;
-                return 8;
+            Reg.SP--;
+            break;
 
             #endregion
 
@@ -737,50 +774,51 @@ public class Cpu
 
             // CB Prefixed
             case 0xCB:
-                return PrefixedTable();
+            _ = PrefixedTable();
+            break;
 
             // DAA
             case 0x27:
-                DAA();
-                return 4;
+            DAA();
+            break;
 
             // CPL
             case 0x2F:
-                CPL();
-                return 4;
+            CPL();
+            break;
 
             // CCF
             case 0x3F:
-                CCF();
-                return 4;
+            CCF();
+            break;
 
             // SCF
             case 0x37:
-                SCF();
-                return 4;
+            SCF();
+            break;
 
             // NOP
             case 0x00:
-                return 4;
+            break;
 
             // HALT
             case 0x76:
-                emulator.interrupt.Halt();
-                return 4;
+            emulator.interrupt.Halt();
+            break;
 
             // STOP
             case 0x10:
-                return 4;
+            break;
 
             // DI
             case 0xF3:
-                emulator.interrupt.Disable();
-                return 4;
+            emulator.interrupt.Disable();
+            break;
 
             // EI
             case 0xFB:
-                emulator.interrupt.Enable();
-                return 4;
+            emulator.interrupt.Enable();
+            break;
 
             #endregion
 
@@ -788,36 +826,46 @@ public class Cpu
 
             // JP nn
             case 0xC3:
-                return JP(true);
+            JP(true);
+            break;
 
             // JP cc,nn
             case 0xC2:
-                return JP(Reg.GetFlag(Flag.Z) == false);
+            JP(Reg.GetFlag(Flag.Z) == false);
+            break;
             case 0xCA:
-                return JP(Reg.GetFlag(Flag.Z));
+            JP(Reg.GetFlag(Flag.Z));
+            break;
             case 0xD2:
-                return JP(Reg.GetFlag(Flag.C) == false);
+            JP(Reg.GetFlag(Flag.C) == false);
+            break;
             case 0xDA:
-                return JP(Reg.GetFlag(Flag.C));
+            JP(Reg.GetFlag(Flag.C));
+            break;
 
             // JP (HL)
             case 0xE9:
-                JP(Reg.HL);
-                return 4;
+            JP(Reg.HL);
+            break;
 
             // JP n
             case 0x18:
-                return JR(true);
+            JR(true);
+            break;
 
             // JR cc,n
             case 0x20:
-                return JR(Reg.GetFlag(Flag.Z) == false);
+            JR(Reg.GetFlag(Flag.Z) == false);
+            break;
             case 0x28:
-                return JR(Reg.GetFlag(Flag.Z));
+            JR(Reg.GetFlag(Flag.Z));
+            break;
             case 0x30:
-                return JR(Reg.GetFlag(Flag.C) == false);
+            JR(Reg.GetFlag(Flag.C) == false);
+            break;
             case 0x38:
-                return JR(Reg.GetFlag(Flag.C));
+            JR(Reg.GetFlag(Flag.C));
+            break;
 
             #endregion
 
@@ -825,17 +873,22 @@ public class Cpu
 
             // CALL nn
             case 0xCD:
-                return CALL(true);
+            CALL(true);
+            break;
 
             // CALL cc,nn
             case 0xC4:
-                return CALL(Reg.GetFlag(Flag.Z) == false);
+            CALL(Reg.GetFlag(Flag.Z) == false);
+            break;
             case 0xCC:
-                return CALL(Reg.GetFlag(Flag.Z));
+            CALL(Reg.GetFlag(Flag.Z));
+            break;
             case 0xD4:
-                return CALL(Reg.GetFlag(Flag.C) == false);
+            CALL(Reg.GetFlag(Flag.C) == false);
+            break;
             case 0xDC:
-                return CALL(Reg.GetFlag(Flag.C));
+            CALL(Reg.GetFlag(Flag.C));
+            break;
 
             #endregion
 
@@ -843,29 +896,29 @@ public class Cpu
 
             // RST n
             case 0xC7:
-                RST(0x00);
-                return 16;
+            RST(0x00);
+            break;
             case 0xCF:
-                RST(0x08);
-                return 16;
+            RST(0x08);
+            break;
             case 0xD7:
-                RST(0x10);
-                return 16;
+            RST(0x10);
+            break;
             case 0xDF:
-                RST(0x18);
-                return 16;
+            RST(0x18);
+            break;
             case 0xE7:
-                RST(0x20);
-                return 16;
+            RST(0x20);
+            break;
             case 0xEF:
-                RST(0x28);
-                return 16;
+            RST(0x28);
+            break;
             case 0xF7:
-                RST(0x30);
-                return 16;
+            RST(0x30);
+            break;
             case 0xFF:
-                RST(0x38);
-                return 16;
+            RST(0x38);
+            break;
 
             #endregion
 
@@ -873,24 +926,31 @@ public class Cpu
 
             // RET
             case 0xC9:
-                RET(true);
-                return 16;
+            RET(true);
+            break;
 
             // RET cc
             case 0xC0:
-                return RET(Reg.GetFlag(Flag.Z) == false);
+            RET(Reg.GetFlag(Flag.Z) == false);
+
+            break;
             case 0xC8:
-                return RET(Reg.GetFlag(Flag.Z));
+            RET(Reg.GetFlag(Flag.Z));
+            break;
+
             case 0xD0:
-                return RET(Reg.GetFlag(Flag.C) == false);
+            RET(Reg.GetFlag(Flag.C) ==
+              false);
+            break;
             case 0xD8:
-                return RET(Reg.GetFlag(Flag.C));
+            RET(Reg.GetFlag(Flag.C));
+            break;
 
             // RETI
             case 0xD9:
-                RET(true);
-                emulator.interrupt.Enable();
-                return 16;
+            RET(true);
+            emulator.interrupt.Enable();
+            break;
 
             #endregion
 
@@ -898,23 +958,23 @@ public class Cpu
 
             // RLCA
             case 0x07:
-                RLCA();
-                return 4;
+            RLCA();
+            break;
 
             //RLA
             case 0x17:
-                RLA();
-                return 4;
+            RLA();
+            break;
 
             // RRCA
             case 0x0F:
-                RRCA();
-                return 4;
+            RRCA();
+            break;
 
             // RRA
             case 0x1F:
-                RRA();
-                return 4;
+            RRA();
+            break;
 
             #endregion
 
@@ -933,45 +993,112 @@ public class Cpu
             case 0xFD:
             default:
             {
-                throw new InvalidOperationException("Illegal Instruction : " + opcode);
+                throw new InvalidOperationException("Illegal Instruction : " + Opcode);
             }
             #endregion
         }
+
+
+        switch (Opcode)
+        {
+            case 0x20:
+            case 0x30:
+            if (!Reg.GetFlag(Flag.Z))
+            {
+                conditionalCycles = 1;
+            }
+            break;
+
+            case 0x28:
+            case 0x38:
+            if (Reg.GetFlag(Flag.Z))
+            {
+                conditionalCycles = 1;
+            }
+            break;
+
+            case 0xc0:
+            case 0xd0:
+            if (!Reg.GetFlag(Flag.Z))
+            {
+                conditionalCycles = 3;
+            }
+            break;
+
+            case 0xc8:
+            case 0xcc:
+            case 0xd8:
+            case 0xdc:
+            if (Reg.GetFlag(Flag.Z))
+            {
+                conditionalCycles = 3;
+            }
+            break;
+
+            case 0xc2:
+            case 0xd2:
+            if (!Reg.GetFlag(Flag.Z))
+            {
+                conditionalCycles = 3;
+            }
+            break;
+
+            case 0xca:
+            case 0xda:
+            if (Reg.GetFlag(Flag.Z))
+            {
+                conditionalCycles = 1;
+            }
+            break;
+
+            case 0xc4:
+            case 0xd4:
+            if (!Reg.GetFlag(Flag.Z))
+            {
+                conditionalCycles = 3;
+            }
+            break;
+            default:
+            break;
+        }
+
+
+        return (byte)(mainTimes[Opcode] + conditionalCycles);
     }
 
-    byte PrefixedTable()
+    private byte PrefixedTable()
     {
-        opcode = NextByte();
+        Opcode = NextByte();
 
-        switch (opcode)
+        switch (Opcode)
         {
             #region Miscellaneous
 
             // SWAP n
             case 0x37:
-                Reg.A = SWAP(Reg.A);
-                return 8;
+            Reg.A = SWAP(Reg.A);
+            break;
             case 0x30:
-                Reg.B = SWAP(Reg.B);
-                return 8;
+            Reg.B = SWAP(Reg.B);
+            break;
             case 0x31:
-                Reg.C = SWAP(Reg.C);
-                return 8;
+            Reg.C = SWAP(Reg.C);
+            break;
             case 0x32:
-                Reg.D = SWAP(Reg.D);
-                return 8;
+            Reg.D = SWAP(Reg.D);
+            break;
             case 0x33:
-                Reg.E = SWAP(Reg.E);
-                return 8;
+            Reg.E = SWAP(Reg.E);
+            break;
             case 0x34:
-                Reg.H = SWAP(Reg.H);
-                return 8;
+            Reg.H = SWAP(Reg.H);
+            break;
             case 0x35:
-                Reg.L = SWAP(Reg.L);
-                return 8;
+            Reg.L = SWAP(Reg.L);
+            break;
             case 0x36:
-                emulator.Write(Reg.HL, SWAP(emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SWAP(emulator.Read(Reg.HL)));
+            break;
 
             #endregion
 
@@ -979,185 +1106,185 @@ public class Cpu
 
             // RLC n
             case 0x07:
-                Reg.A = RLC(Reg.A);
-                return 8;
+            Reg.A = RLC(Reg.A);
+            break;
             case 0x00:
-                Reg.B = RLC(Reg.B);
-                return 8;
+            Reg.B = RLC(Reg.B);
+            break;
             case 0x01:
-                Reg.C = RLC(Reg.C);
-                return 8;
+            Reg.C = RLC(Reg.C);
+            break;
             case 0x02:
-                Reg.D = RLC(Reg.D);
-                return 8;
+            Reg.D = RLC(Reg.D);
+            break;
             case 0x03:
-                Reg.E = RLC(Reg.E);
-                return 8;
+            Reg.E = RLC(Reg.E);
+            break;
             case 0x04:
-                Reg.H = RLC(Reg.H);
-                return 8;
+            Reg.H = RLC(Reg.H);
+            break;
             case 0x05:
-                Reg.L = RLC(Reg.L);
-                return 8;
+            Reg.L = RLC(Reg.L);
+            break;
             case 0x06:
-                emulator.Write(Reg.HL, RLC(emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RLC(emulator.Read(Reg.HL)));
+            break;
 
             // RL n
             case 0x17:
-                Reg.A = RL(Reg.A);
-                return 8;
+            Reg.A = RL(Reg.A);
+            break;
             case 0x10:
-                Reg.B = RL(Reg.B);
-                return 8;
+            Reg.B = RL(Reg.B);
+            break;
             case 0x11:
-                Reg.C = RL(Reg.C);
-                return 8;
+            Reg.C = RL(Reg.C);
+            break;
             case 0x12:
-                Reg.D = RL(Reg.D);
-                return 8;
+            Reg.D = RL(Reg.D);
+            break;
             case 0x13:
-                Reg.E = RL(Reg.E);
-                return 8;
+            Reg.E = RL(Reg.E);
+            break;
             case 0x14:
-                Reg.H = RL(Reg.H);
-                return 8;
+            Reg.H = RL(Reg.H);
+            break;
             case 0x15:
-                Reg.L = RL(Reg.L);
-                return 8;
+            Reg.L = RL(Reg.L);
+            break;
             case 0x16:
-                emulator.Write(Reg.HL, RL(emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RL(emulator.Read(Reg.HL)));
+            break;
 
             // RRC n
             case 0x0F:
-                Reg.A = RRC(Reg.A);
-                return 8;
+            Reg.A = RRC(Reg.A);
+            break;
             case 0x08:
-                Reg.B = RRC(Reg.B);
-                return 8;
+            Reg.B = RRC(Reg.B);
+            break;
             case 0x09:
-                Reg.C = RRC(Reg.C);
-                return 8;
+            Reg.C = RRC(Reg.C);
+            break;
             case 0x0A:
-                Reg.D = RRC(Reg.D);
-                return 8;
+            Reg.D = RRC(Reg.D);
+            break;
             case 0x0B:
-                Reg.E = RRC(Reg.E);
-                return 8;
+            Reg.E = RRC(Reg.E);
+            break;
             case 0x0C:
-                Reg.H = RRC(Reg.H);
-                return 8;
+            Reg.H = RRC(Reg.H);
+            break;
             case 0x0D:
-                Reg.L = RRC(Reg.L);
-                return 8;
+            Reg.L = RRC(Reg.L);
+            break;
             case 0x0E:
-                emulator.Write(Reg.HL, RRC(emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RRC(emulator.Read(Reg.HL)));
+            break;
 
             // RR n
             case 0x1F:
-                Reg.A = RR(Reg.A);
-                return 8;
+            Reg.A = RR(Reg.A);
+            break;
             case 0x18:
-                Reg.B = RR(Reg.B);
-                return 8;
+            Reg.B = RR(Reg.B);
+            break;
             case 0x19:
-                Reg.C = RR(Reg.C);
-                return 8;
+            Reg.C = RR(Reg.C);
+            break;
             case 0x1A:
-                Reg.D = RR(Reg.D);
-                return 8;
+            Reg.D = RR(Reg.D);
+            break;
             case 0x1B:
-                Reg.E = RR(Reg.E);
-                return 8;
+            Reg.E = RR(Reg.E);
+            break;
             case 0x1C:
-                Reg.H = RR(Reg.H);
-                return 8;
+            Reg.H = RR(Reg.H);
+            break;
             case 0x1D:
-                Reg.L = RR(Reg.L);
-                return 8;
+            Reg.L = RR(Reg.L);
+            break;
             case 0x1E:
-                emulator.Write(Reg.HL, RR(emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RR(emulator.Read(Reg.HL)));
+            break;
 
             // SLA n
             case 0x27:
-                Reg.A = SLA(Reg.A);
-                return 8;
+            Reg.A = SLA(Reg.A);
+            break;
             case 0x20:
-                Reg.B = SLA(Reg.B);
-                return 8;
+            Reg.B = SLA(Reg.B);
+            break;
             case 0x21:
-                Reg.C = SLA(Reg.C);
-                return 8;
+            Reg.C = SLA(Reg.C);
+            break;
             case 0x22:
-                Reg.D = SLA(Reg.D);
-                return 8;
+            Reg.D = SLA(Reg.D);
+            break;
             case 0x23:
-                Reg.E = SLA(Reg.E);
-                return 8;
+            Reg.E = SLA(Reg.E);
+            break;
             case 0x24:
-                Reg.H = SLA(Reg.H);
-                return 8;
+            Reg.H = SLA(Reg.H);
+            break;
             case 0x25:
-                Reg.L = SLA(Reg.L);
-                return 8;
+            Reg.L = SLA(Reg.L);
+            break;
             case 0x26:
-                emulator.Write(Reg.HL, SLA(emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SLA(emulator.Read(Reg.HL)));
+            break;
 
             // SRA n
             case 0x2F:
-                Reg.A = SRA(Reg.A);
-                return 8;
+            Reg.A = SRA(Reg.A);
+            break;
             case 0x28:
-                Reg.B = SRA(Reg.B);
-                return 8;
+            Reg.B = SRA(Reg.B);
+            break;
             case 0x29:
-                Reg.C = SRA(Reg.C);
-                return 8;
+            Reg.C = SRA(Reg.C);
+            break;
             case 0x2A:
-                Reg.D = SRA(Reg.D);
-                return 8;
+            Reg.D = SRA(Reg.D);
+            break;
             case 0x2B:
-                Reg.E = SRA(Reg.E);
-                return 8;
+            Reg.E = SRA(Reg.E);
+            break;
             case 0x2C:
-                Reg.H = SRA(Reg.H);
-                return 8;
+            Reg.H = SRA(Reg.H);
+            break;
             case 0x2D:
-                Reg.L = SRA(Reg.L);
-                return 8;
+            Reg.L = SRA(Reg.L);
+            break;
             case 0x2E:
-                emulator.Write(Reg.HL, SRA(emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SRA(emulator.Read(Reg.HL)));
+            break;
 
             // SRL
             case 0x3F:
-                Reg.A = SRL(Reg.A);
-                return 8;
+            Reg.A = SRL(Reg.A);
+            break;
             case 0x38:
-                Reg.B = SRL(Reg.B);
-                return 8;
+            Reg.B = SRL(Reg.B);
+            break;
             case 0x39:
-                Reg.C = SRL(Reg.C);
-                return 8;
+            Reg.C = SRL(Reg.C);
+            break;
             case 0x3A:
-                Reg.D = SRL(Reg.D);
-                return 8;
+            Reg.D = SRL(Reg.D);
+            break;
             case 0x3B:
-                Reg.E = SRL(Reg.E);
-                return 8;
+            Reg.E = SRL(Reg.E);
+            break;
             case 0x3C:
-                Reg.H = SRL(Reg.H);
-                return 8;
+            Reg.H = SRL(Reg.H);
+            break;
             case 0x3D:
-                Reg.L = SRL(Reg.L);
-                return 8;
+            Reg.L = SRL(Reg.L);
+            break;
             case 0x3E:
-                emulator.Write(Reg.HL, SRL(emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SRL(emulator.Read(Reg.HL)));
+            break;
 
             #endregion
 
@@ -1165,631 +1292,633 @@ public class Cpu
 
             // BIT 0,r
             case 0x47:
-                BIT(Bit0, Reg.A);
-                return 8;
+            BIT(0b00000001, Reg.A);
+            break;
             case 0x40:
-                BIT(Bit0, Reg.B);
-                return 8;
+            BIT(0b00000001, Reg.B);
+            break;
             case 0x41:
-                BIT(Bit0, Reg.C);
-                return 8;
+            BIT(0b00000001, Reg.C);
+            break;
             case 0x42:
-                BIT(Bit0, Reg.D);
-                return 8;
+            BIT(0b00000001, Reg.D);
+            break;
             case 0x43:
-                BIT(Bit0, Reg.E);
-                return 8;
+            BIT(0b00000001, Reg.E);
+            break;
             case 0x44:
-                BIT(Bit0, Reg.H);
-                return 8;
+            BIT(0b00000001, Reg.H);
+            break;
             case 0x45:
-                BIT(Bit0, Reg.L);
-                return 8;
+            BIT(0b00000001, Reg.L);
+            break;
             case 0x46:
-                BIT(Bit0, emulator.Read(Reg.HL));
-                return 12;
+            BIT(0b00000001, emulator.Read(Reg.HL));
+            break;
 
             // BIT 1,r
             case 0x4F:
-                BIT(Bit1, Reg.A);
-                return 8;
+            BIT(0b00000010, Reg.A);
+            break;
             case 0x48:
-                BIT(Bit1, Reg.B);
-                return 8;
+            BIT(0b00000010, Reg.B);
+            break;
             case 0x49:
-                BIT(Bit1, Reg.C);
-                return 8;
+            BIT(0b00000010, Reg.C);
+            break;
             case 0x4A:
-                BIT(Bit1, Reg.D);
-                return 8;
+            BIT(0b00000010, Reg.D);
+            break;
             case 0x4B:
-                BIT(Bit1, Reg.E);
-                return 8;
+            BIT(0b00000010, Reg.E);
+            break;
             case 0x4C:
-                BIT(Bit1, Reg.H);
-                return 8;
+            BIT(0b00000010, Reg.H);
+            break;
             case 0x4D:
-                BIT(Bit1, Reg.L);
-                return 8;
+            BIT(0b00000010, Reg.L);
+            break;
             case 0x4E:
-                BIT(Bit1, emulator.Read(Reg.HL));
-                return 12;
+            BIT(0b00000010, emulator.Read(Reg.HL));
+            break;
 
             // BIT 2,r
             case 0x57:
-                BIT(Bit2, Reg.A);
-                return 8;
+            BIT(0b00000100, Reg.A);
+            break;
             case 0x50:
-                BIT(Bit2, Reg.B);
-                return 8;
+            BIT(0b00000100, Reg.B);
+            break;
             case 0x51:
-                BIT(Bit2, Reg.C);
-                return 8;
+            BIT(0b00000100, Reg.C);
+            break;
             case 0x52:
-                BIT(Bit2, Reg.D);
-                return 8;
+            BIT(0b00000100, Reg.D);
+            break;
             case 0x53:
-                BIT(Bit2, Reg.E);
-                return 8;
+            BIT(0b00000100, Reg.E);
+            break;
             case 0x54:
-                BIT(Bit2, Reg.H);
-                return 8;
+            BIT(0b00000100, Reg.H);
+            break;
             case 0x55:
-                BIT(Bit2, Reg.L);
-                return 8;
+            BIT(0b00000100, Reg.L);
+            break;
             case 0x56:
-                BIT(Bit2, emulator.Read(Reg.HL));
-                return 12;
+            BIT(0b00000100, emulator.Read(Reg.HL));
+            break;
 
             // BIT 3,r
             case 0x5F:
-                BIT(Bit3, Reg.A);
-                return 8;
+            BIT(0b00001000, Reg.A);
+            break;
             case 0x58:
-                BIT(Bit3, Reg.B);
-                return 8;
+            BIT(0b00001000, Reg.B);
+            break;
             case 0x59:
-                BIT(Bit3, Reg.C);
-                return 8;
+            BIT(0b00001000, Reg.C);
+            break;
             case 0x5A:
-                BIT(Bit3, Reg.D);
-                return 8;
+            BIT(0b00001000, Reg.D);
+            break;
             case 0x5B:
-                BIT(Bit3, Reg.E);
-                return 8;
+            BIT(0b00001000, Reg.E);
+            break;
             case 0x5C:
-                BIT(Bit3, Reg.H);
-                return 8;
+            BIT(0b00001000, Reg.H);
+            break;
             case 0x5D:
-                BIT(Bit3, Reg.L);
-                return 8;
+            BIT(0b00001000, Reg.L);
+            break;
             case 0x5E:
-                BIT(Bit3, emulator.Read(Reg.HL));
-                return 12;
+            BIT(0b00001000, emulator.Read(Reg.HL));
+            break;
 
             // BIT 4,r
             case 0x67:
-                BIT(Bit4, Reg.A);
-                return 8;
+            BIT(0b00010000, Reg.A);
+            break;
             case 0x60:
-                BIT(Bit4, Reg.B);
-                return 8;
+            BIT(0b00010000, Reg.B);
+            break;
             case 0x61:
-                BIT(Bit4, Reg.C);
-                return 8;
+            BIT(0b00010000, Reg.C);
+            break;
             case 0x62:
-                BIT(Bit4, Reg.D);
-                return 8;
+            BIT(0b00010000, Reg.D);
+            break;
             case 0x63:
-                BIT(Bit4, Reg.E);
-                return 8;
+            BIT(0b00010000, Reg.E);
+            break;
             case 0x64:
-                BIT(Bit4, Reg.H);
-                return 8;
+            BIT(0b00010000, Reg.H);
+            break;
             case 0x65:
-                BIT(Bit4, Reg.L);
-                return 8;
+            BIT(0b00010000, Reg.L);
+            break;
             case 0x66:
-                BIT(Bit4, emulator.Read(Reg.HL));
-                return 12;
+            BIT(0b00010000, emulator.Read(Reg.HL));
+            break;
 
             // BIT 5,r
             case 0x6F:
-                BIT(Bit5, Reg.A);
-                return 8;
+            BIT(0b00100000, Reg.A);
+            break;
             case 0x68:
-                BIT(Bit5, Reg.B);
-                return 8;
+            BIT(0b00100000, Reg.B);
+            break;
             case 0x69:
-                BIT(Bit5, Reg.C);
-                return 8;
+            BIT(0b00100000, Reg.C);
+            break;
             case 0x6A:
-                BIT(Bit5, Reg.D);
-                return 8;
+            BIT(0b00100000, Reg.D);
+            break;
             case 0x6B:
-                BIT(Bit5, Reg.E);
-                return 8;
+            BIT(0b00100000, Reg.E);
+            break;
             case 0x6C:
-                BIT(Bit5, Reg.H);
-                return 8;
+            BIT(0b00100000, Reg.H);
+            break;
             case 0x6D:
-                BIT(Bit5, Reg.L);
-                return 8;
+            BIT(0b00100000, Reg.L);
+            break;
             case 0x6E:
-                BIT(Bit5, emulator.Read(Reg.HL));
-                return 12;
+            BIT(0b00100000, emulator.Read(Reg.HL));
+            break;
 
             // BIT 6,r
             case 0x77:
-                BIT(Bit6, Reg.A);
-                return 8;
+            BIT(0b01000000, Reg.A);
+            break;
             case 0x70:
-                BIT(Bit6, Reg.B);
-                return 8;
+            BIT(0b01000000, Reg.B);
+            break;
             case 0x71:
-                BIT(Bit6, Reg.C);
-                return 8;
+            BIT(0b01000000, Reg.C);
+            break;
             case 0x72:
-                BIT(Bit6, Reg.D);
-                return 8;
+            BIT(0b01000000, Reg.D);
+            break;
             case 0x73:
-                BIT(Bit6, Reg.E);
-                return 8;
+            BIT(0b01000000, Reg.E);
+            break;
             case 0x74:
-                BIT(Bit6, Reg.H);
-                return 8;
+            BIT(0b01000000, Reg.H);
+            break;
             case 0x75:
-                BIT(Bit6, Reg.L);
-                return 8;
+            BIT(0b01000000, Reg.L);
+            break;
             case 0x76:
-                BIT(Bit6, emulator.Read(Reg.HL));
-                return 12;
+            BIT(0b01000000, emulator.Read(Reg.HL));
+            break;
 
             // BIT 7,r
             case 0x7F:
-                BIT(Bit7, Reg.A);
-                return 8;
+            BIT(0b01000000, Reg.A);
+            break;
             case 0x78:
-                BIT(Bit7, Reg.B);
-                return 8;
+            BIT(0b01000000, Reg.B);
+            break;
             case 0x79:
-                BIT(Bit7, Reg.C);
-                return 8;
+            BIT(0b01000000, Reg.C);
+            break;
             case 0x7A:
-                BIT(Bit7, Reg.D);
-                return 8;
+            BIT(0b01000000, Reg.D);
+            break;
             case 0x7B:
-                BIT(Bit7, Reg.E);
-                return 8;
+            BIT(0b01000000, Reg.E);
+            break;
             case 0x7C:
-                BIT(Bit7, Reg.H);
-                return 8;
+            BIT(0b01000000, Reg.H);
+            break;
             case 0x7D:
-                BIT(Bit7, Reg.L);
-                return 8;
+            BIT(0b01000000, Reg.L);
+            break;
             case 0x7E:
-                BIT(Bit7, emulator.Read(Reg.HL));
-                return 12;
+            BIT(0b01000000, emulator.Read(Reg.HL));
+            break;
 
             // SET 0,r
             case 0xC7:
-                Reg.A = SET(Bit0, Reg.A);
-                return 8;
+            Reg.A = SET(0b00000001, Reg.A);
+            break;
             case 0xC0:
-                Reg.B = SET(Bit0, Reg.B);
-                return 8;
+            Reg.B = SET(0b00000001, Reg.B);
+            break;
             case 0xC1:
-                Reg.C = SET(Bit0, Reg.C);
-                return 8;
+            Reg.C = SET(0b00000001, Reg.C);
+            break;
             case 0xC2:
-                Reg.D = SET(Bit0, Reg.D);
-                return 8;
+            Reg.D = SET(0b00000001, Reg.D);
+            break;
             case 0xC3:
-                Reg.E = SET(Bit0, Reg.E);
-                return 8;
+            Reg.E = SET(0b00000001, Reg.E);
+            break;
             case 0xC4:
-                Reg.H = SET(Bit0, Reg.H);
-                return 8;
+            Reg.H = SET(0b00000001, Reg.H);
+            break;
             case 0xC5:
-                Reg.L = SET(Bit0, Reg.L);
-                return 8;
+            Reg.L = SET(0b00000001, Reg.L);
+            break;
             case 0xC6:
-                emulator.Write(Reg.HL, SET(Bit0, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SET(0b00000001, emulator.Read(Reg.HL)));
+            break;
 
             // SET 1,r
             case 0xCF:
-                Reg.A = SET(Bit1, Reg.A);
-                return 8;
+            Reg.A = SET(0b00000010, Reg.A);
+            break;
             case 0xC8:
-                Reg.B = SET(Bit1, Reg.B);
-                return 8;
+            Reg.B = SET(0b00000010, Reg.B);
+            break;
             case 0xC9:
-                Reg.C = SET(Bit1, Reg.C);
-                return 8;
+            Reg.C = SET(0b00000010, Reg.C);
+            break;
             case 0xCA:
-                Reg.D = SET(Bit1, Reg.D);
-                return 8;
+            Reg.D = SET(0b00000010, Reg.D);
+            break;
             case 0xCB:
-                Reg.E = SET(Bit1, Reg.E);
-                return 8;
+            Reg.E = SET(0b00000010, Reg.E);
+            break;
             case 0xCC:
-                Reg.H = SET(Bit1, Reg.H);
-                return 8;
+            Reg.H = SET(0b00000010, Reg.H);
+            break;
             case 0xCD:
-                Reg.L = SET(Bit1, Reg.L);
-                return 8;
+            Reg.L = SET(0b00000010, Reg.L);
+            break;
             case 0xCE:
-                emulator.Write(Reg.HL, SET(Bit1, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SET(0b00000010, emulator.Read(Reg.HL)));
+            break;
 
             // SET 2,r
             case 0xD7:
-                Reg.A = SET(Bit2, Reg.A);
-                return 8;
+            Reg.A = SET(0b00000100, Reg.A);
+            break;
             case 0xD0:
-                Reg.B = SET(Bit2, Reg.B);
-                return 8;
+            Reg.B = SET(0b00000100, Reg.B);
+            break;
             case 0xD1:
-                Reg.C = SET(Bit2, Reg.C);
-                return 8;
+            Reg.C = SET(0b00000100, Reg.C);
+            break;
             case 0xD2:
-                Reg.D = SET(Bit2, Reg.D);
-                return 8;
+            Reg.D = SET(0b00000100, Reg.D);
+            break;
             case 0xD3:
-                Reg.E = SET(Bit2, Reg.E);
-                return 8;
+            Reg.E = SET(0b00000100, Reg.E);
+            break;
             case 0xD4:
-                Reg.H = SET(Bit2, Reg.H);
-                return 8;
+            Reg.H = SET(0b00000100, Reg.H);
+            break;
             case 0xD5:
-                Reg.L = SET(Bit2, Reg.L);
-                return 8;
+            Reg.L = SET(0b00000100, Reg.L);
+            break;
             case 0xD6:
-                emulator.Write(Reg.HL, SET(Bit2, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SET(0b00000100, emulator.Read(Reg.HL)));
+            break;
 
             // SET 3,r
             case 0xDF:
-                Reg.A = SET(Bit3, Reg.A);
-                return 8;
+            Reg.A = SET(0b00001000, Reg.A);
+            break;
             case 0xD8:
-                Reg.B = SET(Bit3, Reg.B);
-                return 8;
+            Reg.B = SET(0b00001000, Reg.B);
+            break;
             case 0xD9:
-                Reg.C = SET(Bit3, Reg.C);
-                return 8;
+            Reg.C = SET(0b00001000, Reg.C);
+            break;
             case 0xDA:
-                Reg.D = SET(Bit3, Reg.D);
-                return 8;
+            Reg.D = SET(0b00001000, Reg.D);
+            break;
             case 0xDB:
-                Reg.E = SET(Bit3, Reg.E);
-                return 8;
+            Reg.E = SET(0b00001000, Reg.E);
+            break;
             case 0xDC:
-                Reg.H = SET(Bit3, Reg.H);
-                return 8;
+            Reg.H = SET(0b00001000, Reg.H);
+            break;
             case 0xDD:
-                Reg.L = SET(Bit3, Reg.L);
-                return 8;
+            Reg.L = SET(0b00001000, Reg.L);
+            break;
             case 0xDE:
-                emulator.Write(Reg.HL, SET(Bit3, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SET(0b00001000, emulator.Read(Reg.HL)));
+            break;
 
             // SET 4,r
             case 0xE7:
-                Reg.A = SET(Bit4, Reg.A);
-                return 8;
+            Reg.A = SET(0b00010000, Reg.A);
+            break;
             case 0xE0:
-                Reg.B = SET(Bit4, Reg.B);
-                return 8;
+            Reg.B = SET(0b00010000, Reg.B);
+            break;
             case 0xE1:
-                Reg.C = SET(Bit4, Reg.C);
-                return 8;
+            Reg.C = SET(0b00010000, Reg.C);
+            break;
             case 0xE2:
-                Reg.D = SET(Bit4, Reg.D);
-                return 8;
+            Reg.D = SET(0b00010000, Reg.D);
+            break;
             case 0xE3:
-                Reg.E = SET(Bit4, Reg.E);
-                return 8;
+            Reg.E = SET(0b00010000, Reg.E);
+            break;
             case 0xE4:
-                Reg.H = SET(Bit4, Reg.H);
-                return 8;
+            Reg.H = SET(0b00010000, Reg.H);
+            break;
             case 0xE5:
-                Reg.L = SET(Bit4, Reg.L);
-                return 8;
+            Reg.L = SET(0b00010000, Reg.L);
+            break;
             case 0xE6:
-                emulator.Write(Reg.HL, SET(Bit4, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SET(0b00010000, emulator.Read(Reg.HL)));
+            break;
 
             // SET 5,r
             case 0xEF:
-                Reg.A = SET(Bit5, Reg.A);
-                return 8;
+            Reg.A = SET(0b00100000, Reg.A);
+            break;
             case 0xE8:
-                Reg.B = SET(Bit5, Reg.B);
-                return 8;
+            Reg.B = SET(0b00100000, Reg.B);
+            break;
             case 0xE9:
-                Reg.C = SET(Bit5, Reg.C);
-                return 8;
+            Reg.C = SET(0b00100000, Reg.C);
+            break;
             case 0xEA:
-                Reg.D = SET(Bit5, Reg.D);
-                return 8;
+            Reg.D = SET(0b00100000, Reg.D);
+            break;
             case 0xEB:
-                Reg.E = SET(Bit5, Reg.E);
-                return 8;
+            Reg.E = SET(0b00100000, Reg.E);
+            break;
             case 0xEC:
-                Reg.H = SET(Bit5, Reg.H);
-                return 8;
+            Reg.H = SET(0b00100000, Reg.H);
+            break;
             case 0xED:
-                Reg.L = SET(Bit5, Reg.L);
-                return 8;
+            Reg.L = SET(0b00100000, Reg.L);
+            break;
             case 0xEE:
-                emulator.Write(Reg.HL, SET(Bit5, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SET(0b00100000, emulator.Read(Reg.HL)));
+            break;
 
             // SET 6,r
             case 0xF7:
-                Reg.A = SET(Bit6, Reg.A);
-                return 8;
+            Reg.A = SET(0b01000000, Reg.A);
+            break;
             case 0xF0:
-                Reg.B = SET(Bit6, Reg.B);
-                return 8;
+            Reg.B = SET(0b01000000, Reg.B);
+            break;
             case 0xF1:
-                Reg.C = SET(Bit6, Reg.C);
-                return 8;
+            Reg.C = SET(0b01000000, Reg.C);
+            break;
             case 0xF2:
-                Reg.D = SET(Bit6, Reg.D);
-                return 8;
+            Reg.D = SET(0b01000000, Reg.D);
+            break;
             case 0xF3:
-                Reg.E = SET(Bit6, Reg.E);
-                return 8;
+            Reg.E = SET(0b01000000, Reg.E);
+            break;
             case 0xF4:
-                Reg.H = SET(Bit6, Reg.H);
-                return 8;
+            Reg.H = SET(0b01000000, Reg.H);
+            break;
             case 0xF5:
-                Reg.L = SET(Bit6, Reg.L);
-                return 8;
+            Reg.L = SET(0b01000000, Reg.L);
+            break;
             case 0xF6:
-                emulator.Write(Reg.HL, SET(Bit6, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SET(0b01000000, emulator.Read(Reg.HL)));
+            break;
 
             // SET 7,r
             case 0xFF:
-                Reg.A = SET(Bit7, Reg.A);
-                return 8;
+            Reg.A = SET(0b01000000, Reg.A);
+            break;
             case 0xF8:
-                Reg.B = SET(Bit7, Reg.B);
-                return 8;
+            Reg.B = SET(0b01000000, Reg.B);
+            break;
             case 0xF9:
-                Reg.C = SET(Bit7, Reg.C);
-                return 8;
+            Reg.C = SET(0b01000000, Reg.C);
+            break;
             case 0xFA:
-                Reg.D = SET(Bit7, Reg.D);
-                return 8;
+            Reg.D = SET(0b01000000, Reg.D);
+            break;
             case 0xFB:
-                Reg.E = SET(Bit7, Reg.E);
-                return 8;
+            Reg.E = SET(0b01000000, Reg.E);
+            break;
             case 0xFC:
-                Reg.H = SET(Bit7, Reg.H);
-                return 8;
+            Reg.H = SET(0b01000000, Reg.H);
+            break;
             case 0xFD:
-                Reg.L = SET(Bit7, Reg.L);
-                return 8;
+            Reg.L = SET(0b01000000, Reg.L);
+            break;
             case 0xFE:
-                emulator.Write(Reg.HL, SET(Bit7, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, SET(0b01000000, emulator.Read(Reg.HL)));
+            break;
 
             // RES 0,r
             case 0x87:
-                Reg.A = RES(Bit0, Reg.A);
-                return 8;
+            Reg.A = RES(0b00000001, Reg.A);
+            break;
             case 0x80:
-                Reg.B = RES(Bit0, Reg.B);
-                return 8;
+            Reg.B = RES(0b00000001, Reg.B);
+            break;
             case 0x81:
-                Reg.C = RES(Bit0, Reg.C);
-                return 8;
+            Reg.C = RES(0b00000001, Reg.C);
+            break;
             case 0x82:
-                Reg.D = RES(Bit0, Reg.D);
-                return 8;
+            Reg.D = RES(0b00000001, Reg.D);
+            break;
             case 0x83:
-                Reg.E = RES(Bit0, Reg.E);
-                return 8;
+            Reg.E = RES(0b00000001, Reg.E);
+            break;
             case 0x84:
-                Reg.H = RES(Bit0, Reg.H);
-                return 8;
+            Reg.H = RES(0b00000001, Reg.H);
+            break;
             case 0x85:
-                Reg.L = RES(Bit0, Reg.L);
-                return 8;
+            Reg.L = RES(0b00000001, Reg.L);
+            break;
             case 0x86:
-                emulator.Write(Reg.HL, RES(Bit0, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RES(0b00000001, emulator.Read(Reg.HL)));
+            break;
 
             // RES 1,r
             case 0x8F:
-                Reg.A = RES(Bit1, Reg.A);
-                return 8;
+            Reg.A = RES(0b00000010, Reg.A);
+            break;
             case 0x88:
-                Reg.B = RES(Bit1, Reg.B);
-                return 8;
+            Reg.B = RES(0b00000010, Reg.B);
+            break;
             case 0x89:
-                Reg.C = RES(Bit1, Reg.C);
-                return 8;
+            Reg.C = RES(0b00000010, Reg.C);
+            break;
             case 0x8A:
-                Reg.D = RES(Bit1, Reg.D);
-                return 8;
+            Reg.D = RES(0b00000010, Reg.D);
+            break;
             case 0x8B:
-                Reg.E = RES(Bit1, Reg.E);
-                return 8;
+            Reg.E = RES(0b00000010, Reg.E);
+            break;
             case 0x8C:
-                Reg.H = RES(Bit1, Reg.H);
-                return 8;
+            Reg.H = RES(0b00000010, Reg.H);
+            break;
             case 0x8D:
-                Reg.L = RES(Bit1, Reg.L);
-                return 8;
+            Reg.L = RES(0b00000010, Reg.L);
+            break;
             case 0x8E:
-                emulator.Write(Reg.HL, RES(Bit1, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RES(0b00000010, emulator.Read(Reg.HL)));
+            break;
 
             // RES 2,r
             case 0x97:
-                Reg.A = RES(Bit2, Reg.A);
-                return 8;
+            Reg.A = RES(0b00000100, Reg.A);
+            break;
             case 0x90:
-                Reg.B = RES(Bit2, Reg.B);
-                return 8;
+            Reg.B = RES(0b00000100, Reg.B);
+            break;
             case 0x91:
-                Reg.C = RES(Bit2, Reg.C);
-                return 8;
+            Reg.C = RES(0b00000100, Reg.C);
+            break;
             case 0x92:
-                Reg.D = RES(Bit2, Reg.D);
-                return 8;
+            Reg.D = RES(0b00000100, Reg.D);
+            break;
             case 0x93:
-                Reg.E = RES(Bit2, Reg.E);
-                return 8;
+            Reg.E = RES(0b00000100, Reg.E);
+            break;
             case 0x94:
-                Reg.H = RES(Bit2, Reg.H);
-                return 8;
+            Reg.H = RES(0b00000100, Reg.H);
+            break;
             case 0x95:
-                Reg.L = RES(Bit2, Reg.L);
-                return 8;
+            Reg.L = RES(0b00000100, Reg.L);
+            break;
             case 0x96:
-                emulator.Write(Reg.HL, RES(Bit2, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RES(0b00000100, emulator.Read(Reg.HL)));
+            break;
 
             // RES 3,r
             case 0x9F:
-                Reg.A = RES(Bit3, Reg.A);
-                return 8;
+            Reg.A = RES(0b00001000, Reg.A);
+            break;
             case 0x98:
-                Reg.B = RES(Bit3, Reg.B);
-                return 8;
+            Reg.B = RES(0b00001000, Reg.B);
+            break;
             case 0x99:
-                Reg.C = RES(Bit3, Reg.C);
-                return 8;
+            Reg.C = RES(0b00001000, Reg.C);
+            break;
             case 0x9A:
-                Reg.D = RES(Bit3, Reg.D);
-                return 8;
+            Reg.D = RES(0b00001000, Reg.D);
+            break;
             case 0x9B:
-                Reg.E = RES(Bit3, Reg.E);
-                return 8;
+            Reg.E = RES(0b00001000, Reg.E);
+            break;
             case 0x9C:
-                Reg.H = RES(Bit3, Reg.H);
-                return 8;
+            Reg.H = RES(0b00001000, Reg.H);
+            break;
             case 0x9D:
-                Reg.L = RES(Bit3, Reg.L);
-                return 8;
+            Reg.L = RES(0b00001000, Reg.L);
+            break;
             case 0x9E:
-                emulator.Write(Reg.HL, RES(Bit3, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RES(0b00001000, emulator.Read(Reg.HL)));
+            break;
 
             // RES 4,r
             case 0xA7:
-                Reg.A = RES(Bit4, Reg.A);
-                return 8;
+            Reg.A = RES(0b00010000, Reg.A);
+            break;
             case 0xA0:
-                Reg.B = RES(Bit4, Reg.B);
-                return 8;
+            Reg.B = RES(0b00010000, Reg.B);
+            break;
             case 0xA1:
-                Reg.C = RES(Bit4, Reg.C);
-                return 8;
+            Reg.C = RES(0b00010000, Reg.C);
+            break;
             case 0xA2:
-                Reg.D = RES(Bit4, Reg.D);
-                return 8;
+            Reg.D = RES(0b00010000, Reg.D);
+            break;
             case 0xA3:
-                Reg.E = RES(Bit4, Reg.E);
-                return 8;
+            Reg.E = RES(0b00010000, Reg.E);
+            break;
             case 0xA4:
-                Reg.H = RES(Bit4, Reg.H);
-                return 8;
+            Reg.H = RES(0b00010000, Reg.H);
+            break;
             case 0xA5:
-                Reg.L = RES(Bit4, Reg.L);
-                return 8;
+            Reg.L = RES(0b00010000, Reg.L);
+            break;
             case 0xA6:
-                emulator.Write(Reg.HL, RES(Bit4, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RES(0b00010000, emulator.Read(Reg.HL)));
+            break;
 
             // RES 5,r
             case 0xAF:
-                Reg.A = RES(Bit5, Reg.A);
-                return 8;
+            Reg.A = RES(0b00100000, Reg.A);
+            break;
             case 0xA8:
-                Reg.B = RES(Bit5, Reg.B);
-                return 8;
+            Reg.B = RES(0b00100000, Reg.B);
+            break;
             case 0xA9:
-                Reg.C = RES(Bit5, Reg.C);
-                return 8;
+            Reg.C = RES(0b00100000, Reg.C);
+            break;
             case 0xAA:
-                Reg.D = RES(Bit5, Reg.D);
-                return 8;
+            Reg.D = RES(0b00100000, Reg.D);
+            break;
             case 0xAB:
-                Reg.E = RES(Bit5, Reg.E);
-                return 8;
+            Reg.E = RES(0b00100000, Reg.E);
+            break;
             case 0xAC:
-                Reg.H = RES(Bit5, Reg.H);
-                return 8;
+            Reg.H = RES(0b00100000, Reg.H);
+            break;
             case 0xAD:
-                Reg.L = RES(Bit5, Reg.L);
-                return 8;
+            Reg.L = RES(0b00100000, Reg.L);
+            break;
             case 0xAE:
-                emulator.Write(Reg.HL, RES(Bit5, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RES(0b00100000, emulator.Read(Reg.HL)));
+            break;
 
             // RES 6,r
             case 0xB7:
-                Reg.A = RES(Bit6, Reg.A);
-                return 8;
+            Reg.A = RES(0b01000000, Reg.A);
+            break;
             case 0xB0:
-                Reg.B = RES(Bit6, Reg.B);
-                return 8;
+            Reg.B = RES(0b01000000, Reg.B);
+            break;
             case 0xB1:
-                Reg.C = RES(Bit6, Reg.C);
-                return 8;
+            Reg.C = RES(0b01000000, Reg.C);
+            break;
             case 0xB2:
-                Reg.D = RES(Bit6, Reg.D);
-                return 8;
+            Reg.D = RES(0b01000000, Reg.D);
+            break;
             case 0xB3:
-                Reg.E = RES(Bit6, Reg.E);
-                return 8;
+            Reg.E = RES(0b01000000, Reg.E);
+            break;
             case 0xB4:
-                Reg.H = RES(Bit6, Reg.H);
-                return 8;
+            Reg.H = RES(0b01000000, Reg.H);
+            break;
             case 0xB5:
-                Reg.L = RES(Bit6, Reg.L);
-                return 8;
+            Reg.L = RES(0b01000000, Reg.L);
+            break;
             case 0xB6:
-                emulator.Write(Reg.HL, RES(Bit6, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RES(0b01000000, emulator.Read(Reg.HL)));
+            break;
 
             // RES 7,r
             case 0xBF:
-                Reg.A = RES(Bit7, Reg.A);
-                return 8;
+            Reg.A = RES(0b01000000, Reg.A);
+            break;
             case 0xB8:
-                Reg.B = RES(Bit7, Reg.B);
-                return 8;
+            Reg.B = RES(0b01000000, Reg.B);
+            break;
             case 0xB9:
-                Reg.C = RES(Bit7, Reg.C);
-                return 8;
+            Reg.C = RES(0b01000000, Reg.C);
+            break;
             case 0xBA:
-                Reg.D = RES(Bit7, Reg.D);
-                return 8;
+            Reg.D = RES(0b01000000, Reg.D);
+            break;
             case 0xBB:
-                Reg.E = RES(Bit7, Reg.E);
-                return 8;
+            Reg.E = RES(0b01000000, Reg.E);
+            break;
             case 0xBC:
-                Reg.H = RES(Bit7, Reg.H);
-                return 8;
+            Reg.H = RES(0b01000000, Reg.H);
+            break;
             case 0xBD:
-                Reg.L = RES(Bit7, Reg.L);
-                return 8;
+            Reg.L = RES(0b01000000, Reg.L);
+            break;
             case 0xBE:
-                emulator.Write(Reg.HL, RES(Bit7, emulator.Read(Reg.HL)));
-                return 16;
+            emulator.Write(Reg.HL, RES(0b01000000, emulator.Read(Reg.HL)));
+            break;
             default:
 
-                #endregion
+            #endregion
         }
+
+        return cbTimes[Opcode];
     }
 
     public void Push(ushort data)
@@ -1808,12 +1937,12 @@ public class Cpu
         return low.Combine(high);
     }
 
-    byte NextByte()
+    private byte NextByte()
     {
         return emulator.Read(Reg.PC++);
     }
 
-    ushort NextShort()
+    private ushort NextShort()
     {
         byte low = NextByte();
         byte high = NextByte();
@@ -1822,7 +1951,7 @@ public class Cpu
 
     #region 8-Bit ALU
 
-    void ADD(byte n)
+    private void ADD(byte n)
     {
         int result = Reg.A + n;
 
@@ -1834,7 +1963,7 @@ public class Cpu
         Reg.A = (byte)result;
     }
 
-    void ADC(byte n)
+    private void ADC(byte n)
     {
         int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
         int result = Reg.A + n + carry;
@@ -1854,7 +1983,7 @@ public class Cpu
         Reg.A = (byte)result;
     }
 
-    void SUB(byte n)
+    private void SUB(byte n)
     {
         int result = Reg.A - n;
 
@@ -1866,7 +1995,7 @@ public class Cpu
         Reg.A = (byte)result;
     }
 
-    void SBC(byte n)
+    private void SBC(byte n)
     {
         int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
         int result = Reg.A - n - carry;
@@ -1879,7 +2008,7 @@ public class Cpu
         Reg.A = (byte)result;
     }
 
-    void AND(byte n)
+    private void AND(byte n)
     {
         byte result = (byte)(Reg.A & n);
 
@@ -1891,7 +2020,7 @@ public class Cpu
         Reg.A = result;
     }
 
-    void OR(byte n)
+    private void OR(byte n)
     {
         byte result = (byte)(Reg.A | n);
 
@@ -1903,7 +2032,7 @@ public class Cpu
         Reg.A = result;
     }
 
-    void XOR(byte n)
+    private void XOR(byte n)
     {
         byte result = (byte)(Reg.A ^ n);
 
@@ -1915,7 +2044,7 @@ public class Cpu
         Reg.A = result;
     }
 
-    void CP(byte n)
+    private void CP(byte n)
     {
         int result = Reg.A - n;
 
@@ -1925,7 +2054,7 @@ public class Cpu
         Reg.SetFlag(Flag.C, (result >> 8) != 0);
     }
 
-    byte INC(byte n)
+    private byte INC(byte n)
     {
         int result = n + 1;
 
@@ -1936,7 +2065,7 @@ public class Cpu
         return (byte)result;
     }
 
-    byte DEC(byte n)
+    private byte DEC(byte n)
     {
         int result = n - 1;
 
@@ -1950,7 +2079,7 @@ public class Cpu
     #endregion
 
     #region 16-Bit Arithmetic
-    void ADD(ushort nn)
+    private void ADD(ushort nn)
     {
         int result = Reg.HL + nn;
 
@@ -1961,7 +2090,7 @@ public class Cpu
         Reg.HL = (ushort)result;
     }
 
-    ushort ADDS(ushort nn)
+    private ushort ADDS(ushort nn)
     {
         byte n = NextByte();
 
@@ -1977,7 +2106,7 @@ public class Cpu
 
     #region Miscellaneous
 
-    void CPL()
+    private void CPL()
     {
         Reg.A = (byte)~Reg.A;
 
@@ -1985,21 +2114,21 @@ public class Cpu
         Reg.SetFlag(Flag.H, true);
     }
 
-    void SCF()
+    private void SCF()
     {
         Reg.SetFlag(Flag.N, false);
         Reg.SetFlag(Flag.H, false);
         Reg.SetFlag(Flag.C, true);
     }
 
-    void CCF()
+    private void CCF()
     {
         Reg.SetFlag(Flag.N, false);
         Reg.SetFlag(Flag.H, false);
         Reg.SetFlag(Flag.C, !Reg.GetFlag(Flag.C));
     }
 
-    byte SWAP(byte n)
+    private byte SWAP(byte n)
     {
         byte result = (byte)(((n & 0xF0) >> 4) | ((n & 0x0F) << 4));
 
@@ -2011,7 +2140,7 @@ public class Cpu
         return result;
     }
 
-    void DAA()
+    private void DAA()
     {
         if (Reg.GetFlag(Flag.N))
         {
@@ -2046,7 +2175,7 @@ public class Cpu
 
     #region Rotates & Shifts
 
-    void RLCA()
+    private void RLCA()
     {
         Reg.SetFlag(Flag.Z, false);
         Reg.SetFlag(Flag.N, false);
@@ -2056,7 +2185,7 @@ public class Cpu
         Reg.A = (byte)((Reg.A << 1) | (Reg.A >> 7));
     }
 
-    void RLA()
+    private void RLA()
     {
         int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
 
@@ -2068,7 +2197,7 @@ public class Cpu
         Reg.A = (byte)((Reg.A << 1) | carry);
     }
 
-    void RRCA()
+    private void RRCA()
     {
         Reg.SetFlag(Flag.Z, false);
         Reg.SetFlag(Flag.N, false);
@@ -2078,7 +2207,7 @@ public class Cpu
         Reg.A = (byte)((Reg.A >> 1) | (Reg.A << 7));
     }
 
-    void RRA()
+    private void RRA()
     {
         int carry = Reg.GetFlag(Flag.C) ? 0b10000000 : 0;
 
@@ -2090,7 +2219,7 @@ public class Cpu
         Reg.A = (byte)((Reg.A >> 1) | carry);
     }
 
-    byte RLC(byte n)
+    private byte RLC(byte n)
     {
         byte result = (byte)((n << 1) | (n >> 7));
 
@@ -2102,7 +2231,7 @@ public class Cpu
         return result;
     }
 
-    byte RL(byte n)
+    private byte RL(byte n)
     {
         int carry = Reg.GetFlag(Flag.C) ? 1 : 0;
         byte result = (byte)((n << 1) | carry);
@@ -2115,7 +2244,7 @@ public class Cpu
         return result;
     }
 
-    byte RRC(byte n)
+    private byte RRC(byte n)
     {
         byte result = (byte)((n >> 1) | (n << 7));
 
@@ -2127,7 +2256,7 @@ public class Cpu
         return result;
     }
 
-    byte RR(byte n)
+    private byte RR(byte n)
     {
         int carry = Reg.GetFlag(Flag.C) ? 0b10000000 : 0;
         byte result = (byte)((n >> 1) | carry);
@@ -2140,7 +2269,7 @@ public class Cpu
         return result;
     }
 
-    byte SLA(byte n)
+    private byte SLA(byte n)
     {
         byte result = (byte)(n << 1);
         Reg.SetFlag(Flag.Z, result == 0);
@@ -2150,7 +2279,7 @@ public class Cpu
         return result;
     }
 
-    byte SRA(byte n)
+    private byte SRA(byte n)
     {
         byte result = (byte)((n >> 1) | (n & 0b10000000));
 
@@ -2162,7 +2291,7 @@ public class Cpu
         return result;
     }
 
-    byte SRL(byte n)
+    private byte SRL(byte n)
     {
         byte result = (byte)(n >> 1);
 
@@ -2178,19 +2307,19 @@ public class Cpu
 
     #region Bit Opcodes
 
-    void BIT(byte bit, byte r)
+    private void BIT(byte bit, byte r)
     {
         Reg.SetFlag(Flag.Z, (r & bit) == 0);
         Reg.SetFlag(Flag.N, false);
         Reg.SetFlag(Flag.H, true);
     }
 
-    static byte SET(byte bit, byte r)
+    private static byte SET(byte bit, byte r)
     {
         return (byte)(r | bit);
     }
 
-    static byte RES(byte bit, byte r)
+    private static byte RES(byte bit, byte r)
     {
         return (byte)(r & ~bit);
     }
@@ -2199,37 +2328,33 @@ public class Cpu
 
     #region Jumps
 
-    void JP(ushort nn)
+    private void JP(ushort nn)
     {
         Reg.PC = nn;
     }
 
-    byte JP(bool condition)
+    private void JP(bool condition)
     {
         if (condition)
         {
             Reg.PC = emulator.ReadShort(Reg.PC);
-            return 16;
         }
         else
         {
             Reg.PC += 2;
-            return 12;
         }
     }
 
-    byte JR(bool condition)
+    private void JR(bool condition)
     {
         if (condition)
         {
             JP((ushort)(Reg.PC + (sbyte)emulator.Read(Reg.PC)));
             Reg.PC += 1;
-            return 12;
         }
         else
         {
             Reg.PC += 1;
-            return 8;
         }
     }
 
@@ -2237,34 +2362,27 @@ public class Cpu
 
     #region Calls
 
-    public byte CALL(bool condition)
+    public void CALL(bool condition)
     {
         if (condition)
         {
             Push((ushort)(Reg.PC + 2));
             JP(emulator.ReadShort(Reg.PC));
-            return 12;
         }
         else
         {
             Reg.PC += 2;
-            return 8;
         }
     }
 
     #endregion
 
     #region Returns
-    byte RET(bool condition)
+    private void RET(bool condition)
     {
         if (condition)
         {
             Reg.PC = Pop();
-            return 20;
-        }
-        else
-        {
-            return 8;
         }
     }
 
@@ -2272,7 +2390,7 @@ public class Cpu
 
     #region Restarts
 
-    void RST(byte n)
+    private void RST(byte n)
     {
         Push(Reg.PC);
         Reg.PC = n;
@@ -2282,7 +2400,7 @@ public class Cpu
 
     internal void Reset()
     {
-        halted = false;
-        haltBug = false;
+        Halted = false;
+        HaltBug = false;
     }
 }

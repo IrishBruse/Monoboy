@@ -165,10 +165,10 @@ public class Ppu
         }
     }
 
-    const int ScanLineCycles = 456;
-    const int HBlankCycles = 204;
-    const int OamCycles = 80;
-    const int VRamCycles = 172;
+    const int ScanLineCycles = 456 / 4;
+    const int HBlankCycles = 204 / 4;
+    const int OamCycles = 80 / 4;
+    const int VRamCycles = 172 / 4;
 
     public int cycles;
 
@@ -199,69 +199,69 @@ public class Ppu
         switch (StatMode)
         {
             case Mode.Hblank:
-                if (cycles >= HBlankCycles)
-                {
-                    cycles -= HBlankCycles;
-                    LY++;
+            if (cycles >= HBlankCycles)
+            {
+                cycles -= HBlankCycles;
+                LY++;
 
-                    if (LY == Emulator.WindowHeight)
-                    {
-                        HandleModeChange(Mode.Vblank);
-                        emulator.interrupt.RequestInterrupt(InterruptFlag.VBlank);
-                        DrawFrame?.Invoke();
-                    }
-                    else
-                    {
-                        HandleModeChange(Mode.OAM);
-                    }
+                if (LY == Emulator.WindowHeight)
+                {
+                    HandleModeChange(Mode.Vblank);
+                    emulator.interrupt.RequestInterrupt(InterruptFlag.VBlank);
+                    DrawFrame?.Invoke();
                 }
-                break;
+                else
+                {
+                    HandleModeChange(Mode.OAM);
+                }
+            }
+            break;
 
             case Mode.Vblank:
-                if (cycles >= ScanLineCycles)
-                {
-                    cycles -= ScanLineCycles;
-                    LY++;
+            if (cycles >= ScanLineCycles)
+            {
+                cycles -= ScanLineCycles;
+                LY++;
 
-                    if (LY == 154)
-                    {
-                        HandleModeChange(Mode.OAM);
-                        LY = 0;
-                    }
+                if (LY == 154)
+                {
+                    HandleModeChange(Mode.OAM);
+                    LY = 0;
                 }
-                break;
+            }
+            break;
 
             case Mode.OAM:
-                if (cycles >= OamCycles)
-                {
-                    cycles -= OamCycles;
-                    HandleModeChange(Mode.VRAM);
-                }
-                break;
+            if (cycles >= OamCycles)
+            {
+                cycles -= OamCycles;
+                HandleModeChange(Mode.VRAM);
+            }
+            break;
 
             case Mode.VRAM:
-                if (cycles >= VRamCycles)
-                {
-                    cycles -= VRamCycles;
-                    DrawScanline();
-                    HandleModeChange(Mode.Hblank);
-                }
-                break;
+            if (cycles >= VRamCycles)
+            {
+                cycles -= VRamCycles;
+                DrawScanline();
+                HandleModeChange(Mode.Hblank);
+            }
+            break;
             default:
-                break;
+            break;
         }
 
         if (LY == LYC)
         {
-            Stat.SetBit(Bit.Bit2, true);
-            if (Stat.GetBit(Bit.Bit6))
+            Stat.SetBit(0b00000100, true);
+            if (Stat.GetBit(0b01000000))
             {
                 emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
             }
         }
         else
         {
-            Stat.SetBit(Bit.Bit2, false);
+            Stat.SetBit(0b00000100, false);
         }
     }
 
@@ -274,15 +274,15 @@ public class Ppu
     {
         StatMode = newMode;
 
-        if (newMode == 2 && Stat.GetBit(Bit.Bit5))
+        if (newMode == 2 && Stat.GetBit(0b00100000))
         {
             emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
         }
-        else if (newMode == 0 && Stat.GetBit(Bit.Bit3))
+        else if (newMode == 0 && Stat.GetBit(0b00001000))
         {
             emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
         }
-        else if (newMode == 1 && Stat.GetBit(Bit.Bit4))
+        else if (newMode == 1 && Stat.GetBit(0b00010000))
         {
             emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
         }
@@ -388,11 +388,11 @@ public class Ppu
             int x = emulator.Read((ushort)(offset + 1)) - 8;
             byte tileID = emulator.Read((ushort)(offset + 2));
             byte flags = emulator.Read((ushort)(offset + 3));
-            byte obp = flags.GetBit(Bit.Bit4) ? OBP1 : OBP0;
+            byte obp = flags.GetBit(0b00010000) ? OBP1 : OBP0;
 
-            bool mirrorX = flags.GetBit(Bit.Bit5);
-            bool mirrorY = flags.GetBit(Bit.Bit6);
-            bool aboveBG = flags.GetBit(Bit.Bit7);
+            bool mirrorX = flags.GetBit(0b00100000);
+            bool mirrorY = flags.GetBit(0b01000000);
+            bool aboveBG = flags.GetBit(0b10000000);
 
             if (LY >= y && LY < y + spriteSize)
             {

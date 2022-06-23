@@ -2,12 +2,12 @@
 
 public static class LCDCBit
 {
-    public const byte LCDEnabled = Bit.Bit7;
-    public const byte WindowTilemap = Bit.Bit6;
-    public const byte WindowEnabled = Bit.Bit5;
-    public const byte Tileset = Bit.Bit4;
-    public const byte Tilemap = Bit.Bit3;
-    public const byte SpritesSize = Bit.Bit2;
-    public const byte SpritesEnabled = Bit.Bit1;
-    public const byte BackgroundEnabled = Bit.Bit0;
+    public const byte LCDEnabled = 0b10000000;
+    public const byte WindowTilemap = 0b01000000;
+    public const byte WindowEnabled = 0b00100000;
+    public const byte Tileset = 0b00010000;
+    public const byte Tilemap = 0b00001000;
+    public const byte SpritesSize = 0b00000100;
+    public const byte SpritesEnabled = 0b00000010;
+    public const byte BackgroundEnabled = 0b00000001;
 }

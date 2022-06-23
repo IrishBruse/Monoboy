@@ -54,12 +54,12 @@ public class Interrupt
         {
             if ((IE & IF & 0b11111) == 0)
             {
-                emulator.cpu.halted = true;
+                emulator.cpu.Halted = true;
                 emulator.register.PC--;
             }
             else
             {
-                emulator.cpu.haltBug = true;
+                emulator.cpu.HaltBug = true;
             }
         }
     }
@@ -75,10 +75,10 @@ public class Interrupt
         {
             if ((((IE & IF) >> i) & 0x1) == 1)
             {
-                if (emulator.cpu.halted == true)
+                if (emulator.cpu.Halted == true)
                 {
                     emulator.register.PC++;
-                    emulator.cpu.halted = false;
+                    emulator.cpu.Halted = false;
                 }
                 if (IME)
                 {

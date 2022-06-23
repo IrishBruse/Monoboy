@@ -4,37 +4,29 @@ using System.IO;
 
 public class MemoryBankController1 : IMemoryBankController
 {
-    public byte[] rom;
-    public byte[] ram = new byte[0x8000];
+    public byte[] Rom { get; set; }
 
-    public byte romBank = 1;
-    public byte ramBank;
-    public bool ramEnabled;
-
-    BankingMode bankingMode = BankingMode.Rom;
+    private byte[] ram = new byte[0x8000];
+    private byte romBank = 1;
+    private byte ramBank;
+    private bool ramEnabled;
+    private BankingMode bankingMode = BankingMode.Rom;
 
     public byte ReadBank00(ushort address)
     {
-        return rom[address];
+        return Rom[address];
     }
 
     public byte ReadBankNN(ushort address)
     {
         int offset = (0x4000 * romBank) + (address & 0x3FFF);
 
-        return rom[offset];
+        return Rom[offset];
     }
 
     public byte ReadRam(ushort address)
     {
-        if (ramEnabled)
-        {
-            return ram[(0x2000 * ramBank) + (address & 0x1FFF)];
-        }
-        else
-        {
-            return 0xff;
-        }
+        return ramEnabled ? ram[(0x2000 * ramBank) + (address & 0x1FFF)] : (byte)0xff;
     }
 
     public void WriteRam(ushort address, byte data)
@@ -97,13 +89,13 @@ public class MemoryBankController1 : IMemoryBankController
             }
             break;
             default:
-                break;
+            break;
         }
     }
 
     public void Load(string path)
     {
-        rom = File.ReadAllBytes(path);
+        Rom = File.ReadAllBytes(path);
 
         string save = path.Replace(".gb", ".sav", true, null);
 
@@ -123,7 +115,7 @@ public class MemoryBankController1 : IMemoryBankController
         this.ram = ram;
     }
 
-    enum BankingMode
+    private enum BankingMode
     {
         Rom,
         Ram,

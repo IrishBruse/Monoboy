@@ -2,16 +2,15 @@
 
 public class MemoryBankController6 : IMemoryBankController
 {
-    public byte[] rom;
-    public byte[] ram = new byte[32768];
+    public byte[] Rom { get; set; }
 
-    public byte romBank = 1;
-    public byte ramBank;
-    public bool ramEnabled;
+    private byte romBank = 1;
+    private byte ramBank;
+    private bool ramEnabled;
 
     public byte ReadBank00(ushort address)
     {
-        return rom[address];
+        return Rom[address];
     }
 
     public byte[] GetRam()
@@ -49,7 +48,7 @@ public class MemoryBankController6 : IMemoryBankController
         throw new System.NotImplementedException();
     }
 
-    enum BankingMode
+    private enum BankingMode
     {
         Rom,
         Ram,

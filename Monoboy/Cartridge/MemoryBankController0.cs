@@ -1,5 +1,6 @@
 ﻿namespace Monoboy.Cartridge;
 
+using System;
 using System.IO;
 
 public class MemoryBankController0 : IMemoryBankController
@@ -31,17 +32,13 @@ public class MemoryBankController0 : IMemoryBankController
         // Ignore
     }
 
-    public void Load(string path)
-    {
-        Rom = File.ReadAllBytes(path);
-    }
-
     public byte[] GetRam()
     {
-        return null;
+        return Array.Empty<byte>();
     }
 
     public void SetRam(byte[] ram)
     {
+
     }
 }

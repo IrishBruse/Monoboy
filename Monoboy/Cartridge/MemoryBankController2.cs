@@ -4,33 +4,26 @@ using System.IO;
 
 public class MemoryBankController2 : IMemoryBankController
 {
-    public byte[] rom;
-    public byte[] ram = new byte[512];
+    public byte[] Rom { get; set; }
+    private byte[] ram = new byte[512];
 
-    public byte romBank = 1;
-    public bool ramEnabled;
+    private byte romBank = 1;
+    private bool ramEnabled;
 
     public byte ReadBank00(ushort address)
     {
-        return rom[address];
+        return Rom[address];
     }
 
     public byte ReadBankNN(ushort address)
     {
-        int offset = 0x4000 * romBank + (address & 0x3FFF);
-        return rom[offset];
+        int offset = (0x4000 * romBank) + (address & 0x3FFF);
+        return Rom[offset];
     }
 
     public byte ReadRam(ushort address)
     {
-        if (ramEnabled)
-        {
-            return ram[address & 0x1FFF];
-        }
-        else
-        {
-            return 0xff;
-        }
+        return ramEnabled ? ram[address & 0x1FFF] : (byte)0xff;
     }
 
     public void WriteBank(ushort address, byte data)
@@ -48,7 +41,7 @@ public class MemoryBankController2 : IMemoryBankController
             }
             break;
             default:
-                break;
+            break;
         }
     }
 
@@ -62,7 +55,7 @@ public class MemoryBankController2 : IMemoryBankController
 
     public void Load(string path)
     {
-        rom = File.ReadAllBytes(path);
+        Rom = File.ReadAllBytes(path);
 
         string save = path.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
 

@@ -3,12 +3,11 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Raylib-cs" Version="4.0.0.1" />
+        <PackageReference Include="Silk.NET" Version="2.15.0" />
         <ProjectReference Include="..\Monoboy\Monoboy.csproj" />
     </ItemGroup>
 

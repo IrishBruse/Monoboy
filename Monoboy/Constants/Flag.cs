@@ -2,8 +2,8 @@
 
 public static class Flag
 {
-    public const byte Z = Bit.Bit7;
-    public const byte N = Bit.Bit6;
-    public const byte H = Bit.Bit5;
-    public const byte C = Bit.Bit4;
+    public const byte Z = 0b10000000;
+    public const byte N = 0b01000000;
+    public const byte H = 0b00100000;
+    public const byte C = 0b00010000;
 }

@@ -29,11 +29,11 @@ public class Joypad
         set
         {
             joyp = value;
-            if (value.GetBit(Bit.Bit4) == false)
+            if (value.GetBit(0b00010000) == false)
             {
                 readPad = true;
             }
-            if (value.GetBit(Bit.Bit5) == false)
+            if (value.GetBit(0b00100000) == false)
             {
                 readPad = false;
             }

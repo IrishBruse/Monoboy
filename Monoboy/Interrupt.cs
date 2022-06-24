@@ -4,62 +4,39 @@ using Monoboy.Utility;
 
 public class Interrupt
 {
-    readonly Emulator emulator;
-    bool IME;// Master interupt enabled
-    bool IMEDelay;// Master interupt enabled delay
+    private readonly Emulator emulator;
+    private readonly Register register;
+    public byte IE { get => emulator.Read(0xFFFF); set => emulator.Write(0xFFFF, value); }
+    public byte IF { get => emulator.Read(0xFF0F); set => emulator.Write(0xFF0F, value); }
 
-    public byte IE
-    {
-        get
-        {
-            return emulator.Read(0xFFFF);
-        }
-
-        set
-        {
-            emulator.Write(0xFFFF, value);
-        }
-    }
-    public byte IF
-    {
-        get
-        {
-            return emulator.Read(0xFF0F);
-        }
-
-        set
-        {
-            emulator.Write(0xFF0F, value);
-        }
-    }
-
-    public Interrupt(Emulator emulator)
+    public Interrupt(Emulator emulator, Register register)
     {
         this.emulator = emulator;
+        this.register = register;
     }
 
     public void Disable()
     {
-        IME = false;
+        emulator.Ime = false;
     }
 
     public void Enable()
     {
-        IMEDelay = true;
+        emulator.ImeDelay = true;
     }
 
     public void Halt()
     {
-        if (IME == false)
+        if (emulator.Ime == false)
         {
-            if ((IE & IF & 0b11111) == 0)
+            if ((emulator.Read(NamedMemory.IE) & emulator.Read(NamedMemory.IF) & 0b11111) == 0)
             {
-                emulator.cpu.Halted = true;
-                emulator.register.PC--;
+                emulator.Halted = true;
+                register.PC--;
             }
             else
             {
-                emulator.cpu.HaltBug = true;
+                emulator.HaltBug = true;
             }
         }
     }
@@ -75,28 +52,28 @@ public class Interrupt
         {
             if ((((IE & IF) >> i) & 0x1) == 1)
             {
-                if (emulator.cpu.Halted == true)
+                if (emulator.Halted)
                 {
-                    emulator.register.PC++;
-                    emulator.cpu.Halted = false;
+                    register.PC++;
+                    emulator.Halted = false;
                 }
-                if (IME)
+                if (emulator.Ime)
                 {
-                    emulator.cpu.Push(emulator.register.PC);
-                    emulator.register.PC = (ushort)(64 + (8 * i));
-                    IME = false;
+                    emulator.Push(register.PC);
+                    register.PC = (ushort)(64 + (8 * i));
+                    emulator.Ime = false;
                     IF = IF.SetBit((byte)(0b1 << i), false);
                 }
             }
         }
 
-        IME |= IMEDelay;
-        IMEDelay = false;
+        emulator.Ime |= emulator.ImeDelay;
+        emulator.ImeDelay = false;
     }
 
     internal void Reset()
     {
-        IME = false;
-        IMEDelay = false;
+        emulator.Ime = false;
+        emulator.ImeDelay = false;
     }
 }

@@ -5,26 +5,19 @@ using Monoboy.Utility;
 
 public class Joypad
 {
-    bool readPad;
+    private bool readPad;
 
-    public byte buttonState;
-    public byte padState;
-    readonly Emulator emulator;
+    byte buttonState;
+    byte padState;
+    private byte joyp = 0b110000;
+    private readonly Interrupt interrupt;
 
-    byte joyp = 0b110000;
     public byte JOYP
     {
         get
         {
             byte result = (byte)(joyp & 0b110000);
-            if (readPad)
-            {
-                return (byte)(result | (~padState & 0b1111));
-            }
-            else
-            {
-                return (byte)(result | (~buttonState & 0b1111));
-            }
+            return readPad ? (byte)(result | (~padState & 0b1111)) : (byte)(result | (~buttonState & 0b1111));
         }
         set
         {
@@ -40,9 +33,9 @@ public class Joypad
         }
     }
 
-    public Joypad(Emulator emulator)
+    public Joypad(Interrupt interrupt)
     {
-        this.emulator = emulator;
+        this.interrupt = interrupt;
     }
 
     public void SetButton(Button button, bool state)
@@ -56,7 +49,7 @@ public class Joypad
             if (state)
             {
                 buttonState |= key;
-                emulator.interrupt.RequestInterrupt(InterruptFlag.Joypad);
+                interrupt.RequestInterrupt(InterruptFlag.Joypad);
             }
             else
             {
@@ -68,7 +61,7 @@ public class Joypad
             if (state)
             {
                 padState |= key;
-                emulator.interrupt.RequestInterrupt(InterruptFlag.Joypad);
+                interrupt.RequestInterrupt(InterruptFlag.Joypad);
             }
             else
             {

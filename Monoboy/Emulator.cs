@@ -8,7 +8,7 @@ using Monoboy.Cartridge;
 public class Emulator
 {
     public const int CpuCyclesPerSecond = 1048576;
-    public const int CyclesPerFrame = 17476;
+    public const int CyclesPerFrame = 17556;
     public const byte WindowWidth = 160;
     public const byte WindowHeight = 144;
 
@@ -27,6 +27,13 @@ public class Emulator
     private readonly Joypad joypad;
     private readonly Timer timer;
 
+    // CPU
+    public bool Halted { get; set; }
+    public bool HaltBug { get; set; }
+
+    // Interupt
+    public bool Ime { get; set; } // Master interupt enabled
+    public bool ImeDelay { get; set; } // Master interupt enabled delay
 
     public long Cycles { get; set; }
 
@@ -34,12 +41,12 @@ public class Emulator
     {
         register = new Register();
         memory = new Memory();
+        interrupt = new Interrupt(this, register);
 
-        timer = new Timer(this);
-        cpu = new Cpu(this);
-        ppu = new Ppu(this);
-        joypad = new Joypad(this);
-        interrupt = new Interrupt(this);
+        cpu = new Cpu(register, this, interrupt);
+        timer = new Timer(memory, interrupt);
+        ppu = new Ppu(memory, interrupt, this);
+        joypad = new Joypad(interrupt);
 
         Reset();
     }
@@ -63,7 +70,7 @@ public class Emulator
         return ticks;
     }
 
-    public void Update()
+    public void StepFrame()
     {
         while (Cycles < CyclesPerFrame)
         {

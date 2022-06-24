@@ -7,179 +7,35 @@ using Monoboy.Utility;
 
 public class Ppu
 {
-    public byte[] VideoRam
+    public byte LCDC { get => memory.io[0x0040]; set => memory.io[0x0040] = value; }
+    public byte Stat { get => memory.io[0x0041]; set => memory.io[0x0041] = value; }
+    public byte StatMode { get => memory.io[0x0041].GetBits(0b00000011); set => memory.io[0x0041] = memory.io[0x0041].SetBits(0b00000011, value); }
+    public byte SCY { get => memory.io[0x0042]; set => memory.io[0x0042] = value; }
+    public byte SCX { get => memory.io[0x0043]; set => memory.io[0x0043] = value; }
+    public byte WX { get => (byte)(memory.io[0x004B] - 7); set => memory.io[0x004B] = value; }
+    public byte WY { get => memory.io[0x004A]; set => memory.io[0x004A] = value; }
+    public byte LY { get => memory.io[0x0044]; set => memory.io[0x0044] = value; }
+    public byte LYC { get => memory.io[0x0045]; set => memory.io[0x0045] = value; }
+    public byte BGP { get => memory.io[0x0047]; set => memory.io[0x0047] = value; }
+    public byte OBP0 { get => memory.io[0x0048]; set => memory.io[0x0048] = value; }
+    public byte OBP1 { get => memory.io[0x0049]; set => memory.io[0x0049] = value; }
+
+    private Memory memory;
+    private Interrupt interrupt;
+
+    private const int ScanLineCycles = 114;
+    private const int HBlankCycles = 51;
+    private const int OamCycles = 20;
+    private const int VRamCycles = 43;
+    private int cycles;
+    private readonly Emulator emulator;
+    private byte[,] framebuffer;
+    private Action DrawFrame;
+
+    public Ppu(Memory memory, Interrupt interrupt, Emulator emulator)
     {
-        get
-        {
-            return emulator.memory.vram;
-        }
-
-        set
-        {
-            emulator.memory.vram = value;
-        }
-    }
-
-    public byte LCDC
-    {
-        get
-        {
-            return emulator.memory.io[0x0040];
-        }
-
-        set
-        {
-            emulator.memory.io[0x0040] = value;
-        }
-    }
-    public byte Stat
-    {
-        get
-        {
-            return emulator.memory.io[0x0041];
-        }
-
-        set
-        {
-            emulator.memory.io[0x0041] = value;
-        }
-    }
-    public byte StatMode
-    {
-        get
-        {
-            return emulator.memory.io[0x0041].GetBits(0b00000011);
-        }
-
-        set
-        {
-            emulator.memory.io[0x0041] = emulator.memory.io[0x0041].SetBits(0b00000011, value);
-        }
-    }
-    public byte SCY
-    {
-        get
-        {
-            return emulator.memory.io[0x0042];
-        }
-
-        set
-        {
-            emulator.memory.io[0x0042] = value;
-        }
-    }
-    public byte SCX
-    {
-        get
-        {
-            return emulator.memory.io[0x0043];
-        }
-
-        set
-        {
-            emulator.memory.io[0x0043] = value;
-        }
-    }
-    public byte WX
-    {
-        get
-        {
-            return (byte)(emulator.memory.io[0x004B] - 7);
-        }
-
-        set
-        {
-            emulator.memory.io[0x004B] = value;
-        }
-    }
-    public byte WY
-    {
-        get
-        {
-            return emulator.memory.io[0x004A];
-        }
-
-        set
-        {
-            emulator.memory.io[0x004A] = value;
-        }
-    }
-    public byte LY
-    {
-        get
-        {
-            return emulator.memory.io[0x0044];
-        }
-
-        set
-        {
-            emulator.memory.io[0x0044] = value;
-        }
-    }
-    public byte LYC
-    {
-        get
-        {
-            return emulator.memory.io[0x0045];
-        }
-
-        set
-        {
-            emulator.memory.io[0x0045] = value;
-        }
-    }
-    public byte BGP
-    {
-        get
-        {
-            return emulator.memory.io[0x0047];
-        }
-
-        set
-        {
-            emulator.memory.io[0x0047] = value;
-        }
-    }
-    public byte OBP0
-    {
-        get
-        {
-            return emulator.memory.io[0x0048];
-        }
-
-        set
-        {
-            emulator.memory.io[0x0048] = value;
-        }
-    }
-    public byte OBP1
-    {
-        get
-        {
-            return emulator.memory.io[0x0049];
-        }
-
-        set
-        {
-            emulator.memory.io[0x0049] = value;
-        }
-    }
-
-    const int ScanLineCycles = 456 / 4;
-    const int HBlankCycles = 204 / 4;
-    const int OamCycles = 80 / 4;
-    const int VRamCycles = 172 / 4;
-
-    public int cycles;
-
-    readonly Emulator emulator;
-
-    public byte[,] framebuffer;
-
-    public Action DrawFrame;
-
-    public Ppu(Emulator emulator)
-    {
+        this.memory = memory;
+        this.interrupt = interrupt;
         this.emulator = emulator;
         framebuffer = new byte[Emulator.WindowWidth, Emulator.WindowHeight];
     }
@@ -207,7 +63,7 @@ public class Ppu
                 if (LY == Emulator.WindowHeight)
                 {
                     HandleModeChange(Mode.Vblank);
-                    emulator.interrupt.RequestInterrupt(InterruptFlag.VBlank);
+                    interrupt.RequestInterrupt(InterruptFlag.VBlank);
                     DrawFrame?.Invoke();
                 }
                 else
@@ -253,15 +109,15 @@ public class Ppu
 
         if (LY == LYC)
         {
-            Stat.SetBit(0b00000100, true);
+            _ = Stat.SetBit(0b00000100, true);
             if (Stat.GetBit(0b01000000))
             {
-                emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
+                interrupt.RequestInterrupt(InterruptFlag.LCDStat);
             }
         }
         else
         {
-            Stat.SetBit(0b00000100, false);
+            _ = Stat.SetBit(0b00000100, false);
         }
     }
 
@@ -270,26 +126,25 @@ public class Ppu
         cycles = 0;
     }
 
-    void HandleModeChange(byte newMode)
+    private void HandleModeChange(byte newMode)
     {
         StatMode = newMode;
 
         if (newMode == 2 && Stat.GetBit(0b00100000))
         {
-            emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
+            interrupt.RequestInterrupt(InterruptFlag.LCDStat);
         }
         else if (newMode == 0 && Stat.GetBit(0b00001000))
         {
-            emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
+            interrupt.RequestInterrupt(InterruptFlag.LCDStat);
         }
         else if (newMode == 1 && Stat.GetBit(0b00010000))
         {
-            emulator.interrupt.RequestInterrupt(InterruptFlag.LCDStat);
+            interrupt.RequestInterrupt(InterruptFlag.LCDStat);
         }
     }
 
-    #region Drawing
-    void DrawScanline()
+    private void DrawScanline()
     {
         if (LCDC.GetBit(LCDCBit.BackgroundEnabled))
         {
@@ -307,7 +162,7 @@ public class Ppu
         }
     }
 
-    void DrawBackground()
+    private void DrawBackground()
     {
         bool tileset = LCDC.GetBit(LCDCBit.Tileset);
         int tilesetAddress = tileset ? 0x0000 : 0x1000;
@@ -320,7 +175,7 @@ public class Ppu
         {
             byte x = (byte)(i + SCX);
             int colum = x / 8;
-            byte rawTile = emulator.ppu.VideoRam[tilemapAddress + (row * 32) + colum];
+            byte rawTile = VideoRam[tilemapAddress + (row * 32) + colum];
 
             int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
 
@@ -339,7 +194,7 @@ public class Ppu
         }
     }
 
-    void DrawWindow()
+    private void DrawWindow()
     {
         bool tileset = LCDC.GetBit(LCDCBit.Tileset);
 
@@ -357,7 +212,7 @@ public class Ppu
                 x = (byte)(i - WX);
             }
             int colum = x / 8;
-            byte rawTile = emulator.ppu.VideoRam[tilemapAddress + (row * 32) + colum];
+            byte rawTile = VideoRam[tilemapAddress + (row * 32) + colum];
 
             int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
 
@@ -376,7 +231,7 @@ public class Ppu
         }
     }
 
-    void DrawSprites()
+    private void DrawSprites()
     {
         int spriteSize = LCDC.GetBit(LCDCBit.SpritesSize) ? 16 : 8;
 
@@ -411,7 +266,7 @@ public class Ppu
                     byte palletIndex = (byte)((hi << 1) | lo);
                     byte palletColor = (byte)((obp >> (palletIndex * 2)) & 0b11);
 
-                    if (x + r >= 0 && x + r < Emulator.WindowWidth)
+                    if (x + r is >= 0 and < Emulator.WindowWidth)
                     {
                         if (palletIndex != 0 && (aboveBG == false || framebuffer[x - r, LY] == ((byte)(BGP & 0b11))))
                         {
@@ -422,5 +277,4 @@ public class Ppu
             }
         }
     }
-    #endregion
 }

@@ -6,57 +6,40 @@ public class Timer
 {
     public byte DIV
     {
-        get
-        {
-            return (byte)(SystemInternalClock >> 8);
-        }
+        get => (byte)(SystemInternalClock >> 8);
 
-        set
-        {
-            SystemInternalClock = 0;
-        }
+        set => SystemInternalClock = 0;
     }
 
     public byte TIMA
     {
-        get
-        {
-            return emulator.memory.io[0x05];
-        }
+        get => memory.io[0x05];
 
-        set
-        {
-            emulator.memory.io[0x05] = value;
-        }
+        set => memory.io[0x05] = value;
     }
 
     //Timer counter
     public byte TMA
     {
-        get
-        {
-            return emulator.memory.io[0x06];
-        }
+        get => memory.io[0x06];
 
-        set
-        {
-            emulator.memory.io[0x06] = value;
-        }
+        set => memory.io[0x06] = value;
     }
-    public bool TacEnabled => (emulator.memory.io[0x07] & 0b100) != 0;
-    public byte TacFrequancy => (byte)(emulator.memory.io[0x07] & 0b011);
+    public bool TacEnabled => (memory.io[0x07] & 0b100) != 0;
+    public byte TacFrequancy => (byte)(memory.io[0x07] & 0b011);
 
-    readonly Emulator emulator;
-
-    readonly ushort[] timerFrequancy = { 1024, 16, 64, 256 };
+    private readonly ushort[] timerFrequancy = { 1024, 16, 64, 256 };
+    private readonly Memory memory;
+    private readonly Interrupt interrupt;
 
     public ushort SystemInternalClock { get; private set; }
 
-    ushort timerCounter;
+    private ushort timerCounter;
 
-    public Timer(Emulator emulator)
+    public Timer(Memory memory, Interrupt interrupt)
     {
-        this.emulator = emulator;
+        this.memory = memory;
+        this.interrupt = interrupt;
     }
 
     public void Step(int ticks)
@@ -76,7 +59,7 @@ public class Timer
             // Overflow occured
             if (TIMA == 0xFF)
             {
-                emulator.interrupt.RequestInterrupt(InterruptFlag.Timer);
+                interrupt.RequestInterrupt(InterruptFlag.Timer);
                 TIMA = TMA;
             }
         }

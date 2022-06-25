@@ -4,42 +4,24 @@ using Monoboy.Constants;
 
 public class Timer
 {
-    public byte DIV
-    {
-        get => (byte)(SystemInternalClock >> 8);
+    public byte TIMA { get => memory[0xFF05]; set => memory[0xFF05] = value; }
+    public byte TMA { get => memory[0xFF06]; set => memory[0xFF06] = value; }
 
-        set => SystemInternalClock = 0;
-    }
-
-    public byte TIMA
-    {
-        get => memory.io[0x05];
-
-        set => memory.io[0x05] = value;
-    }
-
-    //Timer counter
-    public byte TMA
-    {
-        get => memory.io[0x06];
-
-        set => memory.io[0x06] = value;
-    }
-    public bool TacEnabled => (memory.io[0x07] & 0b100) != 0;
-    public byte TacFrequancy => (byte)(memory.io[0x07] & 0b011);
+    public bool TacEnabled => (memory[0xFF07] & 0b100) != 0;
+    public byte TacFrequancy => (byte)(memory[0xFF07] & 0b011);
 
     private readonly ushort[] timerFrequancy = { 1024, 16, 64, 256 };
-    private readonly Memory memory;
-    private readonly Interrupt interrupt;
+    private readonly byte[] memory;
+    private readonly Cpu cpu;
 
-    public ushort SystemInternalClock { get; private set; }
+    public ushort SystemInternalClock { get; set; }
 
     private ushort timerCounter;
 
-    public Timer(Memory memory, Interrupt interrupt)
+    public Timer(byte[] memory, Cpu cpu)
     {
         this.memory = memory;
-        this.interrupt = interrupt;
+        this.cpu = cpu;
     }
 
     public void Step(int ticks)
@@ -59,7 +41,7 @@ public class Timer
             // Overflow occured
             if (TIMA == 0xFF)
             {
-                interrupt.RequestInterrupt(InterruptFlag.Timer);
+                cpu.RequestInterrupt(InterruptFlag.Timer);
                 TIMA = TMA;
             }
         }

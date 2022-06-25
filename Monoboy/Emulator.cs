@@ -17,36 +17,42 @@ public class Emulator
     public bool SpritesEnabled { get; set; } = true;
 
     // Hardware
-    private readonly Interrupt interrupt;
-    private readonly Register register;
-    private readonly Memory memory;
-    private IMemoryBankController memoryBankController;
+    private Register register;
+    private byte[] memory;
+    private IMemoryBankController mbc;
     private bool biosEnabled;
-    private readonly Cpu cpu;
-    private readonly Ppu ppu;
-    private readonly Joypad joypad;
-    private readonly Timer timer;
+    private Cpu cpu;
+    private Ppu ppu;
+    private Joypad joypad;
+    private Timer timer;
 
     // CPU
-    public bool Halted { get; set; }
-    public bool HaltBug { get; set; }
+    internal bool Halted { get; set; }
+    internal bool HaltBug { get; set; }
 
     // Interupt
-    public bool Ime { get; set; } // Master interupt enabled
-    public bool ImeDelay { get; set; } // Master interupt enabled delay
+    internal bool Ime { get; set; } // Master interupt enabled
+    internal bool ImeDelay { get; set; } // Master interupt enabled delay
+
+    public byte DIV
+    {
+        get => (byte)(timer.SystemInternalClock >> 8);
+        set => timer.SystemInternalClock = 0;
+    }
+
+    private byte[] bios;
 
     public long Cycles { get; set; }
 
     public Emulator()
     {
+        memory = new byte[0x10000];
         register = new Register();
-        memory = new Memory();
-        interrupt = new Interrupt(this, register);
 
-        cpu = new Cpu(register, this, interrupt);
-        timer = new Timer(memory, interrupt);
-        ppu = new Ppu(memory, interrupt, this);
-        joypad = new Joypad(interrupt);
+        cpu = new Cpu(register, this);
+        timer = new Timer(memory, cpu);
+        ppu = new Ppu(memory, this, cpu);
+        joypad = new Joypad(cpu);
 
         Reset();
     }
@@ -59,7 +65,7 @@ public class Emulator
         timer.Step(ticks);
         ppu.Step(ticks);
 
-        interrupt.HandleInterupts();
+        cpu.HandleInterupts();
 
         // Disable the bios/boot rom in the bus
         if (biosEnabled && register.PC >= 0x100)
@@ -92,7 +98,7 @@ public class Emulator
 
         // Console.WriteLine(cartridgeType);
 
-        memoryBankController = cartridgeType switch
+        mbc = cartridgeType switch
         {
             byte when cartridgeType <= 0x00 => new MemoryBankController0(),
             byte when cartridgeType <= 0x03 => new MemoryBankController1(),
@@ -103,25 +109,29 @@ public class Emulator
             _ => throw new NotImplementedException()
         };
 
-        memoryBankController.Rom = File.ReadAllBytes(rom);
+        mbc.Rom = File.ReadAllBytes(rom);
 
         string saveFile = rom.Replace(".gb", ".sav");
         if (File.Exists(saveFile))
         {
-            memoryBankController.SetRam(File.ReadAllBytes(saveFile));
+            mbc.SetRam(File.ReadAllBytes(saveFile));
         }
     }
 
     public void Reset()
     {
+        memory = new byte[0x10000];
         register.Reset();
-        memory.Reset();
+
+        // Cpu and Interrupt
+        Halted = false;
+        HaltBug = false;
+        Ime = false;
+        ImeDelay = false;
 
         timer.Reset();
-        cpu.Reset();
         ppu.Reset();
         joypad.Reset();
-        interrupt.Reset();
 
         // TODO change to cli flag
         // memory.boot = File.ReadAllBytes("./dmg.boot");
@@ -133,25 +143,43 @@ public class Emulator
     public void SkipBootRom()
     {
         biosEnabled = false;
-        register.AF = 0x01B0;
-        register.BC = 0x0013;
-        register.DE = 0x00D8;
-        register.HL = 0x014D;
+
+        register.ZFlag = true;
+        register.NFlag = false;
+        register.HFlag = false;
+        register.CFlag = false;
+
+        register.A = 0x01;
+        register.B = 0x00;
+        register.C = 0x13;
+        register.D = 0x00;
+        register.E = 0xD8;
+        register.H = 0x01;
+        register.L = 0x4D;
+        register.PC = 0x0100;
         register.SP = 0xFFFE;
-        register.PC = 0x100;
+
+        Write(0xFF00, 0xCF);
+        Write(0xFF01, 0x00);
+        Write(0xFF02, 0x7E);
+        Write(0xFF04, 0xAB);
         Write(0xFF05, 0x00);
         Write(0xFF06, 0x00);
-        Write(0xFF07, 0x00);
+        Write(0xFF07, 0xF8);
+        Write(0xFF0F, 0xE1);
         Write(0xFF10, 0x80);
         Write(0xFF11, 0xBF);
         Write(0xFF12, 0xF3);
+        Write(0xFF13, 0xFF);
         Write(0xFF14, 0xBF);
         Write(0xFF16, 0x3F);
         Write(0xFF17, 0x00);
+        Write(0xFF18, 0xFF);
         Write(0xFF19, 0xBF);
         Write(0xFF1A, 0x7F);
         Write(0xFF1B, 0xFF);
         Write(0xFF1C, 0x9F);
+        Write(0xFF1D, 0xFF);
         Write(0xFF1E, 0xBF);
         Write(0xFF20, 0xFF);
         Write(0xFF21, 0x00);
@@ -161,151 +189,107 @@ public class Emulator
         Write(0xFF25, 0xF3);
         Write(0xFF26, 0xF1);
         Write(0xFF40, 0x91);
+        Write(0xFF41, 0x85);
         Write(0xFF42, 0x00);
         Write(0xFF43, 0x00);
+        Write(0xFF44, 0x00);
         Write(0xFF45, 0x00);
+        Write(0xFF46, 0xFF);
         Write(0xFF47, 0xFC);
         Write(0xFF48, 0xFF);
         Write(0xFF49, 0xFF);
         Write(0xFF4A, 0x00);
         Write(0xFF4B, 0x00);
+        Write(0xFF4D, 0xFF);
+        Write(0xFF4F, 0xFF);
+        Write(0xFF51, 0xFF);
+        Write(0xFF52, 0xFF);
+        Write(0xFF53, 0xFF);
+        Write(0xFF54, 0xFF);
+        Write(0xFF55, 0xFF);
+        Write(0xFF56, 0xFF);
+        Write(0xFF68, 0xFF);
+        Write(0xFF69, 0xFF);
+        Write(0xFF6A, 0xFF);
+        Write(0xFF6B, 0xFF);
+        Write(0xFF70, 0xFF);
         Write(0xFFFF, 0x00);
     }
 
-    public byte Read(ushort address)
+    internal byte Read(ushort address)
     {
+        if (biosEnabled && address <= 0x00FF)
+        {
+            return bios[address];
+        }
+
         return address switch
         {
-            ushort when address <= 0x00FF && biosEnabled => memory.boot[address],           // Boot rom only enabled while pc has not reached 0x100 yet
-            ushort when address <= 0x3FFF => memoryBankController.ReadBank00(address),      // 16KB ROM Bank = 00 (in cartridge, fixed at bank 00)
-            ushort when address <= 0x7FFF => memoryBankController.ReadBankNN(address),      // 16KB ROM Bank > 00 (in cartridge, every other bank)
-            ushort when address <= 0x9FFF => memory.vram[address - 0x8000],                 // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
-            ushort when address <= 0xBFFF => memoryBankController.ReadRam(address),         // 8KB External RAM (in cartridge, switchable bank, if any)
-            ushort when address <= 0xDFFF => memory.workram[address - 0xC000],              // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
-            ushort when address <= 0xFDFF => memory.workram[address - 0xE000],              // Same as C000-DDFF (ECHO) (typically not used)
-            ushort when address <= 0xFE9F => memory.oam[address - 0xFE00],                  // Sprite Attribute Table (OAM)
-            ushort when address <= 0xFEFF => 0x00,                                          // Not Usable
-            ushort when address <= 0xFF7F => ReadIO(address),                               // I/O Ports
-            ushort when address <= 0xFFFE => memory.zp[address - 0xFF80],                   // Zero Page RAM
-            ushort when address <= 0xFFFF => memory.ie,                                     // Interrupts Enable Register (IE)
-            _ => 0xFF,
+            ushort when address >= 0x0000 && address <= 0x3FFF => mbc.ReadBank00(address),      // 16 KiB ROM bank 00
+            ushort when address >= 0x4000 && address <= 0x7FFF => mbc.ReadBankNN(address),      // 16 KiB ROM Bank 01~NN
+            ushort when address >= 0x8000 && address <= 0x9FFF => memory[address],              // 8 KiB Video RAM (VRAM)
+            ushort when address >= 0xA000 && address <= 0xBFFF => mbc.ReadRam(address),         // 8 KiB External RAM
+            ushort when address >= 0xC000 && address <= 0xCFFF => memory[address],              // 4 KiB Work RAM (WRAM)
+            ushort when address >= 0xD000 && address <= 0xDFFF => memory[address],              // 4 KiB Work RAM (WRAM)
+            ushort when address >= 0xE000 && address <= 0xFDFF => memory[address - 0xE000],     // Mirror of C000~DDFF (ECHO RAM)
+            ushort when address >= 0xFE00 && address <= 0xFE9F => memory[address],              // Sprite attribute table (OAM)
+            ushort when address >= 0xFEA0 && address <= 0xFEFF => 0x00,                         // Not Usable
+            ushort when address >= 0xFF00 && address <= 0xFF7F => ReadIO(address),              // I/O Registers
+            ushort when address >= 0xFF80 && address <= 0xFFFE => memory[address],              // High RAM (HRAM)
+            ushort when address == 0xFFFF => memory[address],                                   // Interrupt Enable register (IE)
+            _ => throw new Exception($"Unhandled I/O read at address 0x{address:X4}"),
         };
     }
 
-    public ushort ReadShort(ushort address)
-    {
-        return (ushort)((Read((ushort)(address + 1)) << 8) | Read(address));
-    }
-
-    public void Write(ushort address, byte data)
+    internal void Write(ushort address, byte data)
     {
         switch (address)
         {
-            case ushort when address <= 0x7FFF:
-            memoryBankController.WriteBank(address, data);      // 16KB ROM Bank > 00 (in cartridge, every other bank)
-            break;
-            case ushort when address <= 0x9FFF:
-            memory.vram[address - 0x8000] = data;               // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
-            break;
-            case ushort when address <= 0xBFFF:
-            memoryBankController.WriteRam(address, data);       // 8KB External RAM (in cartridge, switchable bank, if any)
-            break;
-            case ushort when address <= 0xDFFF:
-            memory.workram[address - 0xC000] = data;            // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
-            break;
-            case ushort when address <= 0xFDFF:
-            memory.workram[address - 0xE000] = data;            // Same as C000-DDFF (ECHO) (typically not used)
-            break;
-            case ushort when address <= 0xFE9F:
-            memory.oam[address - 0xFE00] = data;                // Sprite Attribute Table (OAM)
-            break;
-            case ushort when address <= 0xFEFF:                 // Not Usable
-            break;
-            case ushort when address <= 0xFF7F:
-            WriteIO(address, data);                             // I/O Ports
-            break;
-            case ushort when address <= 0xFFFE:
-            memory.zp[address - 0xFF80] = data;                 // Zero Page RAM
-            break;
-            case ushort when address <= 0xFFFF:
-            memory.ie = data;                                   // Zero Page RAM
-            break;
-            default:
-            break;
-        }
-    }
+            case ushort when address <= 0x7FFF: mbc.WriteBank(address, data); break;            // 16KB ROM Bank > 00 (in cartridge, every other bank)
+            case ushort when address <= 0x9FFF: memory[address] = data; break;                  // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+            case ushort when address <= 0xBFFF: mbc.WriteRam(address, data); break;             // 8KB External RAM (in cartridge, switchable bank, if any)
+            case ushort when address <= 0xDFFF: memory[address] = data; break;                  // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
+            case ushort when address <= 0xFDFF: memory[address] = data; break;                  // Same as C000-DDFF (ECHO) (typically not used)
+            case ushort when address <= 0xFE9F: memory[address] = data; break;                  // Sprite Attribute Table (OAM)
+            case ushort when address <= 0xFEFF: break;                                          // Not Usable
+            case ushort when address <= 0xFF7F: WriteIO(address, data); break;                  // I/O Ports
+            case ushort when address <= 0xFFFE: memory[address] = data; break;                  // Zero Page RAM
+            case ushort when address <= 0xFFFF: memory[address] = data; break;                  // Interrupt Enable register (IE)
 
-    public void WriteShort(ushort address, ushort data)
-    {
-        Write((ushort)(address + 1), (byte)(data >> 8));
-        Write(address, (byte)data);
+            default: throw new Exception($"Unhandled I/O write at address 0x{address:X4}");
+        }
     }
 
     private byte ReadIO(ushort address)
     {
-        switch (address)
+        return address switch
         {
-            case 0xFF00:// JOYP
-            {
-                return joypad.JOYP;
-            }
+            ushort when address == 0xFF00 => joypad.JOYP,                           // Joypad input
+            ushort when address >= 0xFF01 && address <= 0xFF02 => memory[address],  // Serial transfer
+            ushort when address == 0xFF04 => DIV,                                   // Div
+            ushort when address >= 0xFF05 && address <= 0xFF07 => memory[address],  // Timer and divider
+            ushort when address >= 0xFF10 && address <= 0xFF26 => memory[address],  // Sound
+            ushort when address >= 0xFF30 && address <= 0xFF3F => memory[address],  // Wave pattern
+            ushort when address >= 0xFF40 && address <= 0xFF4B => memory[address],  // LCD Control, Status, Position, Scrolling, and Palettes
+            ushort when address >= 0xFF4F => memory[address],                       // VRAM Bank Select
+            ushort when address >= 0xFF50 => memory[address],                       // Set to non-zero to disable boot ROM
+            ushort when address >= 0xFF51 && address <= 0xFF55 => memory[address],  // VRAM DMA
+            ushort when address >= 0xFF68 && address <= 0xFF69 => memory[address],  // BG / OBJ Palettes
+            ushort when address >= 0xFF70 => memory[address],                       // WRAM Bank Select
 
-            case 0xFF04:// DIV
-            {
-                return timer.DIV;
-            }
-
-            default:
-            {
-                return memory.io[address - 0xFF00];
-            }
-        }
+            _ => memory[address],
+        };
     }
 
     private void WriteIO(ushort address, byte data)
     {
         switch (address)
         {
-            case 0xFF00:// JOYP
-            {
-                joypad.JOYP = data;
-            }
-            break;
+            case ushort when address == 0xFF00: joypad.JOYP = data; break;
+            case ushort when address == 0xFF04: DIV = data; break;
 
-            case 0xFF04:// DIV
-            {
-                timer.DIV = data;// is set to zero
-            }
-            break;
+            default: memory[address] = data; break;
+        };
 
-            case 0xFF44:// LY
-            {
-                data = 0;
-            }
-            break;
-
-            case 0xFF46:
-            {
-                ushort offset = (ushort)(data << 8);
-                for (byte i = 0; i < memory.oam.Length; i++)
-                {
-                    memory.oam[i] = Read((ushort)(offset + i));
-                }
-            }
-            break;
-            default:
-            break;
-
-            //case 0xFF02:
-            //{
-            //    if(data == 0x81)
-            //    {
-            //        Debug.Write(Convert.ToChar(Read(0xFF01)));
-            //    }
-            //}
-            //break;
-        }
-
-        memory.io[address - 0xFF00] = data;
     }
 }

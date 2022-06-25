@@ -1,4 +1,4 @@
-namespace Monoboy;
+namespace Monoboy.Desktop.Data;
 
 public static class Icon
 {

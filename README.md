@@ -1,13 +1,20 @@
 # Monoboy
-![example workflow file path](https://github.com/IrishBruse/Monoboy/workflows/Build/badge.svg)
-![example workflow file path](https://github.com/IrishBruse/Monoboy/workflows/Tests/badge.svg)
 
-Monoboy is a Gameboy emulator written in C#
-it was written to help me get better at C# and learn the more indepth parts of it
+<p align="center">
+<img src="./Icon.ico">
+</p>
 
+Reference: https://gbdev.io/pandocs/
 
-# Tests
-![Cpu Test](https://raw.githubusercontent.com/IrishBruse/Monoboy/master/Images/Cpu_Test.png) 
+## Controls
 
-# Games
-![Tetris](https://raw.githubusercontent.com/IrishBruse/Monoboy/master/Images/Tetris.png)
+| Gameboy | Keyboard  | Gamepad    |
+| ------- | --------- | ---------- |
+| Right   | D         | Stick/Dpad |
+| Left    | A         | Stick/Dpad |
+| Up      | W         | Stick/Dpad |
+| Down    | S         | Stick/Dpad |
+| A       | ShiftLeft | A / X      |
+| B       | Space     | B / Circle |
+| Start   | Escape    | Start      |
+| Select  | Enter     | Select     |

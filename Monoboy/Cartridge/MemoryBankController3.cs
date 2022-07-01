@@ -14,7 +14,7 @@ public class MemoryBankController3 : IMemoryBankController
 
     public byte[] Rom { get; set; }
 
-    public byte[] Ram { get; set; } = new byte[32768];
+    public byte[] Ram { get; set; } = new byte[0x8000];
 
     public byte RomBank { get; set; } = 1;
 

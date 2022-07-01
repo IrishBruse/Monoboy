@@ -3,7 +3,7 @@ public class MemoryBankController5 : IMemoryBankController
 {
     public byte[] Rom { get; set; }
 
-    private byte[] ram = new byte[32768];
+    private byte[] ram = new byte[0x8000];
     private byte romBank = 1;
     private byte ramBank;
     private bool ramEnabled;

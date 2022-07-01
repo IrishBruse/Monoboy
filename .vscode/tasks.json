@@ -11,18 +11,20 @@
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
+            "problemMatcher": "$msCompile",
             "group": "build"
         },
         {
-            "label": "Build Monoboy.SilkNet",
+            "label": "Build Monoboy.Frontend",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/Monoboy.SilkNet\\Monoboy.SilkNet.csproj",
+                "${workspaceFolder}/Monoboy.Frontend\\Monoboy.Frontend.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
+            "problemMatcher": "$msCompile",
             "group": "build"
         }
     ]

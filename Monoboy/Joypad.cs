@@ -39,7 +39,7 @@ public class Joypad
         this.cpu = cpu;
     }
 
-    public void SetButton(Button button, bool state)
+    public void SetButton(GameboyButton button, bool state)
     {
         byte key = (byte)button;
 
@@ -69,20 +69,6 @@ public class Joypad
                 padState &= (byte)~key;
             }
         }
-    }
-
-    public enum Button : byte
-    {
-        Right = 0b00000001,
-        Left = 0b00000010,
-        Up = 0b00000100,
-        Down = 0b00001000,
-
-        // Shifted right 4
-        A = 0b00010000,
-        B = 0b00100000,
-        Select = 0b01000000,
-        Start = 0b10000000,
     }
 
     internal void Reset()

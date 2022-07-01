@@ -38,7 +38,7 @@ dotnet_style_require_accessibility_modifiers = for_non_interface_members:silent
 # Expression-level preferences
 dotnet_style_object_initializer = false:error
 dotnet_style_prefer_conditional_expression_over_assignment = false:error
-dotnet_style_prefer_conditional_expression_over_return = fapse:suggestion
+dotnet_style_prefer_conditional_expression_over_return = false:suggestion
 dotnet_style_coalesce_expression = true:suggestion
 dotnet_style_collection_initializer = true:suggestion
 dotnet_style_explicit_tuple_names = true:suggestion

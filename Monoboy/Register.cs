@@ -19,10 +19,7 @@ public class Register
 
     public ushort AF
     {
-        get
-        {
-            return (ushort)((A << 8) | F);
-        }
+        get => (ushort)((A << 8) | F);
 
         set
         {
@@ -33,10 +30,7 @@ public class Register
 
     public ushort BC
     {
-        get
-        {
-            return (ushort)((B << 8) | C);
-        }
+        get => (ushort)((B << 8) | C);
 
         set
         {
@@ -47,10 +41,7 @@ public class Register
 
     public ushort DE
     {
-        get
-        {
-            return (ushort)((D << 8) | E);
-        }
+        get => (ushort)((D << 8) | E);
 
         set
         {
@@ -61,10 +52,7 @@ public class Register
 
     public ushort HL
     {
-        get
-        {
-            return (ushort)((H << 8) | L);
-        }
+        get => (ushort)((H << 8) | L);
 
         set
         {

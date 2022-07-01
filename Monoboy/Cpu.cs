@@ -9,47 +9,6 @@ public class Cpu
     private Register register;
     private Emulator emulator;
 
-    private readonly byte[] mainTimes = {
-        1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,
-        0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,
-        2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,
-        2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1,
-        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-        2, 2, 2, 2, 2, 2, 0, 2, 1, 1, 1, 1, 1, 1, 2, 1,
-        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-        1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-        2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 0, 3, 6, 2, 4,
-        2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4,
-        3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4,
-        3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4,
-    };
-
-    private readonly byte[] cbTimes = {
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
-        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
-        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
-        2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-        2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
-    };
-
-    public byte IE { get => emulator.Read(0xFFFF); set => emulator.Write(0xFFFF, value); }
-    public byte IF { get => emulator.Read(0xFF0F); set => emulator.Write(0xFF0F, value); }
-
     public Cpu(Register register, Emulator emulator)
     {
         this.register = register;
@@ -160,7 +119,7 @@ public class Cpu
             case 0xEA: emulator.Write(NextShort(), register.A); break;
 
             case 0xF2: register.A = emulator.Read((ushort)(0xFF00 + register.C)); break;        // LD A,(C)
-            case 0xE2: emulator.Write((ushort)(0xFF00 + register.C), register.A); break;  // LD (C),A
+            case 0xE2: emulator.Write((ushort)(0xFF00 + register.C), register.A); break;  // LD (C),A    ldh [$ff00+c], a
             case 0x3A: register.A = emulator.Read(register.HL--); break;                        // LD A,(HL-)
             case 0x32: emulator.Write(register.HL--, register.A); break;                  // LD (HL-),A
             case 0x2A: register.A = emulator.Read(register.HL++); break;                        // LD A,(HL+)
@@ -317,10 +276,12 @@ public class Cpu
             case 0xFB: EnableInterrupt(); break;// EI
 
             case 0xC3: JP(true); break;// JP nn
+
             case 0xC2: JP(register.ZFlag == false); break;// JP cc,nn
             case 0xCA: JP(register.ZFlag); break;
             case 0xD2: JP(register.CFlag == false); break;
             case 0xDA: JP(register.CFlag); break;
+
             case 0xE9: JP(register.HL); break;// JP (HL)
             case 0x18: JR(true); break;// JP n
             case 0x20: JR(register.ZFlag == false); break;// JR cc,n
@@ -383,16 +344,9 @@ public class Cpu
             case 0xca: case 0xda: if (register.ZFlag) { conditionalCycles = 1; } break;
         }
 
-        return (byte)(mainTimes[op] + conditionalCycles);
+        return (byte)(Timings.MainTimes[op] + conditionalCycles);
     }
 
-    private void LdnnSP()
-    {
-        ushort address = NextShort();
-        ushort data = register.SP;
-        emulator.Write((ushort)(address + 1), (byte)(data >> 8));
-        emulator.Write(address, (byte)data);
-    }
 
     private byte PrefixedTable()
     {
@@ -689,7 +643,16 @@ public class Cpu
             case 0xBE: emulator.Write(register.HL, RES(0b01000000, emulator.Read(register.HL))); break;
         }
 
-        return cbTimes[op];
+        return Timings.CbTimes[op];
+    }
+
+
+    private void LdnnSP()
+    {
+        ushort address = NextShort();
+        ushort data = register.SP;
+        emulator.Write((ushort)(address + 1), (byte)(data >> 8));
+        emulator.Write(address, (byte)data);
     }
 
     public void Push(ushort data)
@@ -1161,7 +1124,7 @@ public class Cpu
     {
         if (emulator.Ime == false)
         {
-            if ((IE & IF & 0b11111) == 0)
+            if ((emulator.IE & emulator.IF & 0b11111) == 0)
             {
                 emulator.Halted = true;
                 register.PC--;
@@ -1175,14 +1138,14 @@ public class Cpu
 
     public void RequestInterrupt(byte bit)
     {
-        IF = IF.SetBit(bit, true);
+        emulator.IF = emulator.IF.SetBit(bit, true);
     }
 
     public void HandleInterupts()
     {
         for (byte i = 0; i < 5; i++)
         {
-            if ((((IE & IF) >> i) & 0x1) == 1)
+            if ((((emulator.IE & emulator.IF) >> i) & 0x1) == 1)
             {
                 if (emulator.Halted)
                 {
@@ -1194,7 +1157,7 @@ public class Cpu
                     Push(register.PC);
                     register.PC = (ushort)(64 + (8 * i));
                     emulator.Ime = false;
-                    IF = IF.SetBit((byte)(0b1 << i), false);
+                    emulator.IF = emulator.IF.SetBit((byte)(0b1 << i), false);
                 }
             }
         }

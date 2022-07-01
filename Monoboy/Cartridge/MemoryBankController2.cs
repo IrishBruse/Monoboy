@@ -5,7 +5,7 @@ using System.IO;
 public class MemoryBankController2 : IMemoryBankController
 {
     public byte[] Rom { get; set; }
-    private byte[] ram = new byte[512];
+    private byte[] ram = new byte[0x200];
 
     private byte romBank = 1;
     private bool ramEnabled;

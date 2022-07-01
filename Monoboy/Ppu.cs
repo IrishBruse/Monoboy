@@ -1,60 +1,53 @@
 ﻿namespace Monoboy;
 
-using System;
-
 using Monoboy.Constants;
 using Monoboy.Utility;
 
 public class Ppu
 {
-    public const byte LCDEnabled = 0b10000000;
-    public const byte WindowTilemap = 0b01000000;
-    public const byte WindowEnabled = 0b00100000;
-    public const byte Tileset = 0b00010000;
-    public const byte Tilemap = 0b00001000;
-    public const byte SpritesSize = 0b00000100;
-    public const byte SpritesEnabled = 0b00000010;
-    public const byte BackgroundEnabled = 0b00000001;
+    private const byte LCDEnabled = 0b10000000;
+    private const byte WindowTilemap = 0b01000000;
+    private const byte WindowEnabled = 0b00100000;
+    private const byte Tileset = 0b00010000;
+    private const byte Tilemap = 0b00001000;
+    private const byte SpritesSize = 0b00000100;
+    private const byte SpritesEnabled = 0b00000010;
+    private const byte BackgroundEnabled = 0b00000001;
+    private const byte VBlank = 0b00000001;
+    private const byte LCDStat = 0b00000010;
+    private const byte Timer = 0b00000100;
+    private const byte Serial = 0b00001000;
+    private const byte Joypad = 0b00010000;
 
-    public const byte VBlank = 0b00000001;
-    public const byte LCDStat = 0b00000010;
-    public const byte Timer = 0b00000100;
-    public const byte Serial = 0b00001000;
-    public const byte Joypad = 0b00010000;
+    public byte LCDC { get => memory[0xFF40]; set => memory[0xFF40] = value; }
+    public byte Stat { get => memory[0xFF41]; set => memory[0xFF41] = value; }
+    public byte StatMode { get => (byte)(memory[0xFF41] & 0b00000011); set => memory[0xFF41] = memory[0xFF41].SetBits(0b00000011, value); }
+    public byte SCY { get => memory[0xFF42]; set => memory[0xFF42] = value; }
+    public byte SCX { get => memory[0xFF43]; set => memory[0xFF43] = value; }
+    public byte WX { get => (byte)(memory[0xFF4B] - 7); set => memory[0xFF4B] = value; }
+    public byte WY { get => memory[0xFF4A]; set => memory[0xFF4A] = value; }
+    public byte LY { get => memory[0xFF44]; set => memory[0xFF44] = value; }
+    public byte LYC { get => memory[0xFF45]; set => memory[0xFF45] = value; }
+    public byte BGP { get => memory[0xFF47]; set => memory[0xFF47] = value; }
+    public byte OBP0 { get => memory[0xFF48]; set => memory[0xFF48] = value; }
+    public byte OBP1 { get => memory[0xFF49]; set => memory[0xFF49] = value; }
 
-    private const int IO = 0xFF80;
-
-    public byte LCDC { get => memory[IO + 0x0040]; set => memory[IO + 0x0040] = value; }
-    public byte Stat { get => memory[IO + 0x0041]; set => memory[IO + 0x0041] = value; }
-    public byte StatMode { get => memory[IO + 0x0041].GetBits(0b00000011); set => memory[IO + 0x0041] = memory[IO + 0x0041].SetBits(0b00000011, value); }
-    public byte SCY { get => memory[IO + 0x0042]; set => memory[IO + 0x0042] = value; }
-    public byte SCX { get => memory[IO + 0x0043]; set => memory[IO + 0x0043] = value; }
-    public byte WX { get => (byte)(memory[IO + 0x004B] - 7); set => memory[IO + 0x004B] = value; }
-    public byte WY { get => memory[IO + 0x004A]; set => memory[IO + 0x004A] = value; }
-    public byte LY { get => memory[IO + 0x0044]; set => memory[IO + 0x0044] = value; }
-    public byte LYC { get => memory[IO + 0x0045]; set => memory[IO + 0x0045] = value; }
-    public byte BGP { get => memory[IO + 0x0047]; set => memory[IO + 0x0047] = value; }
-    public byte OBP0 { get => memory[IO + 0x0048]; set => memory[IO + 0x0048] = value; }
-    public byte OBP1 { get => memory[IO + 0x0049]; set => memory[IO + 0x0049] = value; }
-
-    private readonly byte[] memory;
+    private Memory memory;
     private readonly Emulator emulator;
     private readonly Cpu cpu;
-
+    private readonly uint[] framebuffer;
     private const int ScanLineCycles = 114;
     private const int HBlankCycles = 51;
     private const int OamCycles = 20;
     private const int VRamCycles = 43;
     private int cycles;
 
-    private byte[,] framebuffer;
-
-    public Ppu(byte[] memory, Emulator emulator, Cpu cpu)
+    public Ppu(Memory memory, Emulator emulator, Cpu cpu, uint[] framebuffer)
     {
         this.memory = memory;
         this.emulator = emulator;
         this.cpu = cpu;
-        framebuffer = new byte[Emulator.WindowWidth, Emulator.WindowHeight];
+        this.framebuffer = framebuffer;
     }
 
     public void Step(int ticks)
@@ -119,8 +112,6 @@ public class Ppu
                 DrawScanline();
                 HandleModeChange(Mode.Hblank);
             }
-            break;
-            default:
             break;
         }
 
@@ -204,10 +195,12 @@ public class Ppu
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
             byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & 0b11);
 
-            if (emulator.BackgroundEnabled)
+            if (!emulator.BackgroundEnabled)
             {
-                framebuffer[i, LY] = colorIndex;
+                continue;
             }
+
+            framebuffer[i + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
         }
     }
 
@@ -246,7 +239,7 @@ public class Ppu
                 continue;
             }
 
-            framebuffer[i, LY] = colorIndex;
+            framebuffer[i + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
         }
     }
 
@@ -283,20 +276,22 @@ public class Ppu
                     int hi = (data2 >> pixelBit) & 1;
                     int lo = (data1 >> pixelBit) & 1;
                     byte palletIndex = (byte)((hi << 1) | lo);
-                    byte palletColor = (byte)((obp >> (palletIndex * 2)) & 0b11);
+                    byte colorIndex = (byte)((obp >> (palletIndex * 2)) & 0b11);
 
                     if (!emulator.SpritesEnabled)
                     {
                         continue;
                     }
-
-                    if (x + r is >= 0 and < Emulator.WindowWidth)
+                    if (x + r is not >= 0 or not < Emulator.WindowWidth)
                     {
-                        if (palletIndex != 0 && (aboveBG == false || framebuffer[x - r, LY] == ((byte)(BGP & 0b11))))
-                        {
-                            framebuffer[x + r, LY] = palletColor;
-                        }
+                        continue;
                     }
+                    if (palletIndex == 0 || aboveBG != false && framebuffer[x - r + (Emulator.WindowWidth * LY)] != ((byte)(BGP & 0b11)))
+                    {
+                        continue;
+                    }
+
+                    framebuffer[x + r + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
                 }
             }
         }

@@ -65,7 +65,6 @@ public class Emulator
         timer = new Timer(memory, cpu);
         ppu = new Ppu(memory, this, cpu, Framebuffer);
         joypad = new Joypad(cpu);
-        mbc = new MemoryBankControllerDummy();
 
         Reset();
     }
@@ -313,8 +312,6 @@ public class Emulator
             case <= 0xFF7F: WriteIO(address, data); break;                  // I/O Ports
             case <= 0xFFFE: memory[address] = data; break;                  // Zero Page RAM
             case <= 0xFFFF: memory[address] = data; break;                  // Interrupt Enable register (IE)
-
-            default: throw new Exception($"Unhandled I/O write at address 0x{address:X4}");
         }
     }
 
@@ -334,7 +331,7 @@ public class Emulator
             0xFF50 => memory[address],                   // Set to non-zero to disable boot ROM
             >= 0xFF51 and <= 0xFF55 => memory[address],  // VRAM DMA
             >= 0xFF68 and <= 0xFF69 => memory[address],  // BG / OBJ Palettes
-            >= 0xFF70 => memory[address],                   // WRAM Bank Select
+            >= 0xFF70 => memory[address],                // WRAM Bank Select
 
             _ => memory[address],
         };

@@ -10,16 +10,6 @@
             "cwd": "${workspaceFolder}/Monoboy.Desktop",
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
-        },
-        {
-            "name": "Monoboy.Frontend",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "Build Monoboy.Frontend",
-            "program": "${workspaceFolder}/Monoboy.Frontend/bin/Debug/net6.0/Monoboy.Frontend.dll",
-            "cwd": "${workspaceFolder}/Monoboy.Frontend",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
         }
     ]
 }

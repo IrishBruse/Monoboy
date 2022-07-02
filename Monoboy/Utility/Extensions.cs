@@ -25,7 +25,14 @@ public static class Extensions
     /// <returns></returns>
     public static byte SetBit(this byte data, byte bit, bool condition)
     {
-        return condition ? (data |= bit) : (data &= (byte)~bit);
+        if (condition)
+        {
+            return data |= bit;
+        }
+        else
+        {
+            return data &= (byte)~bit;
+        }
     }
 
     /// <summary>

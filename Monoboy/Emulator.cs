@@ -20,7 +20,7 @@ public class Emulator
     /// <summary> #AABBGGRR </summary>
     public uint[] Framebuffer { get; set; }
     public string GameTitle { get; private set; }
-    public byte[] Bios { get; set; }
+    byte[] bios;
 
     // Hardware
     private Register register;
@@ -52,15 +52,12 @@ public class Emulator
     internal int Cycles { get; set; }
     internal long TotalCycles { get; set; }
 
-    public Emulator()
+    public Emulator(byte[] bios)
     {
+        this.bios = bios;
+
         memory = new Memory(0x10000);
         Framebuffer = new uint[WindowWidth * WindowHeight];
-
-        for (int i = 0; i < Framebuffer.Length; i++)
-        {
-            Framebuffer[i] = 0xffffffff;
-        }
 
         register = new Register();
 
@@ -68,6 +65,9 @@ public class Emulator
         timer = new Timer(memory, cpu);
         ppu = new Ppu(memory, this, cpu, Framebuffer);
         joypad = new Joypad(cpu);
+        mbc = new MemoryBankControllerDummy();
+
+        Reset();
     }
 
     public byte Step()
@@ -178,7 +178,7 @@ public class Emulator
     {
         for (int i = 0; i < Framebuffer.Length; i++)
         {
-            Framebuffer[i] = 0xffffffff;
+            Framebuffer[i] = Pallet.GetColor(0);
         }
 
         register.Reset();
@@ -277,9 +277,9 @@ public class Emulator
 
     internal byte Read(ushort address)
     {
-        if (biosEnabled && Bios.Length > 0 && address <= 0x00FF)
+        if (biosEnabled && bios.Length > 0 && address <= 0x00FF)
         {
-            return Bios[address];
+            return bios[address];
         }
 
         return address switch
@@ -309,7 +309,7 @@ public class Emulator
             case <= 0xDFFF: memory[address] = data; break;                  // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
             case <= 0xFDFF: memory[address] = data; break;                  // Same as C000-DDFF (ECHO) (typically not used)
             case <= 0xFE9F: memory[address] = data; break;                  // Sprite Attribute Table (OAM)
-            case <= 0xFEFF: throw new Exception($"Not Usable 0x{address:X4}");// Not Usable
+            case <= 0xFEFF: Console.WriteLine($"Read from not usable 0x{address:X4}"); break;// Not Usable
             case <= 0xFF7F: WriteIO(address, data); break;                  // I/O Ports
             case <= 0xFFFE: memory[address] = data; break;                  // Zero Page RAM
             case <= 0xFFFF: memory[address] = data; break;                  // Interrupt Enable register (IE)
@@ -344,11 +344,29 @@ public class Emulator
     {
         switch (address)
         {
-            case ushort when address == 0xFF00: joypad.JOYP = data; break;
-            case ushort when address == 0xFF04: DIV = data; break;
+            case 0xFF00: joypad.JOYP = data; break;
+            case 0xFF01: SerialTransfer(address, data); break;
+            case 0xFF04: DIV = data; break;
+            case 0xFF44: memory[address] = 0; break;
+            case 0xFF46: OamTransfer(data); break;
 
             default: memory[address] = data; break;
         };
 
+    }
+
+    private void OamTransfer(byte data)
+    {
+        ushort offset = (ushort)(data / 0x100);
+        for (byte i = 0; i < 160; i++)
+        {
+            memory[0xFE00 + i] = Read((ushort)(offset + i));
+        }
+    }
+
+    private void SerialTransfer(ushort address, byte data)
+    {
+        Console.WriteLine($"Serial transfer: {data:X2}");
+        memory[address] = data;
     }
 }

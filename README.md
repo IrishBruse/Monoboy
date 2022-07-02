@@ -6,7 +6,7 @@
 
 Reference: https://gbdev.io/pandocs/
 
-## Controls
+## Gameboy Controls
 
 | Gameboy | Keyboard  | Gamepad    |
 | ------- | --------- | ---------- |
@@ -18,3 +18,10 @@ Reference: https://gbdev.io/pandocs/
 | B       | Space     | B / Circle |
 | Start   | Escape    | Start      |
 | Select  | Enter     | Select     |
+
+## Emulator Controls
+
+| Action     | Shortcut |
+| ---------- | -------- |
+| Open Rom   | Ctrl+O   |
+| Screenshot | F2       |

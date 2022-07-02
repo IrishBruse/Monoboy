@@ -183,13 +183,13 @@ public class Ppu
         {
             byte x = (byte)(i + SCX);
             int colum = x / 8;
-            byte rawTile = memory[8000 + tilemapAddress + (row * 32) + colum];
+            byte rawTile = memory[0x8000 + tilemapAddress + (row * 32) + colum];
 
             int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
 
             int line = (byte)(y % 8) * 2;
-            byte data1 = memory[8000 + vramAddress + line];
-            byte data2 = memory[8000 + vramAddress + line + 1];
+            byte data1 = memory[0x8000 + vramAddress + line];
+            byte data2 = memory[0x8000 + vramAddress + line + 1];
 
             byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
@@ -222,13 +222,13 @@ public class Ppu
                 x = (byte)(i - WX);
             }
             int colum = x / 8;
-            byte rawTile = memory[8000 + tilemapAddress + (row * 32) + colum];
+            byte rawTile = memory[0x8000 + tilemapAddress + (row * 32) + colum];
 
             int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
 
             int line = (byte)(y % 8) * 2;
-            byte data1 = memory[8000 + vramAddress + line];
-            byte data2 = memory[8000 + vramAddress + line + 1];
+            byte data1 = memory[0x8000 + vramAddress + line];
+            byte data2 = memory[0x8000 + vramAddress + line + 1];
 
             byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));

@@ -135,7 +135,7 @@ public class Cpu
             case 0xF9: register.SP = register.HL; break;// LD SP,HL
             case 0xF8: register.HL = ADDS(register.SP); break;// LD HL,SP+n
 
-            case 0x08: LdnnSP(); break;// LD (nn),SP
+            case 0x08: WriteSPtoAddress(); break;// LD (nn),SP
 
             case 0xF5: Push(register.AF); break;// Push nn
             case 0xC5: Push(register.BC); break;
@@ -316,7 +316,7 @@ public class Cpu
             case 0x0F: RRCA(); break;// RRCA
             case 0x1F: RRA(); break;// RRA
 
-            case 0x10: throw new NotImplementedException("STOP Instruction called");// STOP
+            case 0x10: Console.WriteLine("Stop Called"); break;// STOP
 
             case 0xD3:
             case 0xDB:
@@ -329,7 +329,7 @@ public class Cpu
             case 0xF4:
             case 0xFC:
             case 0xFD:
-            default: throw new InvalidOperationException("Illegal Instruction : " + op);
+            default: Console.WriteLine("Illegal Instruction : " + op); break;
         }
 
         switch (op)
@@ -646,8 +646,7 @@ public class Cpu
         return Timings.CbTimes[op];
     }
 
-
-    private void LdnnSP()
+    private void WriteSPtoAddress()
     {
         ushort address = NextShort();
         ushort data = register.SP;
@@ -1030,8 +1029,6 @@ public class Cpu
         return result;
     }
 
-
-
     private void BIT(byte bit, byte r)
     {
         register.ZFlag = (r & bit) == 0;
@@ -1165,5 +1162,4 @@ public class Cpu
         emulator.Ime |= emulator.ImeDelay;
         emulator.ImeDelay = false;
     }
-
 }

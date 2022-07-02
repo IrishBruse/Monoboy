@@ -4,7 +4,7 @@ using Monoboy.Constants;
 
 public class Timer
 {
-    byte TacFrequancy => (byte)(memory[0xFF07] & 0b011);
+    byte TacFrequancy => (byte)(memory[0xFF07] & 0b11);
 
     private readonly ushort[] timerFrequancy = { 1024, 16, 64, 256 };
     private Memory memory;
@@ -24,8 +24,7 @@ public class Timer
     {
         SystemInternalClock += (ushort)ticks;
 
-        var tacEnabled = (memory[0xFF07] & 0b100) != 0;
-        if (tacEnabled)
+        if ((memory[0xFF07] & 0b100) != 0)
         {
             timerCounter += (ushort)ticks;
 

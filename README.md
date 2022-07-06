@@ -25,3 +25,10 @@ Reference: https://gbdev.io/pandocs/
 | ---------- | -------- |
 | Open Rom   | Ctrl+O   |
 | Screenshot | F2       |
+
+### Linux notes
+veldrid cant find libdl.so
+Fix is to make a sym link
+```
+sudo ln -s /usr/lib/libdl.so.2 /usr/lib/libdl.so
+```

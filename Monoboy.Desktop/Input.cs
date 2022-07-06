@@ -9,16 +9,16 @@ public class Input
     internal static IKeyboard Keyboard { get; set; }
     internal static IGamepad Gamepad { get; set; }
 
-    private static Dictionary<Key, bool> oldKeys = new();
+    private static Dictionary<KeyCode, bool> oldKeys = new();
 
-    public static bool GetKey(Key key)
+    public static bool GetKey(KeyCode key)
     {
-        return Keyboard.IsKeyPressed(key);
+        return Keyboard.IsKeyPressed((Key)key);
     }
 
-    public static bool GetKeyDown(Key key)
+    public static bool GetKeyDown(KeyCode key)
     {
-        bool state = Keyboard.IsKeyPressed(key);
+        bool state = Keyboard.IsKeyPressed((Key)key);
         oldKeys[key] = state;
         return state && oldKeys[key] == false;
     }

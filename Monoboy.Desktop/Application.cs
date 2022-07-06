@@ -21,6 +21,8 @@ public class Application
 
         emulator = new(Boot.DMG);
 
+        Window.Framebuffer = emulator.Framebuffer;
+
         Window.Update += OnUpdate;
         Window.FileDrop += OnFilesDrop;
     }
@@ -34,22 +36,22 @@ public class Application
     {
         Window.Title = "Monoboy" + (emulator.GameTitle != "" ? $" - {emulator.GameTitle}" : "");
 
-        emulator.SetButtonState(GameboyButton.Right, Input.GetKey(Key.D));
-        emulator.SetButtonState(GameboyButton.Left, Input.GetKey(Key.A));
-        emulator.SetButtonState(GameboyButton.Up, Input.GetKey(Key.W));
-        emulator.SetButtonState(GameboyButton.Down, Input.GetKey(Key.S));
+        emulator.SetButtonState(GameboyButton.Right, Input.GetKey(KeyCode.D));
+        emulator.SetButtonState(GameboyButton.Left, Input.GetKey(KeyCode.A));
+        emulator.SetButtonState(GameboyButton.Up, Input.GetKey(KeyCode.W));
+        emulator.SetButtonState(GameboyButton.Down, Input.GetKey(KeyCode.S));
 
-        emulator.SetButtonState(GameboyButton.A, Input.GetKey(Key.ShiftLeft));
-        emulator.SetButtonState(GameboyButton.B, Input.GetKey(Key.Space));
-        emulator.SetButtonState(GameboyButton.Start, Input.GetKey(Key.Escape));
-        emulator.SetButtonState(GameboyButton.Select, Input.GetKey(Key.Enter));
+        emulator.SetButtonState(GameboyButton.A, Input.GetKey(KeyCode.ShiftLeft));
+        emulator.SetButtonState(GameboyButton.B, Input.GetKey(KeyCode.Space));
+        emulator.SetButtonState(GameboyButton.Start, Input.GetKey(KeyCode.Escape));
+        emulator.SetButtonState(GameboyButton.Select, Input.GetKey(KeyCode.Enter));
 
-        if (Input.GetKey(Key.F2))
+        if (Input.GetKey(KeyCode.F2))
         {
             Window.Screenshot();
         }
 
-        if (Input.GetKeyDown(Key.ControlLeft) && Input.GetKey(Key.O))
+        if (Input.GetKeyDown(KeyCode.ControlLeft) && Input.GetKey(KeyCode.O))
         {
             DialogResult file = Dialog.FileOpen("gb,gbc", Environment.CurrentDirectory);
             if (file.IsOk)

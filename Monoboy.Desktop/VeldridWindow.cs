@@ -20,6 +20,7 @@ public class VeldridWindow
 {
     public string Title { get => Window.Title; set => Window.Title = value; }
 
+    public uint[] Framebuffer { get; set; }
     public Action<double> Update { get; internal set; }
     public Action<string[]> FileDrop { get; internal set; }
 
@@ -75,9 +76,9 @@ public class VeldridWindow
         Window.SetWindowIcon(ref icon);
 
         LoadInput();
+        GenerateResources();
+        OnResize(Window.Size);
     }
-
-
 
     private void LoadInput()
     {
@@ -207,7 +208,7 @@ public class VeldridWindow
 
     private void OnRender(double deltaTime)
     {
-        GraphicsDevice.UpdateTexture(renderBufferTexture, app.Framebuffer, 0, 0, 0, Emulator.WindowWidth, Emulator.WindowHeight, 1, 0, 0);
+        GraphicsDevice.UpdateTexture(renderBufferTexture, Framebuffer, 0, 0, 0, Emulator.WindowWidth, Emulator.WindowHeight, 1, 0, 0);
 
         commandList.Begin();// Begin() must be called before commands can be issued.
         {

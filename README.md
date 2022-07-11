@@ -30,6 +30,16 @@ Reference: https://gbdev.io/pandocs/
 | Dump Background Image | F6       |                       |
 | Dump Tilemap Image    | F7       |                       |
 
+## Pallet
+
+`Pallet.txt` contains the pallet to render the game in and default to
+```
+D0D058
+A0A840
+708028
+405010
+```
+
 ## Screenshots
 
 <p align="center">

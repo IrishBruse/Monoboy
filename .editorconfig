@@ -338,3 +338,4 @@ dotnet_naming_style.camelcase.capitalization = camel_case
 
 dotnet_diagnostic.CA1822.severity = suggestion # Disable convert function to static
 dotnet_diagnostic.IDE0051.severity = none # Remove unused private member
+dotnet_diagnostic.IDE0010.severity = none

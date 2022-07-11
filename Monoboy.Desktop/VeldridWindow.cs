@@ -20,13 +20,32 @@ public class VeldridWindow
 {
     public string Title { get => Window.Title; set => Window.Title = value; }
 
+    public event Action<double> Update
+    {
+        add { Window.Update += value; }
+        remove { Window.Update -= value; }
+    }
+
+    public event Action<string[]> FileDrop
+    {
+        add { Window.FileDrop += value; }
+        remove { Window.FileDrop -= value; }
+    }
+
+    public event Action Load
+    {
+        add { Window.Load += value; }
+        remove { Window.Load -= value; }
+    }
+
     public uint[] Framebuffer { get; set; }
-    public Action<double> Update { get; internal set; }
-    public Action<string[]> FileDrop { get; internal set; }
 
     private IWindow Window { get; set; }
 
     private GraphicsDevice GraphicsDevice { get; set; }
+
+    public IGamepad Gamepad { get; private set; }
+    public IKeyboard Keyboard { get; private set; }
 
     private CommandList commandList;
     private DeviceBuffer vertexBuffer;
@@ -55,8 +74,6 @@ public class VeldridWindow
 
         // Events
         Window.Load += () => OnLoad(data);
-        Window.Update += Update;
-        Window.FileDrop += FileDrop;
         Window.Render += OnRender;
         Window.Closing += OnClosing;
         Window.Resize += OnResize;
@@ -91,7 +108,7 @@ public class VeldridWindow
                 continue;
             }
 
-            Input.Keyboard = keyboard;
+            Keyboard = keyboard;
             break;
         }
 
@@ -101,11 +118,11 @@ public class VeldridWindow
             {
                 if (controller.IsConnected)
                 {
-                    Input.Gamepad = controller;
+                    Gamepad = controller;
                 }
                 else
                 {
-                    Input.Gamepad = null;
+                    Gamepad = null;
                 }
             }
         };
@@ -117,7 +134,7 @@ public class VeldridWindow
                 continue;
             }
 
-            Input.Gamepad = gamepad;
+            Gamepad = gamepad;
             break;
         }
     }

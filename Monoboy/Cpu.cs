@@ -262,7 +262,7 @@ public class Cpu
             case 0x2B: register.HL--; break;
             case 0x3B: register.SP--; break;
 
-            case 0xCB: conditionalCycles = PrefixedTable(); break;// CB Prefixed
+            case 0xCB: return PrefixedTable(); // CB Prefixed
 
             case 0x27: DAA(); break;// DAA
             case 0x2F: CPL(); break;// CPL
@@ -316,7 +316,7 @@ public class Cpu
             case 0x0F: RRCA(); break;// RRCA
             case 0x1F: RRA(); break;// RRA
 
-            case 0x10: Console.WriteLine("Stop Called"); break;// STOP
+            case 0x10: Debug.Log("Stop Called"); break;// STOP
 
             case 0xD3:
             case 0xDB:
@@ -329,7 +329,7 @@ public class Cpu
             case 0xF4:
             case 0xFC:
             case 0xFD:
-            default: Console.WriteLine("Illegal Instruction : " + op); break;
+            default: Debug.Log("Illegal Instruction : " + op); break;
         }
 
         switch (op)
@@ -346,7 +346,6 @@ public class Cpu
 
         return (byte)(Timings.MainTimes[op] + conditionalCycles);
     }
-
 
     private byte PrefixedTable()
     {
@@ -489,14 +488,14 @@ public class Cpu
             case 0x75: BIT(0b01000000, register.L); break;
             case 0x76: BIT(0b01000000, emulator.Read(register.HL)); break;
 
-            case 0x7F: BIT(0b01000000, register.A); break;// BIT 7,r
-            case 0x78: BIT(0b01000000, register.B); break;
-            case 0x79: BIT(0b01000000, register.C); break;
-            case 0x7A: BIT(0b01000000, register.D); break;
-            case 0x7B: BIT(0b01000000, register.E); break;
-            case 0x7C: BIT(0b01000000, register.H); break;
-            case 0x7D: BIT(0b01000000, register.L); break;
-            case 0x7E: BIT(0b01000000, emulator.Read(register.HL)); break;
+            case 0x7F: BIT(0b10000000, register.A); break;// BIT 7,r
+            case 0x78: BIT(0b10000000, register.B); break;
+            case 0x79: BIT(0b10000000, register.C); break;
+            case 0x7A: BIT(0b10000000, register.D); break;
+            case 0x7B: BIT(0b10000000, register.E); break;
+            case 0x7C: BIT(0b10000000, register.H); break;
+            case 0x7D: BIT(0b10000000, register.L); break;
+            case 0x7E: BIT(0b10000000, emulator.Read(register.HL)); break;
 
             case 0xC7: register.A = SET(0b00000001, register.A); break;// SET 0,r
             case 0xC0: register.B = SET(0b00000001, register.B); break;
@@ -561,14 +560,14 @@ public class Cpu
             case 0xF5: register.L = SET(0b01000000, register.L); break;
             case 0xF6: emulator.Write(register.HL, SET(0b01000000, emulator.Read(register.HL))); break;
 
-            case 0xFF: register.A = SET(0b01000000, register.A); break;// SET 7,r
-            case 0xF8: register.B = SET(0b01000000, register.B); break;
-            case 0xF9: register.C = SET(0b01000000, register.C); break;
-            case 0xFA: register.D = SET(0b01000000, register.D); break;
-            case 0xFB: register.E = SET(0b01000000, register.E); break;
-            case 0xFC: register.H = SET(0b01000000, register.H); break;
-            case 0xFD: register.L = SET(0b01000000, register.L); break;
-            case 0xFE: emulator.Write(register.HL, SET(0b01000000, emulator.Read(register.HL))); break;
+            case 0xFF: register.A = SET(0b10000000, register.A); break;// SET 7,r
+            case 0xF8: register.B = SET(0b10000000, register.B); break;
+            case 0xF9: register.C = SET(0b10000000, register.C); break;
+            case 0xFA: register.D = SET(0b10000000, register.D); break;
+            case 0xFB: register.E = SET(0b10000000, register.E); break;
+            case 0xFC: register.H = SET(0b10000000, register.H); break;
+            case 0xFD: register.L = SET(0b10000000, register.L); break;
+            case 0xFE: emulator.Write(register.HL, SET(0b10000000, emulator.Read(register.HL))); break;
 
             case 0x87: register.A = RES(0b00000001, register.A); break;// RES 0,r
             case 0x80: register.B = RES(0b00000001, register.B); break;
@@ -633,14 +632,14 @@ public class Cpu
             case 0xB5: register.L = RES(0b01000000, register.L); break;
             case 0xB6: emulator.Write(register.HL, RES(0b01000000, emulator.Read(register.HL))); break;
 
-            case 0xBF: register.A = RES(0b01000000, register.A); break;// RES 7,r
-            case 0xB8: register.B = RES(0b01000000, register.B); break;
-            case 0xB9: register.C = RES(0b01000000, register.C); break;
-            case 0xBA: register.D = RES(0b01000000, register.D); break;
-            case 0xBB: register.E = RES(0b01000000, register.E); break;
-            case 0xBC: register.H = RES(0b01000000, register.H); break;
-            case 0xBD: register.L = RES(0b01000000, register.L); break;
-            case 0xBE: emulator.Write(register.HL, RES(0b01000000, emulator.Read(register.HL))); break;
+            case 0xBF: register.A = RES(0b10000000, register.A); break;// RES 7,r
+            case 0xB8: register.B = RES(0b10000000, register.B); break;
+            case 0xB9: register.C = RES(0b10000000, register.C); break;
+            case 0xBA: register.D = RES(0b10000000, register.D); break;
+            case 0xBB: register.E = RES(0b10000000, register.E); break;
+            case 0xBC: register.H = RES(0b10000000, register.H); break;
+            case 0xBD: register.L = RES(0b10000000, register.L); break;
+            case 0xBE: emulator.Write(register.HL, RES(0b10000000, emulator.Read(register.HL))); break;
         }
 
         return Timings.CbTimes[op];
@@ -1161,5 +1160,10 @@ public class Cpu
 
         emulator.Ime |= emulator.ImeDelay;
         emulator.ImeDelay = false;
+    }
+
+    public void Reset()
+    {
+
     }
 }

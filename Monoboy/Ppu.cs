@@ -5,20 +5,6 @@ using Monoboy.Utility;
 
 public class Ppu
 {
-    private const byte LCDEnabled = 0b10000000;
-    private const byte WindowTilemap = 0b01000000;
-    private const byte WindowEnabled = 0b00100000;
-    private const byte Tileset = 0b00010000;
-    private const byte Tilemap = 0b00001000;
-    private const byte SpritesSize = 0b00000100;
-    private const byte SpritesEnabled = 0b00000010;
-    private const byte BackgroundEnabled = 0b00000001;
-    private const byte VBlank = 0b00000001;
-    private const byte LCDStat = 0b00000010;
-    private const byte Timer = 0b00000100;
-    private const byte Serial = 0b00001000;
-    private const byte Joypad = 0b00010000;
-
     public byte LCDC { get => memory[0xFF40]; set => memory[0xFF40] = value; }
     public byte Stat { get => memory[0xFF41]; set => memory[0xFF41] = value; }
     public byte StatMode { get => (byte)(memory[0xFF41] & 0b00000011); set => memory[0xFF41] = memory[0xFF41].SetBits(0b00000011, value); }
@@ -40,6 +26,7 @@ public class Ppu
     private const int HBlankCycles = 51;
     private const int OamCycles = 20;
     private const int VRamCycles = 43;
+    private const int VramAddress = 0x8000;
     private int cycles;
 
     public Ppu(Memory memory, Emulator emulator, Cpu cpu, uint[] framebuffer)
@@ -52,15 +39,16 @@ public class Ppu
 
     public void Step(int ticks)
     {
-        cycles += ticks;
 
-        if (LCDC.GetBit(LCDEnabled) == false)
+        if (LCDC.GetBit(Bit.LCDEnabled) == false)
         {
             LY = 0;
             cycles = 0;
             StatMode = 0;
             return;
         }
+
+        cycles += ticks;
 
         switch (StatMode)
         {
@@ -73,7 +61,7 @@ public class Ppu
                 if (LY == Emulator.WindowHeight)
                 {
                     HandleModeChange(Mode.Vblank);
-                    cpu.RequestInterrupt(VBlank);
+                    cpu.RequestInterrupt(Bit.VBlank);
                     // DrawFrame?.Invoke();
                 }
                 else
@@ -113,6 +101,8 @@ public class Ppu
                 HandleModeChange(Mode.Hblank);
             }
             break;
+            default:
+            break;
         }
 
         if (LY == LYC)
@@ -120,7 +110,7 @@ public class Ppu
             _ = Stat.SetBit(0b00000100, true);
             if (Stat.GetBit(0b01000000))
             {
-                cpu.RequestInterrupt(LCDStat);
+                cpu.RequestInterrupt(Bit.LCDStat);
             }
         }
         else
@@ -140,31 +130,31 @@ public class Ppu
 
         if (newMode == 2 && Stat.GetBit(0b00100000))
         {
-            cpu.RequestInterrupt(LCDStat);
+            cpu.RequestInterrupt(Bit.LCDStat);
         }
         else if (newMode == 0 && Stat.GetBit(0b00001000))
         {
-            cpu.RequestInterrupt(LCDStat);
+            cpu.RequestInterrupt(Bit.LCDStat);
         }
         else if (newMode == 1 && Stat.GetBit(0b00010000))
         {
-            cpu.RequestInterrupt(LCDStat);
+            cpu.RequestInterrupt(Bit.LCDStat);
         }
     }
 
     private void DrawScanline()
     {
-        if (LCDC.GetBit(BackgroundEnabled))
+        if (LCDC.GetBit(Bit.BackgroundEnabled))
         {
             DrawBackground();
         }
 
-        if (LCDC.GetBit(WindowEnabled))
+        if (LCDC.GetBit(Bit.WindowEnabled))
         {
             DrawWindow();
         }
 
-        if (LCDC.GetBit(SpritesEnabled))
+        if (LCDC.GetBit(Bit.SpritesEnabled))
         {
             DrawSprites();
         }
@@ -172,9 +162,9 @@ public class Ppu
 
     private void DrawBackground()
     {
-        bool tileset = LCDC.GetBit(Tileset);
+        bool tileset = LCDC.GetBit(Bit.Tileset);
         int tilesetAddress = tileset ? 0x0000 : 0x1000;
-        int tilemapAddress = LCDC.GetBit(Tilemap) ? 0x1C00 : 0x1800;
+        int tilemapAddress = LCDC.GetBit(Bit.Tilemap) ? 0x1C00 : 0x1800;
 
         byte y = (byte)(LY + SCY);
         int row = y / 8;
@@ -183,22 +173,17 @@ public class Ppu
         {
             byte x = (byte)(i + SCX);
             int colum = x / 8;
-            byte rawTile = memory[0x8000 + tilemapAddress + (row * 32) + colum];
+            byte rawTile = memory[VramAddress + tilemapAddress + (row * 32) + colum];
 
             int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
 
             int line = (byte)(y % 8) * 2;
-            byte data1 = memory[0x8000 + vramAddress + line];
-            byte data2 = memory[0x8000 + vramAddress + line + 1];
+            byte data1 = memory[VramAddress + vramAddress + line];
+            byte data2 = memory[VramAddress + vramAddress + line + 1];
 
             byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
             byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & 0b11);
-
-            if (!emulator.BackgroundEnabled)
-            {
-                continue;
-            }
 
             framebuffer[i + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
         }
@@ -206,10 +191,10 @@ public class Ppu
 
     private void DrawWindow()
     {
-        bool tileset = LCDC.GetBit(Tileset);
+        bool tileset = LCDC.GetBit(Bit.Tileset);
 
         int tilesetAddress = tileset ? 0x0000 : 0x1000;
-        int tilemapAddress = LCDC.GetBit(WindowTilemap) ? 0x1C00 : 0x1800;
+        int tilemapAddress = LCDC.GetBit(Bit.WindowTilemap) ? 0x1C00 : 0x1800;
 
         byte y = (byte)(LY - WY);
         int row = y / 8;
@@ -222,22 +207,17 @@ public class Ppu
                 x = (byte)(i - WX);
             }
             int colum = x / 8;
-            byte rawTile = memory[0x8000 + tilemapAddress + (row * 32) + colum];
+            byte rawTile = memory[VramAddress + tilemapAddress + (row * 32) + colum];
 
-            int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
+            int offset = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
 
             int line = (byte)(y % 8) * 2;
-            byte data1 = memory[0x8000 + vramAddress + line];
-            byte data2 = memory[0x8000 + vramAddress + line + 1];
+            byte data1 = memory[VramAddress + offset + line];
+            byte data2 = memory[VramAddress + offset + line + 1];
 
             byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
             byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & 0b11);
-
-            if (!emulator.WindowEnabled)
-            {
-                continue;
-            }
 
             framebuffer[i + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
         }
@@ -245,16 +225,16 @@ public class Ppu
 
     private void DrawSprites()
     {
-        int spriteSize = LCDC.GetBit(SpritesSize) ? 16 : 8;
+        int spriteSize = LCDC.GetBit(Bit.SpritesSize) ? 16 : 8;
 
         for (int i = 64; i >= 0; i--)
         {
             ushort offset = (ushort)(0xFE00 + (i * 4));
 
-            int y = emulator.Read((ushort)(offset + 0)) - 16;
-            int x = emulator.Read((ushort)(offset + 1)) - 8;
-            byte tileID = emulator.Read((ushort)(offset + 2));
-            byte flags = emulator.Read((ushort)(offset + 3));
+            int y = memory[(ushort)(offset + 0)] - 16;
+            int x = memory[(ushort)(offset + 1)] - 8;
+            byte tileID = memory[(ushort)(offset + 2)];
+            byte flags = memory[(ushort)(offset + 3)];
             byte obp = flags.GetBit(0b00010000) ? OBP1 : OBP0;
 
             bool mirrorX = flags.GetBit(0b00100000);
@@ -265,7 +245,7 @@ public class Ppu
             {
                 int row = mirrorY ? spriteSize - 1 - (LY - y) : LY - y;
 
-                int vramAddress = 0x8000 + (tileID * 16) + (row * 2);
+                int vramAddress = VramAddress + (tileID * 16) + (row * 2);
                 byte data1 = emulator.Read((ushort)(vramAddress + 0));
                 byte data2 = emulator.Read((ushort)(vramAddress + 1));
 
@@ -278,20 +258,13 @@ public class Ppu
                     byte palletIndex = (byte)((hi << 1) | lo);
                     byte colorIndex = (byte)((obp >> (palletIndex * 2)) & 0b11);
 
-                    if (!emulator.SpritesEnabled)
+                    if (x + r is >= 0 and < Emulator.WindowWidth)
                     {
-                        continue;
+                        if (palletIndex != 0 && (aboveBG == false || framebuffer[x + r + (Emulator.WindowWidth * LY)] == Pallet.GetColor((byte)(BGP & 0b11))))
+                        {
+                            framebuffer[x + r + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
+                        }
                     }
-                    if (x + r is not >= 0 or not < Emulator.WindowWidth)
-                    {
-                        continue;
-                    }
-                    if (palletIndex == 0 || aboveBG != false && framebuffer[x - r + (Emulator.WindowWidth * LY)] != ((byte)(BGP & 0b11)))
-                    {
-                        continue;
-                    }
-
-                    framebuffer[x + r + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
                 }
             }
         }

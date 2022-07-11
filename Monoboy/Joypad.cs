@@ -9,14 +9,14 @@ public class Joypad
     private byte buttonState;
     private byte padState;
 
-    private byte joyp = 0b110000;
+    private byte joyp;
     private readonly Cpu cpu;
 
     public byte JOYP
     {
         get
         {
-            byte result = (byte)(joyp & 0b110000);
+            byte result = (byte)(joyp & 0b11110000);
             return readPad ? (byte)(result | (~padState & 0b1111)) : (byte)(result | (~buttonState & 0b1111));
         }
 
@@ -74,7 +74,7 @@ public class Joypad
     internal void Reset()
     {
         readPad = false;
-        joyp = 0b110000;
+        joyp = 0b11110000;
         buttonState = 0;
         padState = 0;
     }

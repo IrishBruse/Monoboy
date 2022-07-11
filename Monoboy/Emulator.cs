@@ -13,10 +13,6 @@ public class Emulator
     public const byte WindowWidth = 160;
     public const byte WindowHeight = 144;
 
-    public bool BackgroundEnabled { get; set; } = true;
-    public bool WindowEnabled { get; set; } = true;
-    public bool SpritesEnabled { get; set; } = true;
-
     /// <summary> #AABBGGRR </summary>
     public uint[] Framebuffer { get; set; }
     public string GameTitle { get; private set; }
@@ -24,11 +20,11 @@ public class Emulator
 
     // Hardware
     private Register register;
-    private Memory memory;
+    public Memory Memory { get; set; }
     private IMemoryBankController mbc;
     private bool biosEnabled = true;
     private Cpu cpu;
-    private Ppu ppu;
+    public Ppu ppu;
     private Joypad joypad;
     private Timer timer;
 
@@ -36,18 +32,12 @@ public class Emulator
     internal bool Halted { get; set; }
     internal bool HaltBug { get; set; }
 
-    public byte IE { get => Read(0xFFFF); set => Write(0xFFFF, value); }
     public byte IF { get => Read(0xFF0F); set => Write(0xFF0F, value); }
+    public byte IE { get => Read(0xFFFF); set => Write(0xFFFF, value); }
 
     // Interupt
     internal bool Ime { get; set; } // Master interupt enabled
     internal bool ImeDelay { get; set; } // Master interupt enabled delay
-
-    public byte DIV
-    {
-        get => (byte)(timer.SystemInternalClock >> 8);
-        set => timer.SystemInternalClock = 0;
-    }
 
     internal int Cycles { get; set; }
     internal long TotalCycles { get; set; }
@@ -56,14 +46,14 @@ public class Emulator
     {
         this.bios = bios;
 
-        memory = new Memory(0x10000);
+        Memory = new Memory(0x10000);
         Framebuffer = new uint[WindowWidth * WindowHeight];
 
         register = new Register();
 
         cpu = new Cpu(register, this);
-        timer = new Timer(memory, cpu);
-        ppu = new Ppu(memory, this, cpu, Framebuffer);
+        timer = new Timer(Memory, cpu);
+        ppu = new Ppu(Memory, this, cpu, Framebuffer);
         joypad = new Joypad(cpu);
 
         Reset();
@@ -171,6 +161,8 @@ public class Emulator
         {
             mbc.SetRam(File.ReadAllBytes(saveFile));
         }
+
+
     }
 
     public void Reset()
@@ -188,9 +180,11 @@ public class Emulator
         Ime = false;
         ImeDelay = false;
 
+        cpu.Reset();
         timer.Reset();
         ppu.Reset();
         joypad.Reset();
+        Memory.Reset();
     }
 
     public void SkipBootRom()
@@ -274,7 +268,7 @@ public class Emulator
         joypad.SetButton(button, pressed);
     }
 
-    internal byte Read(ushort address)
+    public byte Read(ushort address)
     {
         if (biosEnabled && bios.Length > 0 && address <= 0x00FF)
         {
@@ -283,35 +277,35 @@ public class Emulator
 
         return address switch
         {
-            <= 0x3FFF => mbc.ReadBank00(address),       // 16 KiB ROM bank 00
-            <= 0x7FFF => mbc.ReadBankNN(address),       // 16 KiB ROM Bank 01~NN
-            <= 0x9FFF => memory[address],               // 8 KiB Video RAM (VRAM)
-            <= 0xBFFF => mbc.ReadRam(address),          // 8 KiB External RAM
-            <= 0xCFFF => memory[address],               // 4 KiB Work RAM (WRAM)
-            <= 0xDFFF => memory[address],               // 4 KiB Work RAM (WRAM)
-            <= 0xFDFF => memory[address - 0x2000],      // Mirror of C000~DDFF (ECHO RAM)
-            <= 0xFE9F => memory[address],               // Sprite attribute table (OAM)
+            <= 0x3FFF => mbc?.ReadBank00(address) ?? 0,       // 16 KiB ROM bank 00
+            <= 0x7FFF => mbc?.ReadBankNN(address) ?? 0,       // 16 KiB ROM Bank 01~NN
+            <= 0x9FFF => Memory[address],               // 8 KiB Video RAM (VRAM)
+            <= 0xBFFF => mbc?.ReadRam(address) ?? 0,          // 8 KiB External RAM
+            <= 0xCFFF => Memory[address],               // 4 KiB Work RAM (WRAM)
+            <= 0xDFFF => Memory[address],               // 4 KiB Work RAM (WRAM)
+            <= 0xFDFF => Memory[address - 0x2000],      // Mirror of C000~DDFF (ECHO RAM)
+            <= 0xFE9F => Memory[address],               // Sprite attribute table (OAM)
             <= 0xFEFF => 0x00,                          // Not Usable
             <= 0xFF7F => ReadIO(address),               // I/O Registers
-            <= 0xFFFE => memory[address],               // High RAM (HRAM)
-            0xFFFF => memory[address],                  // Interrupt Enable register (IE)
+            <= 0xFFFE => Memory[address],               // High RAM (HRAM)
+            0xFFFF => Memory[address],                  // Interrupt Enable register (IE)
         };
     }
 
-    internal void Write(ushort address, byte data)
+    public void Write(ushort address, byte data)
     {
         switch (address)
         {
-            case <= 0x7FFF: mbc.WriteBank(address, data); break;            // 16KB ROM Bank > 00 (in cartridge, every other bank)
-            case <= 0x9FFF: memory[address] = data; break;                  // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
-            case <= 0xBFFF: mbc.WriteRam(address, data); break;             // 8KB External RAM (in cartridge, switchable bank, if any)
-            case <= 0xDFFF: memory[address] = data; break;                  // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
-            case <= 0xFDFF: memory[address] = data; break;                  // Same as C000-DDFF (ECHO) (typically not used)
-            case <= 0xFE9F: memory[address] = data; break;                  // Sprite Attribute Table (OAM)
-            case <= 0xFEFF: Console.WriteLine($"Read from not usable 0x{address:X4}"); break;// Not Usable
+            case <= 0x7FFF: mbc?.WriteBank(address, data); break;            // 16KB ROM Bank > 00 (in cartridge, every other bank)
+            case <= 0x9FFF: Memory[address] = data; break;                  // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
+            case <= 0xBFFF: mbc?.WriteRam(address, data); break;             // 8KB External RAM (in cartridge, switchable bank, if any)
+            case <= 0xDFFF: Memory[address] = data; break;                  // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
+            case <= 0xFDFF: Memory[address] = data; break;                  // Same as C000-DDFF (ECHO) (typically not used)
+            case <= 0xFE9F: Memory[address] = data; break;                  // Sprite Attribute Table (OAM)
+            case <= 0xFEFF: Debug.Log($"Read from not usable 0x{address:X4}"); break;// Not Usable
             case <= 0xFF7F: WriteIO(address, data); break;                  // I/O Ports
-            case <= 0xFFFE: memory[address] = data; break;                  // Zero Page RAM
-            case <= 0xFFFF: memory[address] = data; break;                  // Interrupt Enable register (IE)
+            case <= 0xFFFE: Memory[address] = data; break;                  // Zero Page RAM
+            case <= 0xFFFF: Memory[address] = data; break;                  // Interrupt Enable register (IE)
         }
     }
 
@@ -320,20 +314,20 @@ public class Emulator
         return address switch
         {
             0xFF00 => joypad.JOYP,                       // Joypad input
-            >= 0xFF01 and <= 0xFF02 => memory[address],  // Serial transfer
-            0xFF03 => memory[address],                   // Unknown
-            0xFF04 => DIV,                               // Div
-            >= 0xFF05 and <= 0xFF07 => memory[address],  // Timer and divider
-            >= 0xFF10 and <= 0xFF26 => memory[address],  // Sound
-            >= 0xFF30 and <= 0xFF3F => memory[address],  // Wave pattern
-            >= 0xFF40 and <= 0xFF4B => memory[address],  // LCD Control, Status, Position, Scrolling, and Palettes
-            0xFF4F => memory[address],                   // VRAM Bank Select
-            0xFF50 => memory[address],                   // Set to non-zero to disable boot ROM
-            >= 0xFF51 and <= 0xFF55 => memory[address],  // VRAM DMA
-            >= 0xFF68 and <= 0xFF69 => memory[address],  // BG / OBJ Palettes
-            >= 0xFF70 => memory[address],                // WRAM Bank Select
+            >= 0xFF01 and <= 0xFF02 => Memory[address],  // Serial transfer
+            0xFF03 => Memory[address],                   // Unknown
+            0xFF04 => Memory[address],                   // Div
+            >= 0xFF05 and <= 0xFF07 => Memory[address],  // Timer and divider
+            >= 0xFF10 and <= 0xFF26 => Memory[address],  // Sound
+            >= 0xFF30 and <= 0xFF3F => Memory[address],  // Wave pattern
+            >= 0xFF40 and <= 0xFF4B => Memory[address],  // LCD Control, Status, Position, Scrolling, and Palettes
+            0xFF4F => Memory[address],                   // VRAM Bank Select
+            0xFF50 => Memory[address],                   // Set to non-zero to disable boot ROM
+            >= 0xFF51 and <= 0xFF55 => Memory[address],  // VRAM DMA
+            >= 0xFF68 and <= 0xFF69 => Memory[address],  // BG / OBJ Palettes
+            >= 0xFF70 => Memory[address],                // WRAM Bank Select
 
-            _ => memory[address],
+            _ => Memory[address],
         };
     }
 
@@ -343,27 +337,27 @@ public class Emulator
         {
             case 0xFF00: joypad.JOYP = data; break;
             case 0xFF01: SerialTransfer(address, data); break;
-            case 0xFF04: DIV = data; break;
-            case 0xFF44: memory[address] = 0; break;
+            case 0xFF04: Memory[address] = 0; break;            // Reset Div
+            case 0xFF44: Memory[address] = 0; break;
             case 0xFF46: OamTransfer(data); break;
 
-            default: memory[address] = data; break;
+            default: Memory[address] = data; break;
         };
 
     }
 
     private void OamTransfer(byte data)
     {
-        ushort offset = (ushort)(data / 0x100);
+        ushort offset = (ushort)(data << 8);
         for (byte i = 0; i < 160; i++)
         {
-            memory[0xFE00 + i] = Read((ushort)(offset + i));
+            Memory[0xFE00 + i] = Read((ushort)(offset + i));
         }
     }
 
     private void SerialTransfer(ushort address, byte data)
     {
-        Console.WriteLine($"Serial transfer: {data:X2}");
-        memory[address] = data;
+        Debug.Log($"Serial transfer: {data:X2}");
+        Memory[address] = data;
     }
 }

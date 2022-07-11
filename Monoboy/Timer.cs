@@ -4,15 +4,22 @@ using Monoboy.Constants;
 
 public class Timer
 {
-    byte TacFrequancy => (byte)(memory[0xFF07] & 0b11);
+    public byte Div { get => memory[0xFF04]; set => memory[0xFF04] = value; }
+    public byte Tima { get => memory[0xFF05]; set => memory[0xFF05] = value; }
+    public byte Tma { get => memory[0xFF06]; set => memory[0xFF06] = value; }
+    public bool TacEnabled => (memory[0xFF07] & 0b100) != 0;
+    public byte TacFrequancy => (byte)(memory[0xFF07] & 0b011);
 
-    private readonly ushort[] timerFrequancy = { 1024, 16, 64, 256 };
+    private static readonly int[] TimerFrequancy = { 1024 / 4, 16 / 4, 64 / 4, 256 / 4 };
+
+    private Emulator emulator;
+
+    private int timerCounter;
+
     private Memory memory;
     private readonly Cpu cpu;
 
-    public ushort SystemInternalClock { get; set; }
-
-    private ushort timerCounter;
+    public int DivCounter { get; set; }
 
     public Timer(Memory memory, Cpu cpu)
     {
@@ -22,30 +29,34 @@ public class Timer
 
     public void Step(int ticks)
     {
-        SystemInternalClock += (ushort)ticks;
-
-        if ((memory[0xFF07] & 0b100) != 0)
+        DivCounter += ticks;
+        if (DivCounter >= 256 / 4)
         {
-            timerCounter += (ushort)ticks;
+            Div++;
+            DivCounter -= 256 / 4;
+        }
 
-            while (timerCounter >= timerFrequancy[TacFrequancy])
+        if (TacEnabled == true)
+        {
+            timerCounter += ticks;
+
+            while (timerCounter >= TimerFrequancy[TacFrequancy])
             {
-                memory[0xFF05]++;
-                timerCounter -= timerFrequancy[TacFrequancy];
+                Tima++;
+                timerCounter -= TimerFrequancy[TacFrequancy];
             }
 
-            // Overflow occured
-            if (memory[0xFF05] == 0xFF)
+            if (Tima == 0xFF)
             {
+                Tima = Tma;
                 cpu.RequestInterrupt(InterruptFlag.Timer);
-                memory[0xFF05] = memory[0xFF06];
             }
         }
     }
 
     internal void Reset()
     {
-        SystemInternalClock = 0;
+        DivCounter = 0;
         timerCounter = 0;
     }
 }

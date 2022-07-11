@@ -12,11 +12,14 @@ public class Emulator
     public const int CyclesPerFrame = 17556;
     public const byte WindowWidth = 160;
     public const byte WindowHeight = 144;
+    private const int IFReg = 0xFF0F;
+    private const int IEReg = 0xFFFF;
 
     /// <summary> #AABBGGRR </summary>
     public uint[] Framebuffer { get; set; }
     public string GameTitle { get; private set; }
-    byte[] bios;
+
+    private byte[] bios;
 
     // Hardware
     private Register register;
@@ -24,7 +27,7 @@ public class Emulator
     private IMemoryBankController mbc;
     private bool biosEnabled = true;
     private Cpu cpu;
-    public Ppu ppu;
+    private Ppu ppu;
     private Joypad joypad;
     private Timer timer;
 
@@ -32,8 +35,8 @@ public class Emulator
     internal bool Halted { get; set; }
     internal bool HaltBug { get; set; }
 
-    public byte IF { get => Read(0xFF0F); set => Write(0xFF0F, value); }
-    public byte IE { get => Read(0xFFFF); set => Write(0xFFFF, value); }
+    public byte IF { get => Read(IFReg); set => Write(IFReg, value); }
+    public byte IE { get => Read(IEReg); set => Write(IEReg, value); }
 
     // Interupt
     internal bool Ime { get; set; } // Master interupt enabled
@@ -45,7 +48,6 @@ public class Emulator
     public Emulator(byte[] bios)
     {
         this.bios = bios;
-
         Memory = new Memory(0x10000);
         Framebuffer = new uint[WindowWidth * WindowHeight];
 
@@ -81,6 +83,11 @@ public class Emulator
 
     public void StepFrame()
     {
+        if (mbc == null && biosEnabled == false)
+        {
+            return;
+        }
+
         while (Cycles < CyclesPerFrame)
         {
             Cycles += Step();
@@ -154,6 +161,8 @@ public class Emulator
             _ => throw new NotImplementedException()
         };
 
+        // Console.WriteLine(mbc.GetType().Name);
+
         mbc.Rom = data;
 
         string saveFile = rom.Replace(".gb", ".sav");
@@ -161,15 +170,18 @@ public class Emulator
         {
             mbc.SetRam(File.ReadAllBytes(saveFile));
         }
-
-
     }
 
     public void Reset()
     {
-        for (int i = 0; i < Framebuffer.Length; i++)
+        for (int x = 0; x < WindowWidth; x++)
         {
-            Framebuffer[i] = Pallet.GetColor(0);
+            for (int y = 0; y < WindowHeight; y++)
+            {
+                int i = x + y * WindowWidth;
+
+                Framebuffer[i] = Pallet.GetColor(0);
+            }
         }
 
         register.Reset();
@@ -179,88 +191,12 @@ public class Emulator
         HaltBug = false;
         Ime = false;
         ImeDelay = false;
+        biosEnabled = true;
 
-        cpu.Reset();
         timer.Reset();
         ppu.Reset();
         joypad.Reset();
         Memory.Reset();
-    }
-
-    public void SkipBootRom()
-    {
-        biosEnabled = false;
-
-        register.ZFlag = true;
-        register.NFlag = false;
-        register.HFlag = false;
-        register.CFlag = false;
-
-        register.A = 0x01;
-        register.B = 0x00;
-        register.C = 0x13;
-        register.D = 0x00;
-        register.E = 0xD8;
-        register.H = 0x01;
-        register.L = 0x4D;
-        register.PC = 0x0100;
-        register.SP = 0xFFFE;
-
-        Write(0xFF00, 0xCF);
-        Write(0xFF01, 0x00);
-        Write(0xFF02, 0x7E);
-        Write(0xFF04, 0xAB);
-        Write(0xFF05, 0x00);
-        Write(0xFF06, 0x00);
-        Write(0xFF07, 0xF8);
-        Write(0xFF0F, 0xE1);
-        Write(0xFF10, 0x80);
-        Write(0xFF11, 0xBF);
-        Write(0xFF12, 0xF3);
-        Write(0xFF13, 0xFF);
-        Write(0xFF14, 0xBF);
-        Write(0xFF16, 0x3F);
-        Write(0xFF17, 0x00);
-        Write(0xFF18, 0xFF);
-        Write(0xFF19, 0xBF);
-        Write(0xFF1A, 0x7F);
-        Write(0xFF1B, 0xFF);
-        Write(0xFF1C, 0x9F);
-        Write(0xFF1D, 0xFF);
-        Write(0xFF1E, 0xBF);
-        Write(0xFF20, 0xFF);
-        Write(0xFF21, 0x00);
-        Write(0xFF22, 0x00);
-        Write(0xFF23, 0xBF);
-        Write(0xFF24, 0x77);
-        Write(0xFF25, 0xF3);
-        Write(0xFF26, 0xF1);
-        Write(0xFF40, 0x91);
-        Write(0xFF41, 0x85);
-        Write(0xFF42, 0x00);
-        Write(0xFF43, 0x00);
-        Write(0xFF44, 0x00);
-        Write(0xFF45, 0x00);
-        Write(0xFF46, 0xFF);
-        Write(0xFF47, 0xFC);
-        Write(0xFF48, 0xFF);
-        Write(0xFF49, 0xFF);
-        Write(0xFF4A, 0x00);
-        Write(0xFF4B, 0x00);
-        Write(0xFF4D, 0xFF);
-        Write(0xFF4F, 0xFF);
-        Write(0xFF51, 0xFF);
-        Write(0xFF52, 0xFF);
-        Write(0xFF53, 0xFF);
-        Write(0xFF54, 0xFF);
-        Write(0xFF55, 0xFF);
-        Write(0xFF56, 0xFF);
-        Write(0xFF68, 0xFF);
-        Write(0xFF69, 0xFF);
-        Write(0xFF6A, 0xFF);
-        Write(0xFF6B, 0xFF);
-        Write(0xFF70, 0xFF);
-        Write(0xFFFF, 0x00);
     }
 
     public void SetButtonState(GameboyButton button, bool pressed)
@@ -270,9 +206,43 @@ public class Emulator
 
     public byte Read(ushort address)
     {
-        if (biosEnabled && bios.Length > 0 && address <= 0x00FF)
+        if (biosEnabled)
         {
-            return bios[address];
+            if (bios.Length > 0 && address <= 0x00FF)
+            {
+                return bios[address];
+            }
+
+            if (address >= 0x0104 && address <= 0x0133)
+            {
+                return new byte[]{
+                    0b11001110,0b11101101,
+                    0b00110111,0b01111011,
+                    0b00000000,0b00110110,
+                    0b00000000,0b11000110,
+                    0b00000000,0b11011110,
+                    0b00000000,0b10001101,
+                    0b00000000,0b11111001,
+                    0b00110011,0b00111011,
+                    0b00000000,0b11100011,
+                    0b00000000,0b00110110,
+                    0b00000000,0b11000110,
+                    0b00000000,0b11011101,
+                    0b11011100,0b11000000,
+                    0b10110011,0b00110000,
+                    0b01100110,0b00110000,
+                    0b01100110,0b11000000,
+                    0b11001100,0b11000000,
+                    0b11011101,0b11000000,
+                    0b10011001,0b11110000,
+                    0b10111011,0b00110000,
+                    0b00110011,0b11100000,
+                    0b01100110,0b00110000,
+                    0b01100110,0b11000000,
+                    0b11010111,0b00111110,
+                }
+            [address - 0x0104];
+            }
         }
 
         return address switch
@@ -288,7 +258,7 @@ public class Emulator
             <= 0xFEFF => 0x00,                          // Not Usable
             <= 0xFF7F => ReadIO(address),               // I/O Registers
             <= 0xFFFE => Memory[address],               // High RAM (HRAM)
-            0xFFFF => Memory[address],                  // Interrupt Enable register (IE)
+            IEReg => Memory[address],                  // Interrupt Enable register (IE)
         };
     }
 
@@ -296,16 +266,16 @@ public class Emulator
     {
         switch (address)
         {
-            case <= 0x7FFF: mbc?.WriteBank(address, data); break;            // 16KB ROM Bank > 00 (in cartridge, every other bank)
+            case <= 0x7FFF: mbc?.WriteBank(address, data); break;           // 16KB ROM Bank > 00 (in cartridge, every other bank)
             case <= 0x9FFF: Memory[address] = data; break;                  // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
-            case <= 0xBFFF: mbc?.WriteRam(address, data); break;             // 8KB External RAM (in cartridge, switchable bank, if any)
+            case <= 0xBFFF: mbc?.WriteRam(address, data); break;            // 8KB External RAM (in cartridge, switchable bank, if any)
             case <= 0xDFFF: Memory[address] = data; break;                  // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
             case <= 0xFDFF: Memory[address] = data; break;                  // Same as C000-DDFF (ECHO) (typically not used)
             case <= 0xFE9F: Memory[address] = data; break;                  // Sprite Attribute Table (OAM)
-            case <= 0xFEFF: Debug.Log($"Read from not usable 0x{address:X4}"); break;// Not Usable
+            case <= 0xFEFF: break;                                          // Not Usable
             case <= 0xFF7F: WriteIO(address, data); break;                  // I/O Ports
             case <= 0xFFFE: Memory[address] = data; break;                  // Zero Page RAM
-            case <= 0xFFFF: Memory[address] = data; break;                  // Interrupt Enable register (IE)
+            case <= IEReg: Memory[address] = data; break;                  // Interrupt Enable register (IE)
         }
     }
 
@@ -357,7 +327,82 @@ public class Emulator
 
     private void SerialTransfer(ushort address, byte data)
     {
-        Debug.Log($"Serial transfer: {data:X2}");
         Memory[address] = data;
+    }
+
+    public void SkipBootRom()
+    {
+        biosEnabled = false;
+
+        register.ZFlag = true;
+        register.NFlag = false;
+        register.HFlag = false;
+        register.CFlag = false;
+
+        register.A = 0x01;
+        register.B = 0x00;
+        register.C = 0x13;
+        register.D = 0x00;
+        register.E = 0xD8;
+        register.H = 0x01;
+        register.L = 0x4D;
+        register.PC = 0x0100;
+        register.SP = 0xFFFE;
+
+        Write(0xFF00, 0xCF);
+        Write(0xFF01, 0x00);
+        Write(0xFF02, 0x7E);
+        Write(0xFF04, 0xAB);
+        Write(0xFF05, 0x00);
+        Write(0xFF06, 0x00);
+        Write(0xFF07, 0xF8);
+        Write(IFReg, 0xE1);
+        Write(0xFF10, 0x80);
+        Write(0xFF11, 0xBF);
+        Write(0xFF12, 0xF3);
+        Write(0xFF13, 0xFF);
+        Write(0xFF14, 0xBF);
+        Write(0xFF16, 0x3F);
+        Write(0xFF17, 0x00);
+        Write(0xFF18, 0xFF);
+        Write(0xFF19, 0xBF);
+        Write(0xFF1A, 0x7F);
+        Write(0xFF1B, 0xFF);
+        Write(0xFF1C, 0x9F);
+        Write(0xFF1D, 0xFF);
+        Write(0xFF1E, 0xBF);
+        Write(0xFF20, 0xFF);
+        Write(0xFF21, 0x00);
+        Write(0xFF22, 0x00);
+        Write(0xFF23, 0xBF);
+        Write(0xFF24, 0x77);
+        Write(0xFF25, 0xF3);
+        Write(0xFF26, 0xF1);
+        Write(0xFF40, 0x91);
+        Write(0xFF41, 0x85);
+        Write(0xFF42, 0x00);
+        Write(0xFF43, 0x00);
+        Write(0xFF44, 0x00);
+        Write(0xFF45, 0x00);
+        Write(0xFF46, 0xFF);
+        Write(0xFF47, 0xFC);
+        Write(0xFF48, 0xFF);
+        Write(0xFF49, 0xFF);
+        Write(0xFF4A, 0x00);
+        Write(0xFF4B, 0x00);
+        Write(0xFF4D, 0xFF);
+        Write(0xFF4F, 0xFF);
+        Write(0xFF51, 0xFF);
+        Write(0xFF52, 0xFF);
+        Write(0xFF53, 0xFF);
+        Write(0xFF54, 0xFF);
+        Write(0xFF55, 0xFF);
+        Write(0xFF56, 0xFF);
+        Write(0xFF68, 0xFF);
+        Write(0xFF69, 0xFF);
+        Write(0xFF6A, 0xFF);
+        Write(0xFF6B, 0xFF);
+        Write(0xFF70, 0xFF);
+        Write(IEReg, 0x00);
     }
 }

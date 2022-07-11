@@ -11,7 +11,7 @@ public static class Pallet
     {
         uint[] pallet = new uint[4];
 
-        pallet[0] = 0xFF00FF;
+        pallet[0] = 0xD0D058;
         pallet[1] = 0xA0A840;
         pallet[2] = 0x708028;
         pallet[3] = 0x405010;

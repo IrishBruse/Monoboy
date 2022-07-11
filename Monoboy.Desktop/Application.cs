@@ -1,6 +1,5 @@
 namespace Monoboy.Desktop;
 
-using System;
 using System.Diagnostics;
 using System.IO;
 
@@ -17,50 +16,63 @@ using SixLabors.ImageSharp.PixelFormats;
 
 using Veldrid;
 
+using static Monoboy.Bit;
+
 public class Application
 {
-    private VeldridWindow Window { get; set; }
+    private VeldridWindow window;
 
     private Emulator emulator;
     private Stopwatch timer = new();
 
     private int frame;
-    private bool speedup = false;
+    private bool speedup;
+    private bool paused;
 
     public Application()
     {
         emulator = new(Boot.DMG);
 
-        Window = new(GraphicsBackend.Vulkan, Icon.Data);
+        window = new(GraphicsBackend.Vulkan, Icon.Data);
 
-        Window.Framebuffer = emulator.Framebuffer;
+        window.Framebuffer = emulator.Framebuffer;
 
-        Window.Update += OnUpdate;
-        Window.FileDrop += OnFilesDrop;
-        Window.Load += OnLoad;
+        window.Update += OnUpdate;
+        window.FileDrop += OnFilesDrop;
+        window.Load += OnLoad;
     }
 
     private void OnLoad()
     {
-        Window.Keyboard.KeyDown += KeyDown;
-        Window.Keyboard.KeyUp += KeyUp;
+        window.Keyboard.KeyDown += KeyDown;
+        window.Keyboard.KeyUp += KeyUp;
         timer.Start();
     }
 
     public void Run()
     {
-        Window.Run();
+        window.Run();
     }
+
+    private int milis;
 
     public void OnUpdate(double deltaTime)
     {
-        EmulatorEmulator();
+        string title = !string.IsNullOrEmpty(emulator.GameTitle) ? $" - {emulator.GameTitle}" : "";
+        string pausedTitle = paused ? " - Paused" : "";
+        window.Title = "Monoboy" + title + pausedTitle + " - " + milis;
+
+        if (paused)
+        {
+            return;
+        }
+
+        EmulatorInput();
 
         if (frame >= 3)
         {
             frame = 0;
-            string title = !string.IsNullOrEmpty(emulator.GameTitle) ? $" - {emulator.GameTitle}" : "";
-            Window.Title = "Monoboy" + title + " - " + (timer.ElapsedMilliseconds / 3);
+            milis = (int)(timer.ElapsedMilliseconds / 3);
             timer.Reset();
         }
         else
@@ -81,10 +93,10 @@ public class Application
         }
     }
 
-    private void EmulatorEmulator()
+    private void EmulatorInput()
     {
         // Keyboard
-        var keyboard = Window.Keyboard;
+        IKeyboard keyboard = window.Keyboard;
 
         bool right = keyboard.IsKeyPressed(Key.D) || keyboard.IsKeyPressed(Key.Right);
         bool left = keyboard.IsKeyPressed(Key.A) || keyboard.IsKeyPressed(Key.Left);
@@ -93,11 +105,11 @@ public class Application
 
         bool a = keyboard.IsKeyPressed(Key.Space);
         bool b = keyboard.IsKeyPressed(Key.ShiftLeft);
-        bool select = keyboard.IsKeyPressed(Key.Escape);
-        bool start = keyboard.IsKeyPressed(Key.Enter);
+        bool select = keyboard.IsKeyPressed(Key.Enter);
+        bool start = keyboard.IsKeyPressed(Key.Escape);
 
         // Controller/Gamepad
-        var gamepad = Window.Gamepad;
+        IGamepad gamepad = window.Gamepad;
 
         if (gamepad != null)
         {
@@ -151,19 +163,16 @@ public class Application
             speedup = true;
             break;
 
+            case Key.P:
+            paused = !paused;
+            break;
+
             case Key.F2:
-            Window.Screenshot();
+            window.Screenshot();
             break;
 
             case Key.O:
-            if (keyboard.IsKeyPressed(Key.ControlLeft))
-            {
-                DialogResult file = Dialog.FileOpen("gb,gbc");
-                if (file.IsOk)
-                {
-                    emulator.Open(file.Path);
-                }
-            }
+            OpenFile(keyboard);
             break;
 
             case Key.F5:
@@ -171,68 +180,90 @@ public class Application
             break;
 
             case Key.F6:
-            Image<Rgba32> backgroundImage = new(256, 256, new Rgba32(Pallet.GetColor(0)));
-
-            bool tileset = emulator.ppu.LCDC.GetBit(Bit.Tileset);
-            bool tilemap = emulator.ppu.LCDC.GetBit(Bit.Tilemap);
-
-            ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x1000);
-            ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
-
-            for (int y = 0; y < 256; y++)
-            {
-                ushort row = (ushort)(y / 8);
-
-                for (int x = 0; x < 256; x++)
-                {
-                    ushort colum = (ushort)(x / 8);
-
-                    byte rawTile = emulator.Read((ushort)(0x8000 + tilemapAddress + (row * 32) + colum));
-
-                    int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
-
-                    int line = (byte)(y % 8) * 2;
-                    byte data1 = emulator.Read((ushort)(0x8000 + vramAddress + line));
-                    byte data2 = emulator.Read((ushort)(0x8000 + vramAddress + line + 1));
-
-                    byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
-                    byte palletIndex = (byte)((((data2 & (bit)) != 0 ? 1 : 0) << 1) | ((data1 & (bit)) != 0 ? 1 : 0));
-                    byte colorIndex = (byte)((emulator.ppu.BGP >> (palletIndex * 2)) & 0b11);
-                    backgroundImage[x, y] = new(Pallet.GetColor(colorIndex));
-                }
-            }
-
-            backgroundImage.SaveAsPng("Background.png");
+            DumpBackground();
             break;
 
             case Key.F7:
-            Image<Rgba32> tilesetImage = new(128, 192, new Rgba32(Pallet.GetColor(0)));
-
-            for (int y = 0; y < 192; y++)
-            {
-                ushort row = (ushort)(y / 8);
-
-                for (int x = 0; x < 128; x++)
-                {
-                    ushort colum = (ushort)(x / 8);
-
-                    ushort rawTile = (ushort)((row * 16) + colum);
-
-                    ushort tileGraphicAddress = (ushort)(rawTile * 16);
-
-                    byte line = (byte)((byte)(y % 8) * 2);
-                    byte data1 = emulator.Read((ushort)(0x8000 + tileGraphicAddress + line));
-                    byte data2 = emulator.Read((ushort)(0x8000 + tileGraphicAddress + line + 1));
-
-                    byte bit = (byte)(0b00000001 << (((x % 8) - 7) * 0xff));
-                    byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-                    byte colorIndex = (byte)((emulator.ppu.BGP >> (palletIndex * 2)) & 0b11);
-                    tilesetImage[x, y] = new(Pallet.GetColor(colorIndex));
-                }
-            }
-
-            tilesetImage.SaveAsPng("Tileset.png");
+            DumpTileset();
             break;
         }
+    }
+
+    private void OpenFile(IKeyboard keyboard)
+    {
+        if (keyboard.IsKeyPressed(Key.ControlLeft))
+        {
+            DialogResult file = Dialog.FileOpen("gb,gbc");
+            if (file.IsOk)
+            {
+                emulator.Open(file.Path);
+            }
+        }
+    }
+
+    private void DumpBackground()
+    {
+        Image<Rgba32> backgroundImage = new(256, 256, new Rgba32(Pallet.GetColor(0)));
+
+        bool tileset = emulator.Read(0xFF40).GetBit(Flags.Tileset);
+        bool tilemap = emulator.Read(0xFF40).GetBit(Flags.Tilemap);
+
+        ushort tilesetAddress = (ushort)(tileset ? 0x0000 : 0x1000);
+        ushort tilemapAddress = (ushort)(tilemap ? 0x1C00 : 0x1800);
+
+        for (int y = 0; y < 256; y++)
+        {
+            ushort row = (ushort)(y / 8);
+
+            for (int x = 0; x < 256; x++)
+            {
+                ushort colum = (ushort)(x / 8);
+
+                byte rawTile = emulator.Read((ushort)(0x8000 + tilemapAddress + (row * 32) + colum));
+
+                int vramAddress = tileset ? (rawTile * 16) + tilesetAddress : ((short)tilesetAddress) + ((sbyte)rawTile * 16);
+
+                int line = (byte)(y % 8) * 2;
+                byte data1 = emulator.Read((ushort)(0x8000 + vramAddress + line));
+                byte data2 = emulator.Read((ushort)(0x8000 + vramAddress + line + 1));
+
+                byte bit = (byte)(Bit0 << (((x % 8) - 7) * 0xff));
+                byte palletIndex = (byte)((((data2 & (bit)) != 0 ? 1 : 0) << 1) | ((data1 & (bit)) != 0 ? 1 : 0));
+                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & Bit01);
+                backgroundImage[x, y] = new(packed: Pallet.GetColor(colorIndex));
+            }
+        }
+
+        backgroundImage.SaveAsPng("Background.png");
+    }
+
+    private void DumpTileset()
+    {
+        Image<Rgba32> tilesetImage = new(128, 192, new Rgba32(Pallet.GetColor(0)));
+
+        for (int y = 0; y < 192; y++)
+        {
+            ushort row = (ushort)(y / 8);
+
+            for (int x = 0; x < 128; x++)
+            {
+                ushort colum = (ushort)(x / 8);
+
+                ushort rawTile = (ushort)((row * 16) + colum);
+
+                ushort tileGraphicAddress = (ushort)(rawTile * 16);
+
+                byte line = (byte)((byte)(y % 8) * 2);
+                byte data1 = emulator.Read((ushort)(0x8000 + tileGraphicAddress + line));
+                byte data2 = emulator.Read((ushort)(0x8000 + tileGraphicAddress + line + 1));
+
+                byte bit = (byte)(Bit0 << (((x % 8) - 7) * 0xff));
+                byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
+                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & Bit01);
+                tilesetImage[x, y] = new(Pallet.GetColor(colorIndex));
+            }
+        }
+
+        tilesetImage.SaveAsPng("Tileset.png");
     }
 }

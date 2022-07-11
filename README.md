@@ -16,14 +16,15 @@ Reference: https://gbdev.io/pandocs/
 | Down    | S         | Stick   | Dpad / Arrow Keys |
 | A       | Space     | A       |                   |
 | B       | ShiftLeft | B       |                   |
-| Start   | Enter     | Start   |                   |
-| Select  | Escape    | Select  |                   |
+| Start   | Escape    | Start   |                   |
+| Select  | Enter     | Select  |                   |
 
 ## Emulator Controls
 
 | Action                | Shortcut | Alternative           |
 | --------------------- | -------- | --------------------- |
 | Speedup 5 time        | F        |                       |
+| Pause                 | P        |                       |
 | Open Rom              | Ctrl+O   | Drop file into window |
 | Screenshot            | F2       |                       |
 | Dump Memory           | F5       |                       |

@@ -37,29 +37,16 @@ public class MemoryBankController3 : IMemoryBankController
     {
         if (RamEnabled)
         {
-            switch (RamBank)
+            return RamBank switch
             {
-                case byte when address < 0x3:
-                return Ram[(0x2000 * RamBank) + (address & 0x1FFF)];
-
-                // Timer
-                case 0x8:
-                return seconds;
-
-                case 0x9:
-                return minutes;
-
-                case 0xA:
-                return hours;
-
-                case 0xB:
-                return days;
-
-                case 0xC:
-                return daysCarry;
-                default:
-                break;
-            }
+                < 0x3 => Ram[(0x2000 * RamBank) + (address & 0x1FFF)],
+                0x8 => seconds,
+                0x9 => minutes,
+                0xA => hours,
+                0xB => days,
+                0xC => daysCarry,
+                _ => 0xFF
+            };
         }
 
         return 0xFF;
@@ -71,7 +58,7 @@ public class MemoryBankController3 : IMemoryBankController
         {
             switch (RamBank)
             {
-                case byte when address < 0x3:
+                case < 0x3:
                 Ram[(0x2000 * RamBank) + (address & 0x1FFF)] = data;
                 break;
 
@@ -101,13 +88,13 @@ public class MemoryBankController3 : IMemoryBankController
     {
         switch (address)
         {
-            case ushort when address < 0x2000:
+            case < 0x2000:
             {
                 RamEnabled = data == 0x0A;
             }
             break;
 
-            case ushort when address < 0x4000:
+            case < 0x4000:
             {
                 RomBank = (byte)(data & 0b01111111);
                 if (RomBank == 0x00)
@@ -117,7 +104,7 @@ public class MemoryBankController3 : IMemoryBankController
             }
             break;
 
-            case ushort when address < 0x6000:
+            case < 0x6000:
             {
                 if (data >= 0x00 && data <= 0x03 && data >= 0x08 && data <= 0xC0)
                 {
@@ -126,7 +113,7 @@ public class MemoryBankController3 : IMemoryBankController
             }
             break;
 
-            case ushort when address < 0x8000:
+            case < 0x8000:
             {
                 DateTime now = DateTime.Now;
                 seconds = (byte)now.Second;

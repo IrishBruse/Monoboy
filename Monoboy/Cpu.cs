@@ -119,7 +119,7 @@ public class Cpu
             case 0xEA: emulator.Write(NextShort(), register.A); break;
 
             case 0xF2: register.A = emulator.Read((ushort)(0xFF00 + register.C)); break;        // LD A,(C)
-            case 0xE2: emulator.Write((ushort)(0xFF00 + register.C), register.A); break;  // LD (C),A    ldh [$ff00+c], a
+            case 0xE2: emulator.Write((ushort)(0xFF00 + register.C), register.A); break;  // LD (C),A
             case 0x3A: register.A = emulator.Read(register.HL--); break;                        // LD A,(HL-)
             case 0x32: emulator.Write(register.HL--, register.A); break;                  // LD (HL-),A
             case 0x2A: register.A = emulator.Read(register.HL++); break;                        // LD A,(HL+)
@@ -269,9 +269,6 @@ public class Cpu
             case 0x3F: CCF(); break;// CCF
             case 0x37: SCF(); break;// SCF
 
-            case 0x00: break;// NOP
-            case 0x76: Halt(); break;// HALT
-
             case 0xF3: Disable(); break;// DI
             case 0xFB: EnableInterrupt(); break;// EI
 
@@ -311,13 +308,15 @@ public class Cpu
             case 0xD8: RET(register.CFlag); break;
             case 0xD9: RET(true); EnableInterrupt(); break;// RETI
 
-            case 0x07: RLCA(); break;// RLCA
-            case 0x17: RLA(); break;//RLA
-            case 0x0F: RRCA(); break;// RRCA
-            case 0x1F: RRA(); break;// RRA
+            case 0x07: RLCA(); break;   // RLCA
+            case 0x17: RLA(); break;    // RLA
+            case 0x0F: RRCA(); break;   // RRCA
+            case 0x1F: RRA(); break;    // RRA
 
-            case 0x10: Debug.Log("Stop Called"); break;// STOP
+            case 0x76: Halt(); break;   // HALT
 
+            case 0x00: // NOP
+            case 0x10: // STOP
             case 0xD3:
             case 0xDB:
             case 0xDD:
@@ -329,7 +328,7 @@ public class Cpu
             case 0xF4:
             case 0xFC:
             case 0xFD:
-            default: Debug.Log("Illegal Instruction : " + op); break;
+            default: break;
         }
 
         switch (op)
@@ -425,221 +424,221 @@ public class Cpu
             case 0x3D: register.L = SRL(register.L); break;
             case 0x3E: emulator.Write(register.HL, SRL(emulator.Read(register.HL))); break;
 
-            case 0x47: BIT(0b00000001, register.A); break;// BIT 0,r
-            case 0x40: BIT(0b00000001, register.B); break;
-            case 0x41: BIT(0b00000001, register.C); break;
-            case 0x42: BIT(0b00000001, register.D); break;
-            case 0x43: BIT(0b00000001, register.E); break;
-            case 0x44: BIT(0b00000001, register.H); break;
-            case 0x45: BIT(0b00000001, register.L); break;
-            case 0x46: BIT(0b00000001, emulator.Read(register.HL)); break;
+            case 0x47: BIT(Bit0, register.A); break;// BIT 0,r
+            case 0x40: BIT(Bit0, register.B); break;
+            case 0x41: BIT(Bit0, register.C); break;
+            case 0x42: BIT(Bit0, register.D); break;
+            case 0x43: BIT(Bit0, register.E); break;
+            case 0x44: BIT(Bit0, register.H); break;
+            case 0x45: BIT(Bit0, register.L); break;
+            case 0x46: BIT(Bit0, emulator.Read(register.HL)); break;
 
-            case 0x4F: BIT(0b00000010, register.A); break;// BIT 1,r
-            case 0x48: BIT(0b00000010, register.B); break;
-            case 0x49: BIT(0b00000010, register.C); break;
-            case 0x4A: BIT(0b00000010, register.D); break;
-            case 0x4B: BIT(0b00000010, register.E); break;
-            case 0x4C: BIT(0b00000010, register.H); break;
-            case 0x4D: BIT(0b00000010, register.L); break;
-            case 0x4E: BIT(0b00000010, emulator.Read(register.HL)); break;
+            case 0x4F: BIT(Bit1, register.A); break;// BIT 1,r
+            case 0x48: BIT(Bit1, register.B); break;
+            case 0x49: BIT(Bit1, register.C); break;
+            case 0x4A: BIT(Bit1, register.D); break;
+            case 0x4B: BIT(Bit1, register.E); break;
+            case 0x4C: BIT(Bit1, register.H); break;
+            case 0x4D: BIT(Bit1, register.L); break;
+            case 0x4E: BIT(Bit1, emulator.Read(register.HL)); break;
 
-            case 0x57: BIT(0b00000100, register.A); break;// BIT 2,r
-            case 0x50: BIT(0b00000100, register.B); break;
-            case 0x51: BIT(0b00000100, register.C); break;
-            case 0x52: BIT(0b00000100, register.D); break;
-            case 0x53: BIT(0b00000100, register.E); break;
-            case 0x54: BIT(0b00000100, register.H); break;
-            case 0x55: BIT(0b00000100, register.L); break;
-            case 0x56: BIT(0b00000100, emulator.Read(register.HL)); break;
+            case 0x57: BIT(Bit2, register.A); break;// BIT 2,r
+            case 0x50: BIT(Bit2, register.B); break;
+            case 0x51: BIT(Bit2, register.C); break;
+            case 0x52: BIT(Bit2, register.D); break;
+            case 0x53: BIT(Bit2, register.E); break;
+            case 0x54: BIT(Bit2, register.H); break;
+            case 0x55: BIT(Bit2, register.L); break;
+            case 0x56: BIT(Bit2, emulator.Read(register.HL)); break;
 
-            case 0x5F: BIT(0b00001000, register.A); break;// BIT 3,r
-            case 0x58: BIT(0b00001000, register.B); break;
-            case 0x59: BIT(0b00001000, register.C); break;
-            case 0x5A: BIT(0b00001000, register.D); break;
-            case 0x5B: BIT(0b00001000, register.E); break;
-            case 0x5C: BIT(0b00001000, register.H); break;
-            case 0x5D: BIT(0b00001000, register.L); break;
-            case 0x5E: BIT(0b00001000, emulator.Read(register.HL)); break;
+            case 0x5F: BIT(Bit3, register.A); break;// BIT 3,r
+            case 0x58: BIT(Bit3, register.B); break;
+            case 0x59: BIT(Bit3, register.C); break;
+            case 0x5A: BIT(Bit3, register.D); break;
+            case 0x5B: BIT(Bit3, register.E); break;
+            case 0x5C: BIT(Bit3, register.H); break;
+            case 0x5D: BIT(Bit3, register.L); break;
+            case 0x5E: BIT(Bit3, emulator.Read(register.HL)); break;
 
-            case 0x67: BIT(0b00010000, register.A); break;// BIT 4,r
-            case 0x60: BIT(0b00010000, register.B); break;
-            case 0x61: BIT(0b00010000, register.C); break;
-            case 0x62: BIT(0b00010000, register.D); break;
-            case 0x63: BIT(0b00010000, register.E); break;
-            case 0x64: BIT(0b00010000, register.H); break;
-            case 0x65: BIT(0b00010000, register.L); break;
-            case 0x66: BIT(0b00010000, emulator.Read(register.HL)); break;
+            case 0x67: BIT(Bit4, register.A); break;// BIT 4,r
+            case 0x60: BIT(Bit4, register.B); break;
+            case 0x61: BIT(Bit4, register.C); break;
+            case 0x62: BIT(Bit4, register.D); break;
+            case 0x63: BIT(Bit4, register.E); break;
+            case 0x64: BIT(Bit4, register.H); break;
+            case 0x65: BIT(Bit4, register.L); break;
+            case 0x66: BIT(Bit4, emulator.Read(register.HL)); break;
 
-            case 0x6F: BIT(0b00100000, register.A); break;// BIT 5,r
-            case 0x68: BIT(0b00100000, register.B); break;
-            case 0x69: BIT(0b00100000, register.C); break;
-            case 0x6A: BIT(0b00100000, register.D); break;
-            case 0x6B: BIT(0b00100000, register.E); break;
-            case 0x6C: BIT(0b00100000, register.H); break;
-            case 0x6D: BIT(0b00100000, register.L); break;
-            case 0x6E: BIT(0b00100000, emulator.Read(register.HL)); break;
+            case 0x6F: BIT(Bit5, register.A); break;// BIT 5,r
+            case 0x68: BIT(Bit5, register.B); break;
+            case 0x69: BIT(Bit5, register.C); break;
+            case 0x6A: BIT(Bit5, register.D); break;
+            case 0x6B: BIT(Bit5, register.E); break;
+            case 0x6C: BIT(Bit5, register.H); break;
+            case 0x6D: BIT(Bit5, register.L); break;
+            case 0x6E: BIT(Bit5, emulator.Read(register.HL)); break;
 
-            case 0x77: BIT(0b01000000, register.A); break;// BIT 6,r
-            case 0x70: BIT(0b01000000, register.B); break;
-            case 0x71: BIT(0b01000000, register.C); break;
-            case 0x72: BIT(0b01000000, register.D); break;
-            case 0x73: BIT(0b01000000, register.E); break;
-            case 0x74: BIT(0b01000000, register.H); break;
-            case 0x75: BIT(0b01000000, register.L); break;
-            case 0x76: BIT(0b01000000, emulator.Read(register.HL)); break;
+            case 0x77: BIT(Bit6, register.A); break;// BIT 6,r
+            case 0x70: BIT(Bit6, register.B); break;
+            case 0x71: BIT(Bit6, register.C); break;
+            case 0x72: BIT(Bit6, register.D); break;
+            case 0x73: BIT(Bit6, register.E); break;
+            case 0x74: BIT(Bit6, register.H); break;
+            case 0x75: BIT(Bit6, register.L); break;
+            case 0x76: BIT(Bit6, emulator.Read(register.HL)); break;
 
-            case 0x7F: BIT(0b10000000, register.A); break;// BIT 7,r
-            case 0x78: BIT(0b10000000, register.B); break;
-            case 0x79: BIT(0b10000000, register.C); break;
-            case 0x7A: BIT(0b10000000, register.D); break;
-            case 0x7B: BIT(0b10000000, register.E); break;
-            case 0x7C: BIT(0b10000000, register.H); break;
-            case 0x7D: BIT(0b10000000, register.L); break;
-            case 0x7E: BIT(0b10000000, emulator.Read(register.HL)); break;
+            case 0x7F: BIT(Bit7, register.A); break;// BIT 7,r
+            case 0x78: BIT(Bit7, register.B); break;
+            case 0x79: BIT(Bit7, register.C); break;
+            case 0x7A: BIT(Bit7, register.D); break;
+            case 0x7B: BIT(Bit7, register.E); break;
+            case 0x7C: BIT(Bit7, register.H); break;
+            case 0x7D: BIT(Bit7, register.L); break;
+            case 0x7E: BIT(Bit7, emulator.Read(register.HL)); break;
 
-            case 0xC7: register.A = SET(0b00000001, register.A); break;// SET 0,r
-            case 0xC0: register.B = SET(0b00000001, register.B); break;
-            case 0xC1: register.C = SET(0b00000001, register.C); break;
-            case 0xC2: register.D = SET(0b00000001, register.D); break;
-            case 0xC3: register.E = SET(0b00000001, register.E); break;
-            case 0xC4: register.H = SET(0b00000001, register.H); break;
-            case 0xC5: register.L = SET(0b00000001, register.L); break;
-            case 0xC6: emulator.Write(register.HL, SET(0b00000001, emulator.Read(register.HL))); break;
+            case 0xC7: register.A = SET(Bit0, register.A); break;// SET 0,r
+            case 0xC0: register.B = SET(Bit0, register.B); break;
+            case 0xC1: register.C = SET(Bit0, register.C); break;
+            case 0xC2: register.D = SET(Bit0, register.D); break;
+            case 0xC3: register.E = SET(Bit0, register.E); break;
+            case 0xC4: register.H = SET(Bit0, register.H); break;
+            case 0xC5: register.L = SET(Bit0, register.L); break;
+            case 0xC6: emulator.Write(register.HL, SET(Bit0, emulator.Read(register.HL))); break;
 
-            case 0xCF: register.A = SET(0b00000010, register.A); break;// SET 1,r
-            case 0xC8: register.B = SET(0b00000010, register.B); break;
-            case 0xC9: register.C = SET(0b00000010, register.C); break;
-            case 0xCA: register.D = SET(0b00000010, register.D); break;
-            case 0xCB: register.E = SET(0b00000010, register.E); break;
-            case 0xCC: register.H = SET(0b00000010, register.H); break;
-            case 0xCD: register.L = SET(0b00000010, register.L); break;
-            case 0xCE: emulator.Write(register.HL, SET(0b00000010, emulator.Read(register.HL))); break;
+            case 0xCF: register.A = SET(Bit1, register.A); break;// SET 1,r
+            case 0xC8: register.B = SET(Bit1, register.B); break;
+            case 0xC9: register.C = SET(Bit1, register.C); break;
+            case 0xCA: register.D = SET(Bit1, register.D); break;
+            case 0xCB: register.E = SET(Bit1, register.E); break;
+            case 0xCC: register.H = SET(Bit1, register.H); break;
+            case 0xCD: register.L = SET(Bit1, register.L); break;
+            case 0xCE: emulator.Write(register.HL, SET(Bit1, emulator.Read(register.HL))); break;
 
-            case 0xD7: register.A = SET(0b00000100, register.A); break;// SET 2,r
-            case 0xD0: register.B = SET(0b00000100, register.B); break;
-            case 0xD1: register.C = SET(0b00000100, register.C); break;
-            case 0xD2: register.D = SET(0b00000100, register.D); break;
-            case 0xD3: register.E = SET(0b00000100, register.E); break;
-            case 0xD4: register.H = SET(0b00000100, register.H); break;
-            case 0xD5: register.L = SET(0b00000100, register.L); break;
-            case 0xD6: emulator.Write(register.HL, SET(0b00000100, emulator.Read(register.HL))); break;
+            case 0xD7: register.A = SET(Bit2, register.A); break;// SET 2,r
+            case 0xD0: register.B = SET(Bit2, register.B); break;
+            case 0xD1: register.C = SET(Bit2, register.C); break;
+            case 0xD2: register.D = SET(Bit2, register.D); break;
+            case 0xD3: register.E = SET(Bit2, register.E); break;
+            case 0xD4: register.H = SET(Bit2, register.H); break;
+            case 0xD5: register.L = SET(Bit2, register.L); break;
+            case 0xD6: emulator.Write(register.HL, SET(Bit2, emulator.Read(register.HL))); break;
 
-            case 0xDF: register.A = SET(0b00001000, register.A); break;// SET 3,r
-            case 0xD8: register.B = SET(0b00001000, register.B); break;
-            case 0xD9: register.C = SET(0b00001000, register.C); break;
-            case 0xDA: register.D = SET(0b00001000, register.D); break;
-            case 0xDB: register.E = SET(0b00001000, register.E); break;
-            case 0xDC: register.H = SET(0b00001000, register.H); break;
-            case 0xDD: register.L = SET(0b00001000, register.L); break;
-            case 0xDE: emulator.Write(register.HL, SET(0b00001000, emulator.Read(register.HL))); break;
+            case 0xDF: register.A = SET(Bit3, register.A); break;// SET 3,r
+            case 0xD8: register.B = SET(Bit3, register.B); break;
+            case 0xD9: register.C = SET(Bit3, register.C); break;
+            case 0xDA: register.D = SET(Bit3, register.D); break;
+            case 0xDB: register.E = SET(Bit3, register.E); break;
+            case 0xDC: register.H = SET(Bit3, register.H); break;
+            case 0xDD: register.L = SET(Bit3, register.L); break;
+            case 0xDE: emulator.Write(register.HL, SET(Bit3, emulator.Read(register.HL))); break;
 
-            case 0xE7: register.A = SET(0b00010000, register.A); break;// SET 4,r
-            case 0xE0: register.B = SET(0b00010000, register.B); break;
-            case 0xE1: register.C = SET(0b00010000, register.C); break;
-            case 0xE2: register.D = SET(0b00010000, register.D); break;
-            case 0xE3: register.E = SET(0b00010000, register.E); break;
-            case 0xE4: register.H = SET(0b00010000, register.H); break;
-            case 0xE5: register.L = SET(0b00010000, register.L); break;
-            case 0xE6: emulator.Write(register.HL, SET(0b00010000, emulator.Read(register.HL))); break;
+            case 0xE7: register.A = SET(Bit4, register.A); break;// SET 4,r
+            case 0xE0: register.B = SET(Bit4, register.B); break;
+            case 0xE1: register.C = SET(Bit4, register.C); break;
+            case 0xE2: register.D = SET(Bit4, register.D); break;
+            case 0xE3: register.E = SET(Bit4, register.E); break;
+            case 0xE4: register.H = SET(Bit4, register.H); break;
+            case 0xE5: register.L = SET(Bit4, register.L); break;
+            case 0xE6: emulator.Write(register.HL, SET(Bit4, emulator.Read(register.HL))); break;
 
-            case 0xEF: register.A = SET(0b00100000, register.A); break;// SET 5,r
-            case 0xE8: register.B = SET(0b00100000, register.B); break;
-            case 0xE9: register.C = SET(0b00100000, register.C); break;
-            case 0xEA: register.D = SET(0b00100000, register.D); break;
-            case 0xEB: register.E = SET(0b00100000, register.E); break;
-            case 0xEC: register.H = SET(0b00100000, register.H); break;
-            case 0xED: register.L = SET(0b00100000, register.L); break;
-            case 0xEE: emulator.Write(register.HL, SET(0b00100000, emulator.Read(register.HL))); break;
+            case 0xEF: register.A = SET(Bit5, register.A); break;// SET 5,r
+            case 0xE8: register.B = SET(Bit5, register.B); break;
+            case 0xE9: register.C = SET(Bit5, register.C); break;
+            case 0xEA: register.D = SET(Bit5, register.D); break;
+            case 0xEB: register.E = SET(Bit5, register.E); break;
+            case 0xEC: register.H = SET(Bit5, register.H); break;
+            case 0xED: register.L = SET(Bit5, register.L); break;
+            case 0xEE: emulator.Write(register.HL, SET(Bit5, emulator.Read(register.HL))); break;
 
-            case 0xF7: register.A = SET(0b01000000, register.A); break;// SET 6,r
-            case 0xF0: register.B = SET(0b01000000, register.B); break;
-            case 0xF1: register.C = SET(0b01000000, register.C); break;
-            case 0xF2: register.D = SET(0b01000000, register.D); break;
-            case 0xF3: register.E = SET(0b01000000, register.E); break;
-            case 0xF4: register.H = SET(0b01000000, register.H); break;
-            case 0xF5: register.L = SET(0b01000000, register.L); break;
-            case 0xF6: emulator.Write(register.HL, SET(0b01000000, emulator.Read(register.HL))); break;
+            case 0xF7: register.A = SET(Bit6, register.A); break;// SET 6,r
+            case 0xF0: register.B = SET(Bit6, register.B); break;
+            case 0xF1: register.C = SET(Bit6, register.C); break;
+            case 0xF2: register.D = SET(Bit6, register.D); break;
+            case 0xF3: register.E = SET(Bit6, register.E); break;
+            case 0xF4: register.H = SET(Bit6, register.H); break;
+            case 0xF5: register.L = SET(Bit6, register.L); break;
+            case 0xF6: emulator.Write(register.HL, SET(Bit6, emulator.Read(register.HL))); break;
 
-            case 0xFF: register.A = SET(0b10000000, register.A); break;// SET 7,r
-            case 0xF8: register.B = SET(0b10000000, register.B); break;
-            case 0xF9: register.C = SET(0b10000000, register.C); break;
-            case 0xFA: register.D = SET(0b10000000, register.D); break;
-            case 0xFB: register.E = SET(0b10000000, register.E); break;
-            case 0xFC: register.H = SET(0b10000000, register.H); break;
-            case 0xFD: register.L = SET(0b10000000, register.L); break;
-            case 0xFE: emulator.Write(register.HL, SET(0b10000000, emulator.Read(register.HL))); break;
+            case 0xFF: register.A = SET(Bit7, register.A); break;// SET 7,r
+            case 0xF8: register.B = SET(Bit7, register.B); break;
+            case 0xF9: register.C = SET(Bit7, register.C); break;
+            case 0xFA: register.D = SET(Bit7, register.D); break;
+            case 0xFB: register.E = SET(Bit7, register.E); break;
+            case 0xFC: register.H = SET(Bit7, register.H); break;
+            case 0xFD: register.L = SET(Bit7, register.L); break;
+            case 0xFE: emulator.Write(register.HL, SET(Bit7, emulator.Read(register.HL))); break;
 
-            case 0x87: register.A = RES(0b00000001, register.A); break;// RES 0,r
-            case 0x80: register.B = RES(0b00000001, register.B); break;
-            case 0x81: register.C = RES(0b00000001, register.C); break;
-            case 0x82: register.D = RES(0b00000001, register.D); break;
-            case 0x83: register.E = RES(0b00000001, register.E); break;
-            case 0x84: register.H = RES(0b00000001, register.H); break;
-            case 0x85: register.L = RES(0b00000001, register.L); break;
-            case 0x86: emulator.Write(register.HL, RES(0b00000001, emulator.Read(register.HL))); break;
+            case 0x87: register.A = RES(Bit0, register.A); break;// RES 0,r
+            case 0x80: register.B = RES(Bit0, register.B); break;
+            case 0x81: register.C = RES(Bit0, register.C); break;
+            case 0x82: register.D = RES(Bit0, register.D); break;
+            case 0x83: register.E = RES(Bit0, register.E); break;
+            case 0x84: register.H = RES(Bit0, register.H); break;
+            case 0x85: register.L = RES(Bit0, register.L); break;
+            case 0x86: emulator.Write(register.HL, RES(Bit0, emulator.Read(register.HL))); break;
 
-            case 0x8F: register.A = RES(0b00000010, register.A); break;// RES 1,r
-            case 0x88: register.B = RES(0b00000010, register.B); break;
-            case 0x89: register.C = RES(0b00000010, register.C); break;
-            case 0x8A: register.D = RES(0b00000010, register.D); break;
-            case 0x8B: register.E = RES(0b00000010, register.E); break;
-            case 0x8C: register.H = RES(0b00000010, register.H); break;
-            case 0x8D: register.L = RES(0b00000010, register.L); break;
-            case 0x8E: emulator.Write(register.HL, RES(0b00000010, emulator.Read(register.HL))); break;
+            case 0x8F: register.A = RES(Bit1, register.A); break;// RES 1,r
+            case 0x88: register.B = RES(Bit1, register.B); break;
+            case 0x89: register.C = RES(Bit1, register.C); break;
+            case 0x8A: register.D = RES(Bit1, register.D); break;
+            case 0x8B: register.E = RES(Bit1, register.E); break;
+            case 0x8C: register.H = RES(Bit1, register.H); break;
+            case 0x8D: register.L = RES(Bit1, register.L); break;
+            case 0x8E: emulator.Write(register.HL, RES(Bit1, emulator.Read(register.HL))); break;
 
-            case 0x97: register.A = RES(0b00000100, register.A); break;// RES 2,r
-            case 0x90: register.B = RES(0b00000100, register.B); break;
-            case 0x91: register.C = RES(0b00000100, register.C); break;
-            case 0x92: register.D = RES(0b00000100, register.D); break;
-            case 0x93: register.E = RES(0b00000100, register.E); break;
-            case 0x94: register.H = RES(0b00000100, register.H); break;
-            case 0x95: register.L = RES(0b00000100, register.L); break;
-            case 0x96: emulator.Write(register.HL, RES(0b00000100, emulator.Read(register.HL))); break;
+            case 0x97: register.A = RES(Bit2, register.A); break;// RES 2,r
+            case 0x90: register.B = RES(Bit2, register.B); break;
+            case 0x91: register.C = RES(Bit2, register.C); break;
+            case 0x92: register.D = RES(Bit2, register.D); break;
+            case 0x93: register.E = RES(Bit2, register.E); break;
+            case 0x94: register.H = RES(Bit2, register.H); break;
+            case 0x95: register.L = RES(Bit2, register.L); break;
+            case 0x96: emulator.Write(register.HL, RES(Bit2, emulator.Read(register.HL))); break;
 
-            case 0x9F: register.A = RES(0b00001000, register.A); break;// RES 3,r
-            case 0x98: register.B = RES(0b00001000, register.B); break;
-            case 0x99: register.C = RES(0b00001000, register.C); break;
-            case 0x9A: register.D = RES(0b00001000, register.D); break;
-            case 0x9B: register.E = RES(0b00001000, register.E); break;
-            case 0x9C: register.H = RES(0b00001000, register.H); break;
-            case 0x9D: register.L = RES(0b00001000, register.L); break;
-            case 0x9E: emulator.Write(register.HL, RES(0b00001000, emulator.Read(register.HL))); break;
+            case 0x9F: register.A = RES(Bit3, register.A); break;// RES 3,r
+            case 0x98: register.B = RES(Bit3, register.B); break;
+            case 0x99: register.C = RES(Bit3, register.C); break;
+            case 0x9A: register.D = RES(Bit3, register.D); break;
+            case 0x9B: register.E = RES(Bit3, register.E); break;
+            case 0x9C: register.H = RES(Bit3, register.H); break;
+            case 0x9D: register.L = RES(Bit3, register.L); break;
+            case 0x9E: emulator.Write(register.HL, RES(Bit3, emulator.Read(register.HL))); break;
 
-            case 0xA7: register.A = RES(0b00010000, register.A); break;// RES 4,r
-            case 0xA0: register.B = RES(0b00010000, register.B); break;
-            case 0xA1: register.C = RES(0b00010000, register.C); break;
-            case 0xA2: register.D = RES(0b00010000, register.D); break;
-            case 0xA3: register.E = RES(0b00010000, register.E); break;
-            case 0xA4: register.H = RES(0b00010000, register.H); break;
-            case 0xA5: register.L = RES(0b00010000, register.L); break;
-            case 0xA6: emulator.Write(register.HL, RES(0b00010000, emulator.Read(register.HL))); break;
+            case 0xA7: register.A = RES(Bit4, register.A); break;// RES 4,r
+            case 0xA0: register.B = RES(Bit4, register.B); break;
+            case 0xA1: register.C = RES(Bit4, register.C); break;
+            case 0xA2: register.D = RES(Bit4, register.D); break;
+            case 0xA3: register.E = RES(Bit4, register.E); break;
+            case 0xA4: register.H = RES(Bit4, register.H); break;
+            case 0xA5: register.L = RES(Bit4, register.L); break;
+            case 0xA6: emulator.Write(register.HL, RES(Bit4, emulator.Read(register.HL))); break;
 
-            case 0xAF: register.A = RES(0b00100000, register.A); break;// RES 5,r
-            case 0xA8: register.B = RES(0b00100000, register.B); break;
-            case 0xA9: register.C = RES(0b00100000, register.C); break;
-            case 0xAA: register.D = RES(0b00100000, register.D); break;
-            case 0xAB: register.E = RES(0b00100000, register.E); break;
-            case 0xAC: register.H = RES(0b00100000, register.H); break;
-            case 0xAD: register.L = RES(0b00100000, register.L); break;
-            case 0xAE: emulator.Write(register.HL, RES(0b00100000, emulator.Read(register.HL))); break;
+            case 0xAF: register.A = RES(Bit5, register.A); break;// RES 5,r
+            case 0xA8: register.B = RES(Bit5, register.B); break;
+            case 0xA9: register.C = RES(Bit5, register.C); break;
+            case 0xAA: register.D = RES(Bit5, register.D); break;
+            case 0xAB: register.E = RES(Bit5, register.E); break;
+            case 0xAC: register.H = RES(Bit5, register.H); break;
+            case 0xAD: register.L = RES(Bit5, register.L); break;
+            case 0xAE: emulator.Write(register.HL, RES(Bit5, emulator.Read(register.HL))); break;
 
-            case 0xB7: register.A = RES(0b01000000, register.A); break;// RES 6,r
-            case 0xB0: register.B = RES(0b01000000, register.B); break;
-            case 0xB1: register.C = RES(0b01000000, register.C); break;
-            case 0xB2: register.D = RES(0b01000000, register.D); break;
-            case 0xB3: register.E = RES(0b01000000, register.E); break;
-            case 0xB4: register.H = RES(0b01000000, register.H); break;
-            case 0xB5: register.L = RES(0b01000000, register.L); break;
-            case 0xB6: emulator.Write(register.HL, RES(0b01000000, emulator.Read(register.HL))); break;
+            case 0xB7: register.A = RES(Bit6, register.A); break;// RES 6,r
+            case 0xB0: register.B = RES(Bit6, register.B); break;
+            case 0xB1: register.C = RES(Bit6, register.C); break;
+            case 0xB2: register.D = RES(Bit6, register.D); break;
+            case 0xB3: register.E = RES(Bit6, register.E); break;
+            case 0xB4: register.H = RES(Bit6, register.H); break;
+            case 0xB5: register.L = RES(Bit6, register.L); break;
+            case 0xB6: emulator.Write(register.HL, RES(Bit6, emulator.Read(register.HL))); break;
 
-            case 0xBF: register.A = RES(0b10000000, register.A); break;// RES 7,r
-            case 0xB8: register.B = RES(0b10000000, register.B); break;
-            case 0xB9: register.C = RES(0b10000000, register.C); break;
-            case 0xBA: register.D = RES(0b10000000, register.D); break;
-            case 0xBB: register.E = RES(0b10000000, register.E); break;
-            case 0xBC: register.H = RES(0b10000000, register.H); break;
-            case 0xBD: register.L = RES(0b10000000, register.L); break;
-            case 0xBE: emulator.Write(register.HL, RES(0b10000000, emulator.Read(register.HL))); break;
+            case 0xBF: register.A = RES(Bit7, register.A); break;// RES 7,r
+            case 0xB8: register.B = RES(Bit7, register.B); break;
+            case 0xB9: register.C = RES(Bit7, register.C); break;
+            case 0xBA: register.D = RES(Bit7, register.D); break;
+            case 0xBB: register.E = RES(Bit7, register.E); break;
+            case 0xBC: register.H = RES(Bit7, register.H); break;
+            case 0xBD: register.L = RES(Bit7, register.L); break;
+            case 0xBE: emulator.Write(register.HL, RES(Bit7, emulator.Read(register.HL))); break;
         }
 
         return Timings.CbTimes[op];
@@ -905,7 +904,7 @@ public class Cpu
         register.ZFlag = false;
         register.NFlag = false;
         register.HFlag = false;
-        register.CFlag = (byte)(register.A & 0b10000000) != 0;
+        register.CFlag = (byte)(register.A & Bit7) != 0;
 
         register.A = (byte)((register.A << 1) | (register.A >> 7));
     }
@@ -917,7 +916,7 @@ public class Cpu
         register.ZFlag = false;
         register.NFlag = false;
         register.HFlag = false;
-        register.CFlag = (byte)(register.A & 0b10000000) != 0;
+        register.CFlag = (byte)(register.A & Bit7) != 0;
 
         register.A = (byte)((register.A << 1) | carry);
     }
@@ -927,19 +926,19 @@ public class Cpu
         register.ZFlag = false;
         register.NFlag = false;
         register.HFlag = false;
-        register.CFlag = (byte)(register.A & 0b00000001) != 0;
+        register.CFlag = (byte)(register.A & Bit0) != 0;
 
         register.A = (byte)((register.A >> 1) | (register.A << 7));
     }
 
     private void RRA()
     {
-        int carry = register.CFlag ? 0b10000000 : 0;
+        int carry = register.CFlag ? Bit7 : 0;
 
         register.ZFlag = false;
         register.NFlag = false;
         register.HFlag = false;
-        register.CFlag = (byte)(register.A & 0b00000001) != 0;
+        register.CFlag = (byte)(register.A & Bit0) != 0;
 
         register.A = (byte)((register.A >> 1) | carry);
     }
@@ -951,7 +950,7 @@ public class Cpu
         register.ZFlag = result == 0;
         register.NFlag = false;
         register.HFlag = false;
-        register.CFlag = (n & 0b10000000) != 0;
+        register.CFlag = (n & Bit7) != 0;
 
         return result;
     }
@@ -964,7 +963,7 @@ public class Cpu
         register.ZFlag = result == 0;
         register.NFlag = false;
         register.HFlag = false;
-        register.CFlag = (n & 0b10000000) != 0;
+        register.CFlag = (n & Bit7) != 0;
 
         return result;
     }
@@ -976,20 +975,20 @@ public class Cpu
         register.ZFlag = result == 0;
         register.NFlag = false;
         register.HFlag = false;
-        register.CFlag = (n & 0b00000001) != 0;
+        register.CFlag = (n & Bit0) != 0;
 
         return result;
     }
 
     private byte RR(byte n)
     {
-        int carry = register.CFlag ? 0b10000000 : 0;
+        int carry = register.CFlag ? Bit7 : 0;
         byte result = (byte)((n >> 1) | carry);
 
         register.ZFlag = result == 0;
         register.NFlag = false;
         register.HFlag = false;
-        register.CFlag = (n & 0b00000001) != 0;
+        register.CFlag = (n & Bit0) != 0;
 
         return result;
     }
@@ -1000,13 +999,13 @@ public class Cpu
         register.ZFlag = result == 0;
         register.NFlag = false;
         register.HFlag = false;
-        register.CFlag = (n & 0b10000000) != 0;
+        register.CFlag = (n & Bit7) != 0;
         return result;
     }
 
     private byte SRA(byte n)
     {
-        byte result = (byte)((n >> 1) | (n & 0b10000000));
+        byte result = (byte)((n >> 1) | (n & Bit7));
 
         register.ZFlag = result == 0;
         register.NFlag = false;
@@ -1141,7 +1140,7 @@ public class Cpu
     {
         for (byte i = 0; i < 5; i++)
         {
-            if ((((emulator.IE & emulator.IF) >> i) & 0x1) == 1)
+            if ((((emulator.IE & emulator.IF) >> i) & 1) == 1)
             {
                 if (emulator.Halted)
                 {
@@ -1153,17 +1152,12 @@ public class Cpu
                     Push(register.PC);
                     register.PC = (ushort)(64 + (8 * i));
                     emulator.Ime = false;
-                    emulator.IF = emulator.IF.SetBit((byte)(0b1 << i), false);
+                    emulator.IF = emulator.IF.SetBit((byte)(Bit0 << i), false);
                 }
             }
         }
 
         emulator.Ime |= emulator.ImeDelay;
         emulator.ImeDelay = false;
-    }
-
-    public void Reset()
-    {
-
     }
 }

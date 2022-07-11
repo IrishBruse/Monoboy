@@ -2,6 +2,7 @@ namespace Monoboy.Desktop.Data;
 
 public static class Boot
 {
+    // https://github.com/Hacktix/Bootix
     public static readonly byte[] DMG = new byte[]
     {
         0x31, 0xFE, 0xFF, 0x21, 0xFF, 0x9F, 0xAF, 0x32, 0xCB, 0x7C, 0x20, 0xFA,

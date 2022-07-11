@@ -63,26 +63,26 @@ public class Register
 
     public bool ZFlag
     {
-        get => (F & 0b10000000) != 0;
-        set => F = value ? (byte)(F | 0b10000000) : (byte)(F & 0b01111111);
+        get => (F & Bit7) != 0;
+        set => F = value ? (byte)(F | Bit7) : (byte)(F & 0b01111111);
     }
 
     public bool NFlag
     {
-        get => (F & 0b01000000) != 0;
-        set => F = value ? (byte)(F | 0b01000000) : (byte)(F & 0b10111111);
+        get => (F & Bit6) != 0;
+        set => F = value ? (byte)(F | Bit6) : (byte)(F & 0b10111111);
     }
 
     public bool HFlag
     {
-        get => (F & 0b00100000) != 0;
-        set => F = value ? (byte)(F | 0b00100000) : (byte)(F & 0b11011111);
+        get => (F & Bit5) != 0;
+        set => F = value ? (byte)(F | Bit5) : (byte)(F & 0b11011111);
     }
 
     public bool CFlag
     {
-        get => (F & 0b00010000) != 0;
-        set => F = value ? (byte)(F | 0b00010000) : (byte)(F & 0b11101111);
+        get => (F & Bit4) != 0;
+        set => F = value ? (byte)(F | Bit4) : (byte)(F & 0b11101111);
     }
 
     internal void Reset()

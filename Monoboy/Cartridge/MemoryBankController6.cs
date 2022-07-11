@@ -57,7 +57,7 @@ public class MemoryBankController6 : IMemoryBankController
 
             case ushort when address < 0x6000:
             {
-                byte bank = (byte)(data & 0b11);
+                byte bank = (byte)(data & Bit01);
 
                 if (bankingMode == BankingMode.Rom)
                 {

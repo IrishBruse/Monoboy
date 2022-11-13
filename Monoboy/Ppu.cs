@@ -10,7 +10,7 @@ public class Ppu
     public byte StatMode { get => (byte)(memory[0xFF41] & 0b00000011); set => memory[0xFF41] = memory[0xFF41].SetBits(0b00000011, value); }
     public byte SCY { get => memory[0xFF42]; set => memory[0xFF42] = value; }
     public byte SCX { get => memory[0xFF43]; set => memory[0xFF43] = value; }
-    public byte WX { get => (byte)(memory[0xFF4B] - 7); set => memory[0xFF4B] = value; }
+    public byte WX { get => (byte)(memory[0xFF4B] - 6); set => memory[0xFF4B] = value; }
     public byte WY { get => memory[0xFF4A]; set => memory[0xFF4A] = value; }
     public byte LY { get => memory[0xFF44]; set => memory[0xFF44] = value; }
     public byte LYC { get => memory[0xFF45]; set => memory[0xFF45] = value; }
@@ -149,7 +149,7 @@ public class Ppu
             DrawBackground();
         }
 
-        if (LCDC.GetBit(Flags.WindowEnabled))
+        if (LCDC.GetBit(Flags.WindowEnabled) && WY <= LY)
         {
             DrawWindow();
         }
@@ -163,6 +163,7 @@ public class Ppu
     private void DrawBackground()
     {
         bool tileset = LCDC.GetBit(Flags.Tileset);
+
         int tilesetAddress = tileset ? 0x0000 : 0x1000;
         int tilemapAddress = LCDC.GetBit(Flags.Tilemap) ? 0x1C00 : 0x1800;
 

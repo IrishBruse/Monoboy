@@ -1,22 +1,18 @@
 namespace Monoboy;
 
-using System;
-
 public class Memory
 {
-    public bool Test = false;
-
     public Memory(int size)
     {
         data = new byte[size];
     }
 
-    byte[] data;
+    private byte[] data;
 
     public byte this[int i]
     {
-        get { return data[i]; }
-        set { data[i] = value; }
+        get => data[i];
+        set => data[i] = value;
     }
 
     public static implicit operator byte[](Memory rhs)

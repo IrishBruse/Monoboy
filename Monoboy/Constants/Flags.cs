@@ -1,4 +1,4 @@
-namespace Monoboy;
+namespace Monoboy.Constants;
 
 public class Flags
 {

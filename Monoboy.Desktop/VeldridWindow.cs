@@ -22,20 +22,26 @@ public class VeldridWindow
 
     public event Action<double> Update
     {
-        add { Window.Update += value; }
-        remove { Window.Update -= value; }
+        add => Window.Update += value;
+        remove => Window.Update -= value;
     }
 
     public event Action<string[]> FileDrop
     {
-        add { Window.FileDrop += value; }
-        remove { Window.FileDrop -= value; }
+        add => Window.FileDrop += value;
+        remove => Window.FileDrop -= value;
     }
 
     public event Action Load
     {
-        add { Window.Load += value; }
-        remove { Window.Load -= value; }
+        add => Window.Load += value;
+        remove => Window.Load -= value;
+    }
+
+    public event Action Closing
+    {
+        add => Window.Closing += value;
+        remove => Window.Closing -= value;
     }
 
     public uint[] Framebuffer { get; set; }

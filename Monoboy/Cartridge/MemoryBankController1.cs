@@ -1,5 +1,6 @@
 ﻿namespace Monoboy.Cartridge;
 
+using System;
 using System.IO;
 
 public class MemoryBankController1 : IMemoryBankController
@@ -78,6 +79,7 @@ public class MemoryBankController1 : IMemoryBankController
 
             case ushort when address < 0x8000:
             {
+                Console.WriteLine("test");
                 if ((data & 1) == 0)
                 {
                     bankingMode = BankingMode.Rom;
@@ -93,11 +95,17 @@ public class MemoryBankController1 : IMemoryBankController
         }
     }
 
-    public void Load(string path)
+    public void Save(string romPath)
     {
-        Rom = File.ReadAllBytes(path);
+        string save = romPath.Replace(".gb", ".sav", true, null);
+        File.WriteAllBytes(save, ram);
+    }
 
-        string save = path.Replace(".gb", ".sav", true, null);
+    public void Load(string romPath)
+    {
+        Rom = File.ReadAllBytes(romPath);
+
+        string save = romPath.Replace(".gb", ".sav", true, null);
 
         if (File.Exists(save))
         {

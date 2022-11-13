@@ -1,4 +1,7 @@
 ﻿namespace Monoboy.Cartridge;
+
+using System.IO;
+
 public class MemoryBankController5 : IMemoryBankController
 {
     public byte[] Rom { get; set; }
@@ -98,6 +101,24 @@ public class MemoryBankController5 : IMemoryBankController
     public void SetRam(byte[] ram)
     {
         this.ram = ram;
+    }
+
+    public void Save(string romPath)
+    {
+        string save = romPath.Replace(".gb", ".sav", true, null);
+        File.WriteAllBytes(save, ram);
+    }
+
+    public void Load(string romPath)
+    {
+        Rom = File.ReadAllBytes(romPath);
+
+        string save = romPath.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
+
+        if (File.Exists(save))
+        {
+            ram = File.ReadAllBytes(save);
+        }
     }
 
     private enum BankingMode

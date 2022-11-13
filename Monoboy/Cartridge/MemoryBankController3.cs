@@ -6,15 +6,15 @@ using System.IO;
 public class MemoryBankController3 : IMemoryBankController
 {
     // Timer
-    byte seconds;   // RTC S
-    byte minutes;   // RTC M
-    byte hours;     // RTC H
-    byte days;      // RTC DL
-    byte daysCarry; // RTC DH
+    private byte seconds;   // RTC S
+    private byte minutes;   // RTC M
+    private byte hours;     // RTC H
+    private byte days;      // RTC DL
+    private byte daysCarry; // RTC DH
 
     public byte[] Rom { get; set; }
 
-    public byte[] Ram { get; set; } = new byte[0x8000];
+    private byte[] ram = new byte[0x8000];
 
     public byte RomBank { get; set; } = 1;
 
@@ -39,7 +39,7 @@ public class MemoryBankController3 : IMemoryBankController
         {
             return RamBank switch
             {
-                < 0x3 => Ram[(0x2000 * RamBank) + (address & 0x1FFF)],
+                < 0x3 => ram[(0x2000 * RamBank) + (address & 0x1FFF)],
                 0x8 => seconds,
                 0x9 => minutes,
                 0xA => hours,
@@ -59,7 +59,7 @@ public class MemoryBankController3 : IMemoryBankController
             switch (RamBank)
             {
                 case < 0x3:
-                Ram[(0x2000 * RamBank) + (address & 0x1FFF)] = data;
+                ram[(0x2000 * RamBank) + (address & 0x1FFF)] = data;
                 break;
 
                 // Timer
@@ -126,25 +126,31 @@ public class MemoryBankController3 : IMemoryBankController
         }
     }
 
-    public void Load(string path)
+    public void Save(string romPath)
     {
-        Rom = File.ReadAllBytes(path);
+        string save = romPath.Replace(".gb", ".sav", true, null);
+        File.WriteAllBytes(save, ram);
+    }
 
-        string save = path.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
+    public void Load(string romPath)
+    {
+        Rom = File.ReadAllBytes(romPath);
+
+        string save = romPath.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
 
         if (File.Exists(save))
         {
-            Ram = File.ReadAllBytes(save);
+            ram = File.ReadAllBytes(save);
         }
     }
 
     public byte[] GetRam()
     {
-        return Ram;
+        return ram;
     }
 
     public void SetRam(byte[] ram)
     {
-        Ram = ram;
+        this.ram = ram;
     }
 }

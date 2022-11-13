@@ -53,11 +53,17 @@ public class MemoryBankController2 : IMemoryBankController
         }
     }
 
-    public void Load(string path)
+    public void Save(string romPath)
     {
-        Rom = File.ReadAllBytes(path);
+        string save = romPath.Replace(".gb", ".sav", true, null);
+        File.WriteAllBytes(save, ram);
+    }
 
-        string save = path.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
+    public void Load(string romPath)
+    {
+        Rom = File.ReadAllBytes(romPath);
+
+        string save = romPath.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
 
         if (File.Exists(save))
         {

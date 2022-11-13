@@ -8,8 +8,8 @@ using Monoboy.Constants;
 
 public class Emulator
 {
-    public const int CpuCyclesPerSecond = 1048576;
-    public const int CyclesPerFrame = 17556;
+    public const int CpuCyclesPerSecond = 0x100000;
+    public const int CyclesPerFrame = 0x4494;
     public const byte WindowWidth = 160;
     public const byte WindowHeight = 144;
     private const int IFReg = 0xFF0F;
@@ -44,6 +44,8 @@ public class Emulator
 
     internal int Cycles { get; set; }
     internal long TotalCycles { get; set; }
+
+    private string romPath;
 
     public Emulator(byte[] bios)
     {
@@ -97,6 +99,10 @@ public class Emulator
 
     public void Open(string rom)
     {
+        romPath = rom;
+
+        mbc?.Save(romPath);
+
         Reset();
 
         byte[] data = File.ReadAllBytes(rom);
@@ -161,7 +167,15 @@ public class Emulator
             _ => throw new NotImplementedException()
         };
 
-        // Console.WriteLine(mbc.GetType().Name);
+        mbc.Load(romPath);
+        mbc.Save(romPath);
+
+        Console.WriteLine("Cartridge Header Info");
+        Console.WriteLine("Title: " + GameTitle);
+        Console.WriteLine("CGB flag: " + data[0x143]);
+        Console.WriteLine("New licensee code: " + data[0x144] + "" + data[0x145]);
+        Console.WriteLine("SGB flag: " + data[0x146]);
+        Console.WriteLine("Cartridge type: " + data[0x147]);
 
         mbc.Rom = data;
 
@@ -178,7 +192,7 @@ public class Emulator
         {
             for (int y = 0; y < WindowHeight; y++)
             {
-                int i = x + y * WindowWidth;
+                int i = x + (y * WindowWidth);
 
                 Framebuffer[i] = Pallet.GetColor(0);
             }
@@ -405,4 +419,10 @@ public class Emulator
         Write(0xFF70, 0xFF);
         Write(IEReg, 0x00);
     }
+
+    public void Save()
+    {
+        mbc?.Save(romPath);
+    }
+
 }

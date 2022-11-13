@@ -32,6 +32,15 @@ public class MemoryBankController0 : IMemoryBankController
         // Ignore
     }
 
+    public void Save(string romPath)
+    {
+    }
+
+    public void Load(string romPath)
+    {
+        Rom = File.ReadAllBytes(romPath);
+    }
+
     public byte[] GetRam()
     {
         return Array.Empty<byte>();

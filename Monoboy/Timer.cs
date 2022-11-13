@@ -34,7 +34,7 @@ public class Timer
             DivCounter -= 256 / 4;
         }
 
-        if (TacEnabled == true)
+        if (TacEnabled)
         {
             timerCounter += ticks;
 

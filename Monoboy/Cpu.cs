@@ -1,7 +1,6 @@
 ﻿namespace Monoboy;
 
-using System;
-
+using Monoboy.Constants;
 using Monoboy.Utility;
 
 public class Cpu

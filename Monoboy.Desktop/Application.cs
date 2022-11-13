@@ -16,7 +16,7 @@ using SixLabors.ImageSharp.PixelFormats;
 
 using Veldrid;
 
-using static Monoboy.Bit;
+using static Monoboy.Constants.Bit;
 
 public class Application
 {
@@ -40,6 +40,12 @@ public class Application
         window.Update += OnUpdate;
         window.FileDrop += OnFilesDrop;
         window.Load += OnLoad;
+        window.Closing += OnClosing;
+    }
+
+    private void OnClosing()
+    {
+        emulator.Save();
     }
 
     private void OnLoad()
@@ -47,6 +53,10 @@ public class Application
         window.Keyboard.KeyDown += KeyDown;
         window.Keyboard.KeyUp += KeyUp;
         timer.Start();
+
+        emulator.SkipBootRom();
+        // emulator.Open(@"D:\Emulation\GB\Legend of Zelda, The - Link's Awakening.gb");
+        emulator.Open(@"D:\Emulation\GB\Tetris.gb");
     }
 
     public void Run()
@@ -60,7 +70,7 @@ public class Application
     {
         string title = !string.IsNullOrEmpty(emulator.GameTitle) ? $" - {emulator.GameTitle}" : "";
         string pausedTitle = paused ? " - Paused" : "";
-        window.Title = "Monoboy" + title + pausedTitle + " - " + milis;
+        window.Title = "Monoboy" + title + pausedTitle + " - " + milis + "ms";
 
         if (paused)
         {

@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>WinExe</OutputType>
+        <OutputType>Exe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
 
+        <!--
         <SelfContained>false</SelfContained>
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <ApplicationIcon>../Icon.ico</ApplicationIcon>
+        -->
     </PropertyGroup>
 
     <ItemGroup>

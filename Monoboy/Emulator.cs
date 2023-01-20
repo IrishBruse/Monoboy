@@ -16,7 +16,7 @@ public class Emulator
     private const int IEReg = 0xFFFF;
 
     /// <summary> #AABBGGRR </summary>
-    public uint[] Framebuffer { get; set; }
+    public byte[] Framebuffer { get; set; }
     public string GameTitle { get; private set; }
 
     private byte[] bios;
@@ -51,7 +51,7 @@ public class Emulator
     {
         this.bios = bios;
         Memory = new Memory(0x10000);
-        Framebuffer = new uint[WindowWidth * WindowHeight];
+        Framebuffer = new byte[WindowWidth * WindowHeight * 4];
 
         register = new Register();
 
@@ -194,7 +194,12 @@ public class Emulator
             {
                 int i = x + (y * WindowWidth);
 
-                Framebuffer[i] = Pallet.GetColor(0);
+                uint color = Pallet.GetColor(0);
+                int index = i;
+                Framebuffer[(index * 4) + 0] = (byte)color;
+                Framebuffer[(index * 4) + 1] = (byte)((color & 0xff00) >> 8);
+                Framebuffer[(index * 4) + 2] = (byte)((color & 0xff0000) >> 16);
+                Framebuffer[(index * 4) + 3] = 255;
             }
         }
 

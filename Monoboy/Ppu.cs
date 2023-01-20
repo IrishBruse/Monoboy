@@ -21,7 +21,7 @@ public class Ppu
     private readonly Memory memory;
     private readonly Emulator emulator;
     private readonly Cpu cpu;
-    private readonly uint[] framebuffer;
+    private readonly byte[] framebuffer;
     private const int ScanLineCycles = 114;
     private const int HBlankCycles = 51;
     private const int OamCycles = 20;
@@ -29,7 +29,7 @@ public class Ppu
     private const int VramAddress = 0x8000;
     private int cycles;
 
-    public Ppu(Memory memory, Emulator emulator, Cpu cpu, uint[] framebuffer)
+    public Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
     {
         this.memory = memory;
         this.emulator = emulator;
@@ -186,7 +186,12 @@ public class Ppu
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
             byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & Bit01);
 
-            framebuffer[i + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
+            uint color = Pallet.GetColor(colorIndex);
+            int index = i + (Emulator.WindowWidth * LY);
+            framebuffer[(index * 4) + 0] = (byte)color;
+            framebuffer[(index * 4) + 1] = (byte)((color & 0xff00) >> 8);
+            framebuffer[(index * 4) + 2] = (byte)((color & 0xff0000) >> 16);
+            framebuffer[(index * 4) + 3] = 255;
         }
     }
 
@@ -220,7 +225,15 @@ public class Ppu
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
             byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & Bit01);
 
-            framebuffer[i + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
+            // framebuffer[i + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
+
+            uint color = Pallet.GetColor(colorIndex);
+            int index = i + (Emulator.WindowWidth * LY);
+            framebuffer[(index * 4) + 0] = (byte)color;
+            framebuffer[(index * 4) + 1] = (byte)((color & 0xff00) >> 8);
+            framebuffer[(index * 4) + 2] = (byte)((color & 0xff0000) >> 16);
+            framebuffer[(index * 4) + 3] = 255;
+
         }
     }
 
@@ -263,7 +276,12 @@ public class Ppu
                     {
                         if (palletIndex != 0 && (aboveBG == false || framebuffer[x + r + (Emulator.WindowWidth * LY)] == Pallet.GetColor((byte)(BGP & Bit01))))
                         {
-                            framebuffer[x + r + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
+                            uint color = Pallet.GetColor(colorIndex);
+                            int index = x + r + (Emulator.WindowWidth * LY);
+                            framebuffer[(index * 4) + 0] = (byte)color;
+                            framebuffer[(index * 4) + 1] = (byte)((color & 0xff00) >> 8);
+                            framebuffer[(index * 4) + 2] = (byte)((color & 0xff0000) >> 16);
+                            framebuffer[(index * 4) + 3] = 255;
                         }
                     }
                 }

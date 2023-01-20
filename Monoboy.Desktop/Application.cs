@@ -31,7 +31,7 @@ public class Application
 
     public Application()
     {
-        emulator = new(Boot.DMG);
+        emulator = new(Boot.Bootix);
 
         window = new(GraphicsBackend.Vulkan, Icon.Data);
 

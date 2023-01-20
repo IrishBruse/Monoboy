@@ -44,7 +44,7 @@ public class VeldridWindow
         remove => Window.Closing -= value;
     }
 
-    public uint[] Framebuffer { get; set; }
+    public byte[] Framebuffer { get; set; }
 
     private IWindow Window { get; set; }
 

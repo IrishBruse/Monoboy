@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+        <WasmMainJSPath>main.js</WasmMainJSPath>
+        <OutputType>Exe</OutputType>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RunAOTCompilation>false</RunAOTCompilation>
+        <WasmBuildNative>true</WasmBuildNative>
+        <RootNamespace>DotnetRaylibWasm</RootNamespace>
+        <WasmNativeStrip>true</WasmNativeStrip>
+        <EnableAggressiveTrimming>true</EnableAggressiveTrimming>
+        <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>full</TrimMode>
+        <!-- This is to basically disable globalization to exclude icudt.dat (1.5MB) and reduce size of dotnet.wasm -->
+        <InvariantGlobalization>true</InvariantGlobalization>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <WasmExtraFilesToDeploy Include="./index.html" />
+        <WasmExtraFilesToDeploy Include="./style.css" />
+        <WasmExtraFilesToDeploy Include="./favicon.ico" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Monoboy\Monoboy.csproj" />
+    </ItemGroup>
+
+</Project>

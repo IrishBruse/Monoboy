@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monoboy.Desktop", "Monoboy.Desktop\Monoboy.Desktop.csproj", "{E458394A-7B23-4576-BE85-FE018D0E4944}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monoboy.Frontend", "Monoboy.Frontend\Monoboy.Frontend.csproj", "{FC1AD02B-6B03-4EF9-87B9-3A9C8730EAEC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monoboy.Wasm", "Monoboy.Wasm\Monoboy.Wasm.csproj", "{2754CD0D-A05F-4C4C-A8F0-B4E4F8078761}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,5 +28,9 @@ Global
 		{FC1AD02B-6B03-4EF9-87B9-3A9C8730EAEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC1AD02B-6B03-4EF9-87B9-3A9C8730EAEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC1AD02B-6B03-4EF9-87B9-3A9C8730EAEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2754CD0D-A05F-4C4C-A8F0-B4E4F8078761}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2754CD0D-A05F-4C4C-A8F0-B4E4F8078761}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2754CD0D-A05F-4C4C-A8F0-B4E4F8078761}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2754CD0D-A05F-4C4C-A8F0-B4E4F8078761}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -2,6 +2,8 @@
 
 using Monoboy.Utility;
 
+using static Monoboy.Constants.Bit;
+
 public class Register
 {
     public byte A { get; set; }

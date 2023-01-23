@@ -11,6 +11,6 @@ public interface IMemoryBankController
     public void WriteRam(ushort address, byte data);
     public byte[] GetRam();
     public void SetRam(byte[] ram);
-    public void Save(string romPath);
-    public void Load(string romPath);
+    public void Save(byte[] data);
+    public void Load(byte[] data);
 }

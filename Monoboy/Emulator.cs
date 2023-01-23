@@ -1,6 +1,7 @@
 ﻿namespace Monoboy;
 
 using System;
+using System.Diagnostics;
 using System.IO;
 
 using Monoboy.Cartridge;
@@ -44,8 +45,6 @@ public class Emulator
 
     internal int Cycles { get; set; }
     internal long TotalCycles { get; set; }
-
-    private string romPath;
 
     public Emulator(byte[] bios)
     {
@@ -99,14 +98,25 @@ public class Emulator
 
     public void Open(string rom)
     {
-        romPath = rom;
+        byte[] data = File.ReadAllBytes(rom);
+        Open(data);
 
-        mbc?.Save(romPath);
+        string saveFile = rom.Replace(".gb", ".sav");
+        if (File.Exists(saveFile))
+        {
+            mbc.SetRam(File.ReadAllBytes(saveFile));
+        }
+    }
+
+    public void Open(byte[] data)
+    {
+        mbc?.Save(data);
 
         Reset();
 
-        byte[] data = File.ReadAllBytes(rom);
         byte cartridgeType = data[0x147];
+
+        Console.WriteLine(cartridgeType);
 
         GameTitle = "";
 
@@ -167,8 +177,8 @@ public class Emulator
             _ => throw new NotImplementedException()
         };
 
-        mbc.Load(romPath);
-        mbc.Save(romPath);
+        mbc.Load(data);
+        mbc.Save(data);
 
         Console.WriteLine("Cartridge Header Info");
         Console.WriteLine("Title: " + GameTitle);
@@ -178,12 +188,6 @@ public class Emulator
         Console.WriteLine("Cartridge type: " + data[0x147]);
 
         mbc.Rom = data;
-
-        string saveFile = rom.Replace(".gb", ".sav");
-        if (File.Exists(saveFile))
-        {
-            mbc.SetRam(File.ReadAllBytes(saveFile));
-        }
     }
 
     public void Reset()
@@ -427,7 +431,7 @@ public class Emulator
 
     public void Save()
     {
-        mbc?.Save(romPath);
+        // mbc?.Save(romPath);
     }
 
 }

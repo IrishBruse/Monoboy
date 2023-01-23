@@ -23,11 +23,11 @@ public class Joypad
         set
         {
             joyp = value;
-            if (value.GetBit(Bit4) == false)
+            if (value.GetBit(Bit.Bit4) == false)
             {
                 readPad = true;
             }
-            if (value.GetBit(Bit5) == false)
+            if (value.GetBit(Bit.Bit5) == false)
             {
                 readPad = false;
             }
@@ -43,7 +43,7 @@ public class Joypad
     {
         byte key = (byte)button;
 
-        if (key > Bit3)
+        if (key > Bit.Bit3)
         {
             key = (byte)(key >> 4);
 

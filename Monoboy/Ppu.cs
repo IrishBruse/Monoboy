@@ -3,6 +3,8 @@
 using Monoboy.Constants;
 using Monoboy.Utility;
 
+using static Monoboy.Constants.Bit;
+
 public class Ppu
 {
     public byte LCDC { get => memory[0xFF40]; set => memory[0xFF40] = value; }
@@ -274,10 +276,16 @@ public class Ppu
 
                     if (x + r is >= 0 and < Emulator.WindowWidth)
                     {
-                        if (palletIndex != 0 && (aboveBG == false || framebuffer[x + r + (Emulator.WindowWidth * LY)] == Pallet.GetColor((byte)(BGP & Bit01))))
+                        uint color = Pallet.GetColor((byte)(BGP & Bit01));
+                        int index = x + r + (Emulator.WindowWidth * LY);
+                        bool conditional =
+                            framebuffer[(index * 4) + 0] == (byte)color &&
+                            framebuffer[(index * 4) + 1] == (byte)((color & 0xff00) >> 8) &&
+                            framebuffer[(index * 4) + 2] == (byte)((color & 0xff0000) >> 16);
+
+                        if (palletIndex != 0 && (aboveBG == false || conditional))
                         {
-                            uint color = Pallet.GetColor(colorIndex);
-                            int index = x + r + (Emulator.WindowWidth * LY);
+                            color = Pallet.GetColor(colorIndex);
                             framebuffer[(index * 4) + 0] = (byte)color;
                             framebuffer[(index * 4) + 1] = (byte)((color & 0xff00) >> 8);
                             framebuffer[(index * 4) + 2] = (byte)((color & 0xff0000) >> 16);

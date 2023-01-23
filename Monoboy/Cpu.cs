@@ -3,6 +3,8 @@
 using Monoboy.Constants;
 using Monoboy.Utility;
 
+using static Monoboy.Constants.Bit;
+
 public class Cpu
 {
     private Register register;

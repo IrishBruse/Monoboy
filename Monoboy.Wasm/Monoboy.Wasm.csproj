@@ -6,9 +6,8 @@
         <WasmMainJSPath>main.js</WasmMainJSPath>
         <OutputType>Exe</OutputType>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <RunAOTCompilation>false</RunAOTCompilation>
+        <RunAOTCompilation>true</RunAOTCompilation>
         <WasmBuildNative>true</WasmBuildNative>
-        <RootNamespace>DotnetRaylibWasm</RootNamespace>
         <WasmNativeStrip>true</WasmNativeStrip>
         <EnableAggressiveTrimming>true</EnableAggressiveTrimming>
         <PublishTrimmed>true</PublishTrimmed>

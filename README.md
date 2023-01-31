@@ -1,7 +1,6 @@
-# Monoboy
-
 <p align="center">
-<img src="./Icon.ico">
+    <h1>Monoboy</h1>
+    <img src="./Icon.ico">
 </p>
 
 Reference: https://gbdev.io/pandocs/

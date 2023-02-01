@@ -1,7 +1,6 @@
-# Monoboy
-
 <p align="center">
-<img src="./Icon.ico">
+    <h1>Monoboy</h1>
+    <img src="./Icon.ico">
 </p>
 
 Reference: https://gbdev.io/pandocs/
@@ -43,26 +42,11 @@ A0A840
 
 ## Screenshots
 
-<p align="center">
-<img src="Images/cpu_instrs.png">
-<br/>
-blargg's cpu_instrs passing
-</p>
-<br/>
 
-<p align="center">
-<img src="Images/Tetris.png">
-<br/>
-Tetris
-</p>
-<br/>
+| ![blargg's cpu_instrs passing](Images/cpu_instrs.png) |                              | 
+| ----------------------------------------------------  | ---------------------------- |
+| ![Super Marioland](Images/Super%20Marioland.png)      | ![Tetris](Images/Tetris.png) |
 
-<p align="center">
-<img src="Images/Super Marioland.png">
-<br/>
-Super Marioland
-</p>
-<br/>
 
 ### Linux notes
 veldrid cant find libdl.so

@@ -10,12 +10,12 @@ public class Timer
     public bool TacEnabled => (memory[0xFF07] & Bit.Bit2) != 0;
     public byte TacFrequancy => (byte)(memory[0xFF07] & 0b011);
 
-    private static readonly int[] TimerFrequancy = { 1024 / 4, 16 / 4, 64 / 4, 256 / 4 };
+    static readonly int[] TimerFrequancy = { 1024 / 4, 16 / 4, 64 / 4, 256 / 4 };
 
-    private int timerCounter;
+    int timerCounter;
 
-    private Memory memory;
-    private readonly Cpu cpu;
+    Memory memory;
+    readonly Cpu cpu;
 
     public int DivCounter { get; set; }
 

@@ -4,73 +4,63 @@ using System.Diagnostics;
 using System.IO;
 
 using Monoboy.Constants;
-using Monoboy.Desktop.Data;
 using Monoboy.Utility;
 
 using NativeFileDialogSharp;
 
-using Silk.NET.Input;
+using Raylib_cs;
 
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-using Veldrid;
-
 using static Monoboy.Constants.Bit;
+
+using Color = Raylib_cs.Color;
 
 public class Application
 {
-    private VeldridWindow window;
+    Emulator emulator;
+    Stopwatch timer = new();
 
-    private Emulator emulator;
-    private Stopwatch timer = new();
-
-    private int frame;
-    private bool speedup;
-    private bool paused;
+    int frame;
+    bool speedup;
+    bool paused;
 
     public Application()
     {
         emulator = new(Boot.Bootix);
-
-        window = new(GraphicsBackend.Vulkan, Icon.Data);
-
-        window.Framebuffer = emulator.Framebuffer;
-
-        window.Update += OnUpdate;
-        window.FileDrop += OnFilesDrop;
-        window.Load += OnLoad;
-        window.Closing += OnClosing;
-    }
-
-    private void OnClosing()
-    {
-        emulator.Save();
-    }
-
-    private void OnLoad()
-    {
-        window.Keyboard.KeyDown += KeyDown;
-        window.Keyboard.KeyUp += KeyUp;
-        timer.Start();
-
         emulator.SkipBootRom();
-        // emulator.Open(@"D:\Emulation\GB\Legend of Zelda, The - Link's Awakening.gb");
-        emulator.Open(@"D:\Emulation\GB\Tetris.gb");
     }
 
     public void Run()
     {
-        window.Run();
+        Raylib.InitWindow(800, 480, "Hello World");
+
+        while (!Raylib.WindowShouldClose())
+        {
+            Update();
+
+            Raylib.BeginDrawing();
+            Raylib.ClearBackground(Color.White);
+
+            Raylib.DrawText("Hello, world!", 12, 12, 20, Color.Black);
+
+            Raylib.EndDrawing();
+        }
+
+        Raylib.CloseWindow();
+
+        Emulator.Save();
     }
 
-    private int milis;
+    int milis;
 
-    public void OnUpdate(double deltaTime)
+    void Update()
     {
         string title = !string.IsNullOrEmpty(emulator.GameTitle) ? $" - {emulator.GameTitle}" : "";
         string pausedTitle = paused ? " - Paused" : "";
-        window.Title = "Monoboy" + title + pausedTitle + " - " + milis + "ms";
+
+        Raylib.SetWindowTitle("Monoboy" + title + pausedTitle + " - " + milis + "ms");
 
         if (paused)
         {
@@ -78,6 +68,7 @@ public class Application
         }
 
         EmulatorInput();
+        KeyDown();
 
         if (frame >= 3)
         {
@@ -103,35 +94,29 @@ public class Application
         }
     }
 
-    private void EmulatorInput()
+    void EmulatorInput()
     {
-        // Keyboard
-        IKeyboard keyboard = window.Keyboard;
+        bool right = Raylib.IsKeyPressed(KeyboardKey.D) || Raylib.IsKeyPressed(KeyboardKey.Right);
+        bool left = Raylib.IsKeyPressed(KeyboardKey.A) || Raylib.IsKeyPressed(KeyboardKey.Left);
+        bool up = Raylib.IsKeyPressed(KeyboardKey.W) || Raylib.IsKeyPressed(KeyboardKey.Up);
+        bool down = Raylib.IsKeyPressed(KeyboardKey.S) || Raylib.IsKeyPressed(KeyboardKey.Down);
 
-        bool right = keyboard.IsKeyPressed(Key.D) || keyboard.IsKeyPressed(Key.Right);
-        bool left = keyboard.IsKeyPressed(Key.A) || keyboard.IsKeyPressed(Key.Left);
-        bool up = keyboard.IsKeyPressed(Key.W) || keyboard.IsKeyPressed(Key.Up);
-        bool down = keyboard.IsKeyPressed(Key.S) || keyboard.IsKeyPressed(Key.Down);
+        bool a = Raylib.IsKeyPressed(KeyboardKey.Space);
+        bool b = Raylib.IsKeyPressed(KeyboardKey.LeftShift);
+        bool select = Raylib.IsKeyPressed(KeyboardKey.Enter);
+        bool start = Raylib.IsKeyPressed(KeyboardKey.Escape);
 
-        bool a = keyboard.IsKeyPressed(Key.Space);
-        bool b = keyboard.IsKeyPressed(Key.ShiftLeft);
-        bool select = keyboard.IsKeyPressed(Key.Enter);
-        bool start = keyboard.IsKeyPressed(Key.Escape);
-
-        // Controller/Gamepad
-        IGamepad gamepad = window.Gamepad;
-
-        if (gamepad != null)
+        if (Raylib.IsGamepadAvailable(0))
         {
-            right |= gamepad.DPadRight().Pressed || gamepad.Thumbsticks[0].X > 0.5f;
-            left |= gamepad.DPadLeft().Pressed || gamepad.Thumbsticks[0].X < -0.5f;
-            up |= gamepad.DPadUp().Pressed || gamepad.Thumbsticks[0].Y < -0.5f;
-            down |= gamepad.DPadDown().Pressed || gamepad.Thumbsticks[0].Y > 0.5f;
+            right |= Raylib.IsGamepadButtonPressed(0, GamepadButton.LeftFaceRight) || Raylib.GetGamepadAxisMovement(0, GamepadAxis.LeftX) > 0.5f;
+            left |= Raylib.IsGamepadButtonPressed(0, GamepadButton.LeftFaceLeft) || Raylib.GetGamepadAxisMovement(0, GamepadAxis.LeftX) < -0.5f;
+            up |= Raylib.IsGamepadButtonPressed(0, GamepadButton.LeftFaceUp) || Raylib.GetGamepadAxisMovement(0, GamepadAxis.LeftY) < -0.5f;
+            down |= Raylib.IsGamepadButtonPressed(0, GamepadButton.LeftFaceDown) || Raylib.GetGamepadAxisMovement(0, GamepadAxis.LeftY) > 0.5f;
 
-            a |= gamepad.A().Pressed;
-            b |= gamepad.B().Pressed;
-            select |= gamepad.Back().Pressed;
-            start |= gamepad.Start().Pressed;
+            a |= Raylib.IsGamepadButtonPressed(0, GamepadButton.RightFaceDown);
+            b |= Raylib.IsGamepadButtonPressed(0, GamepadButton.RightFaceLeft);
+            select |= Raylib.IsGamepadButtonPressed(0, GamepadButton.MiddleLeft);
+            start |= Raylib.IsGamepadButtonPressed(0, GamepadButton.MiddleRight);
         }
 
         // Set data in emulator
@@ -155,63 +140,42 @@ public class Application
         emulator.Open(files[0]);
     }
 
-    private void KeyUp(IKeyboard keyboard, Key key, int i)
+    void KeyDown()
     {
-        switch (key)
-        {
-            case Key.F:
-            speedup = false;
-            break;
-        }
-    }
+        speedup = Raylib.IsKeyDown(KeyboardKey.F);
 
-    private void KeyDown(IKeyboard keyboard, Key key, int i)
-    {
-        switch (key)
+        if (Raylib.IsKeyPressed(KeyboardKey.F))
         {
-            case Key.F:
-            speedup = true;
-            break;
-
-            case Key.P:
             paused = !paused;
-            break;
-
-            case Key.F2:
-            window.Screenshot();
-            break;
-
-            case Key.O:
-            OpenFile(keyboard);
-            break;
-
-            case Key.F5:
-            File.WriteAllBytes("Memory.bin", emulator.Memory);
-            break;
-
-            case Key.F6:
-            DumpBackground();
-            break;
-
-            case Key.F7:
-            DumpTileset();
-            break;
         }
-    }
-
-    private void OpenFile(IKeyboard keyboard)
-    {
-        if (keyboard.IsKeyPressed(Key.ControlLeft))
+        else if (Raylib.IsKeyDown(KeyboardKey.LeftControl) && Raylib.IsKeyPressed(KeyboardKey.O))
         {
-            DialogResult file = Dialog.FileOpen("gb,gbc");
-            if (file.IsOk)
-            {
-                emulator.Open(file.Path);
-            }
+            OpenFile();
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.F5))
+        {
+            File.WriteAllBytes("Memory.bin", emulator.Memory);
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.F6))
+        {
+            DumpBackground();
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.F7))
+        {
+            DumpTileset();
         }
     }
 
-    private void DumpBackground()
+    void OpenFile()
+    {
+        DialogResult file = Dialog.FileOpen("gb,gbc");
+        if (file.IsOk)
+        {
+            emulator.Open(file.Path);
+        }
+    }
+
+    void DumpBackground()
     {
         Image<Rgba32> backgroundImage = new(256, 256, new Rgba32(Pallet.GetColor(0)));
 
@@ -247,7 +211,7 @@ public class Application
         backgroundImage.SaveAsPng("Background.png");
     }
 
-    private void DumpTileset()
+    void DumpTileset()
     {
         Image<Rgba32> tilesetImage = new(128, 192, new Rgba32(Pallet.GetColor(0)));
 

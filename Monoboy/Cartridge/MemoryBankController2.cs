@@ -1,14 +1,13 @@
 ﻿namespace Monoboy.Cartridge;
 
-using System.IO;
 
 public class MemoryBankController2 : IMemoryBankController
 {
     public byte[] Rom { get; set; }
-    private byte[] ram = new byte[0x200];
+    byte[] ram = new byte[0x200];
 
-    private byte romBank = 1;
-    private bool ramEnabled;
+    byte romBank = 1;
+    bool ramEnabled;
 
     public byte ReadBank00(ushort address)
     {

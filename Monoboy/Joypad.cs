@@ -5,12 +5,12 @@ using Monoboy.Utility;
 
 public class Joypad
 {
-    private bool readPad;
-    private byte buttonState;
-    private byte padState;
+    bool readPad;
+    byte buttonState;
+    byte padState;
 
-    private byte joyp;
-    private readonly Cpu cpu;
+    byte joyp;
+    readonly Cpu cpu;
 
     public byte JOYP
     {

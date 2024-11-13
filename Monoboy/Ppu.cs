@@ -20,16 +20,16 @@ public class Ppu
     public byte OBP0 { get => memory[0xFF48]; set => memory[0xFF48] = value; }
     public byte OBP1 { get => memory[0xFF49]; set => memory[0xFF49] = value; }
 
-    private readonly Memory memory;
-    private readonly Emulator emulator;
-    private readonly Cpu cpu;
-    private readonly byte[] framebuffer;
-    private const int ScanLineCycles = 114;
-    private const int HBlankCycles = 51;
-    private const int OamCycles = 20;
-    private const int VRamCycles = 43;
-    private const int VramAddress = 0x8000;
-    private int cycles;
+    readonly Memory memory;
+    readonly Emulator emulator;
+    readonly Cpu cpu;
+    readonly byte[] framebuffer;
+    const int ScanLineCycles = 114;
+    const int HBlankCycles = 51;
+    const int OamCycles = 20;
+    const int VRamCycles = 43;
+    const int VramAddress = 0x8000;
+    int cycles;
 
     public Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
     {
@@ -126,7 +126,7 @@ public class Ppu
         cycles = 0;
     }
 
-    private void HandleModeChange(byte newMode)
+    void HandleModeChange(byte newMode)
     {
         StatMode = newMode;
 
@@ -144,7 +144,7 @@ public class Ppu
         }
     }
 
-    private void DrawScanline()
+    void DrawScanline()
     {
         if (LCDC.GetBit(Flags.BackgroundEnabled))
         {
@@ -162,7 +162,7 @@ public class Ppu
         }
     }
 
-    private void DrawBackground()
+    void DrawBackground()
     {
         bool tileset = LCDC.GetBit(Flags.Tileset);
 
@@ -197,7 +197,7 @@ public class Ppu
         }
     }
 
-    private void DrawWindow()
+    void DrawWindow()
     {
         bool tileset = LCDC.GetBit(Flags.Tileset);
 
@@ -239,7 +239,7 @@ public class Ppu
         }
     }
 
-    private void DrawSprites()
+    void DrawSprites()
     {
         int spriteSize = LCDC.GetBit(Flags.SpritesSize) ? 16 : 8;
 

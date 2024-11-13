@@ -1,7 +1,6 @@
 ﻿namespace Monoboy.Cartridge;
 
 using System;
-using System.IO;
 
 public class MemoryBankController0 : IMemoryBankController
 {

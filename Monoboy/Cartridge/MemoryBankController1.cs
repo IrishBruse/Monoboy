@@ -8,11 +8,11 @@ public class MemoryBankController1 : IMemoryBankController
 {
     public byte[] Rom { get; set; }
 
-    private byte[] ram = new byte[0x8000];
-    private byte romBank = 1;
-    private byte ramBank;
-    private bool ramEnabled;
-    private BankingMode bankingMode = BankingMode.Rom;
+    byte[] ram = new byte[0x8000];
+    byte romBank = 1;
+    byte ramBank;
+    bool ramEnabled;
+    BankingMode bankingMode = BankingMode.Rom;
 
     public byte ReadBank00(ushort address)
     {
@@ -124,7 +124,7 @@ public class MemoryBankController1 : IMemoryBankController
         this.ram = ram;
     }
 
-    private enum BankingMode
+    enum BankingMode
     {
         Rom,
         Ram,

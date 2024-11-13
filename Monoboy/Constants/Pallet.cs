@@ -5,7 +5,7 @@ using System.IO;
 
 public static class Pallet
 {
-    private static readonly uint[] Colors;
+    static readonly uint[] Colors;
 
     static Pallet()
     {

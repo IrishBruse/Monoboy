@@ -7,8 +7,8 @@ using static Monoboy.Constants.Bit;
 
 public class Cpu
 {
-    private Register register;
-    private Emulator emulator;
+    Register register;
+    Emulator emulator;
 
     public Cpu(Register register, Emulator emulator)
     {
@@ -342,12 +342,14 @@ public class Cpu
             case 0xc8: case 0xcc: if (register.ZFlag) { conditionalCycles = 3; } break;
             case 0xd8: case 0xdc: if (register.ZFlag) { conditionalCycles = 3; } break;
             case 0xca: case 0xda: if (register.ZFlag) { conditionalCycles = 1; } break;
+            default:
+            break;
         }
 
         return (byte)(Timings.MainTimes[op] + conditionalCycles);
     }
 
-    private byte PrefixedTable()
+    byte PrefixedTable()
     {
         byte op = NextByte();
 
@@ -645,7 +647,7 @@ public class Cpu
         return Timings.CbTimes[op];
     }
 
-    private void WriteSPtoAddress()
+    void WriteSPtoAddress()
     {
         ushort address = NextShort();
         ushort data = register.SP;
@@ -669,12 +671,12 @@ public class Cpu
         return low.Combine(high);
     }
 
-    private byte NextByte()
+    byte NextByte()
     {
         return emulator.Read(register.PC++);
     }
 
-    private ushort NextShort()
+    ushort NextShort()
     {
         byte low = NextByte();
         byte high = NextByte();
@@ -682,7 +684,7 @@ public class Cpu
     }
 
 
-    private void ADD(byte n)
+    void ADD(byte n)
     {
         int result = register.A + n;
 
@@ -694,7 +696,7 @@ public class Cpu
         register.A = (byte)result;
     }
 
-    private void ADC(byte n)
+    void ADC(byte n)
     {
         int carry = register.CFlag ? 1 : 0;
         int result = register.A + n + carry;
@@ -714,7 +716,7 @@ public class Cpu
         register.A = (byte)result;
     }
 
-    private void SUB(byte n)
+    void SUB(byte n)
     {
         int result = register.A - n;
 
@@ -726,7 +728,7 @@ public class Cpu
         register.A = (byte)result;
     }
 
-    private void SBC(byte n)
+    void SBC(byte n)
     {
         int carry = register.CFlag ? 1 : 0;
         int result = register.A - n - carry;
@@ -739,7 +741,7 @@ public class Cpu
         register.A = (byte)result;
     }
 
-    private void AND(byte n)
+    void AND(byte n)
     {
         byte result = (byte)(register.A & n);
 
@@ -751,7 +753,7 @@ public class Cpu
         register.A = result;
     }
 
-    private void OR(byte n)
+    void OR(byte n)
     {
         byte result = (byte)(register.A | n);
 
@@ -763,7 +765,7 @@ public class Cpu
         register.A = result;
     }
 
-    private void XOR(byte n)
+    void XOR(byte n)
     {
         byte result = (byte)(register.A ^ n);
 
@@ -775,7 +777,7 @@ public class Cpu
         register.A = result;
     }
 
-    private void CP(byte n)
+    void CP(byte n)
     {
         int result = register.A - n;
 
@@ -785,7 +787,7 @@ public class Cpu
         register.CFlag = (result >> 8) != 0;
     }
 
-    private byte INC(byte n)
+    byte INC(byte n)
     {
         int result = n + 1;
 
@@ -796,7 +798,7 @@ public class Cpu
         return (byte)result;
     }
 
-    private byte DEC(byte n)
+    byte DEC(byte n)
     {
         int result = n - 1;
 
@@ -808,7 +810,7 @@ public class Cpu
     }
 
 
-    private void ADD(ushort nn)
+    void ADD(ushort nn)
     {
         int result = register.HL + nn;
 
@@ -819,7 +821,7 @@ public class Cpu
         register.HL = (ushort)result;
     }
 
-    private ushort ADDS(ushort nn)
+    ushort ADDS(ushort nn)
     {
         byte n = NextByte();
 
@@ -833,7 +835,7 @@ public class Cpu
 
 
 
-    private void CPL()
+    void CPL()
     {
         register.A = (byte)~register.A;
 
@@ -841,21 +843,21 @@ public class Cpu
         register.HFlag = true;
     }
 
-    private void SCF()
+    void SCF()
     {
         register.NFlag = false;
         register.HFlag = false;
         register.CFlag = true;
     }
 
-    private void CCF()
+    void CCF()
     {
         register.NFlag = false;
         register.HFlag = false;
         register.CFlag = !register.CFlag;
     }
 
-    private byte SWAP(byte n)
+    byte SWAP(byte n)
     {
         byte result = (byte)(((n & 0xF0) >> 4) | ((n & 0x0F) << 4));
 
@@ -867,7 +869,7 @@ public class Cpu
         return result;
     }
 
-    private void DAA()
+    void DAA()
     {
         if (register.NFlag)
         {
@@ -900,7 +902,7 @@ public class Cpu
 
 
 
-    private void RLCA()
+    void RLCA()
     {
         register.ZFlag = false;
         register.NFlag = false;
@@ -910,7 +912,7 @@ public class Cpu
         register.A = (byte)((register.A << 1) | (register.A >> 7));
     }
 
-    private void RLA()
+    void RLA()
     {
         int carry = register.CFlag ? 1 : 0;
 
@@ -922,7 +924,7 @@ public class Cpu
         register.A = (byte)((register.A << 1) | carry);
     }
 
-    private void RRCA()
+    void RRCA()
     {
         register.ZFlag = false;
         register.NFlag = false;
@@ -932,7 +934,7 @@ public class Cpu
         register.A = (byte)((register.A >> 1) | (register.A << 7));
     }
 
-    private void RRA()
+    void RRA()
     {
         int carry = register.CFlag ? Bit7 : 0;
 
@@ -944,7 +946,7 @@ public class Cpu
         register.A = (byte)((register.A >> 1) | carry);
     }
 
-    private byte RLC(byte n)
+    byte RLC(byte n)
     {
         byte result = (byte)((n << 1) | (n >> 7));
 
@@ -956,7 +958,7 @@ public class Cpu
         return result;
     }
 
-    private byte RL(byte n)
+    byte RL(byte n)
     {
         int carry = register.CFlag ? 1 : 0;
         byte result = (byte)((n << 1) | carry);
@@ -969,7 +971,7 @@ public class Cpu
         return result;
     }
 
-    private byte RRC(byte n)
+    byte RRC(byte n)
     {
         byte result = (byte)((n >> 1) | (n << 7));
 
@@ -981,7 +983,7 @@ public class Cpu
         return result;
     }
 
-    private byte RR(byte n)
+    byte RR(byte n)
     {
         int carry = register.CFlag ? Bit7 : 0;
         byte result = (byte)((n >> 1) | carry);
@@ -994,7 +996,7 @@ public class Cpu
         return result;
     }
 
-    private byte SLA(byte n)
+    byte SLA(byte n)
     {
         byte result = (byte)(n << 1);
         register.ZFlag = result == 0;
@@ -1004,7 +1006,7 @@ public class Cpu
         return result;
     }
 
-    private byte SRA(byte n)
+    byte SRA(byte n)
     {
         byte result = (byte)((n >> 1) | (n & Bit7));
 
@@ -1016,7 +1018,7 @@ public class Cpu
         return result;
     }
 
-    private byte SRL(byte n)
+    byte SRL(byte n)
     {
         byte result = (byte)(n >> 1);
 
@@ -1028,30 +1030,30 @@ public class Cpu
         return result;
     }
 
-    private void BIT(byte bit, byte r)
+    void BIT(byte bit, byte r)
     {
         register.ZFlag = (r & bit) == 0;
         register.NFlag = false;
         register.HFlag = true;
     }
 
-    private static byte SET(byte bit, byte r)
+    static byte SET(byte bit, byte r)
     {
         return (byte)(r | bit);
     }
 
-    private static byte RES(byte bit, byte r)
+    static byte RES(byte bit, byte r)
     {
         return (byte)(r & ~bit);
     }
 
 
-    private void JP(ushort nn)
+    void JP(ushort nn)
     {
         register.PC = nn;
     }
 
-    private void JP(bool condition)
+    void JP(bool condition)
     {
         if (condition)
         {
@@ -1064,7 +1066,7 @@ public class Cpu
         }
     }
 
-    private void JR(bool condition)
+    void JR(bool condition)
     {
         if (condition)
         {
@@ -1091,7 +1093,7 @@ public class Cpu
         }
     }
 
-    private void RET(bool condition)
+    void RET(bool condition)
     {
         if (condition)
         {
@@ -1099,7 +1101,7 @@ public class Cpu
         }
     }
 
-    private void RST(byte n)
+    void RST(byte n)
     {
         Push(register.PC);
         register.PC = n;

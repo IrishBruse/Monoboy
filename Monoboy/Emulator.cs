@@ -1,7 +1,6 @@
 ﻿namespace Monoboy;
 
 using System;
-using System.Diagnostics;
 using System.IO;
 
 using Monoboy.Cartridge;
@@ -13,24 +12,24 @@ public class Emulator
     public const int CyclesPerFrame = 0x4494;
     public const byte WindowWidth = 160;
     public const byte WindowHeight = 144;
-    private const int IFReg = 0xFF0F;
-    private const int IEReg = 0xFFFF;
+    const int IFReg = 0xFF0F;
+    const int IEReg = 0xFFFF;
 
     /// <summary> #AABBGGRR </summary>
     public byte[] Framebuffer { get; set; }
     public string GameTitle { get; private set; }
 
-    private byte[] bios;
+    byte[] bios;
 
     // Hardware
-    private Register register;
+    Register register;
     public Memory Memory { get; set; }
-    private IMemoryBankController mbc;
-    private bool biosEnabled = true;
-    private Cpu cpu;
-    private Ppu ppu;
-    private Joypad joypad;
-    private Timer timer;
+    IMemoryBankController mbc;
+    bool biosEnabled = true;
+    Cpu cpu;
+    Ppu ppu;
+    Joypad joypad;
+    Timer timer;
 
     // CPU
     internal bool Halted { get; set; }
@@ -236,7 +235,7 @@ public class Emulator
                 return bios[address];
             }
 
-            if (address >= 0x0104 && address <= 0x0133)
+            if (address is >= 0x0104 and <= 0x0133)
             {
                 return new byte[]{
                     0b11001110,0b11101101,
@@ -299,10 +298,11 @@ public class Emulator
             case <= 0xFF7F: WriteIO(address, data); break;                  // I/O Ports
             case <= 0xFFFE: Memory[address] = data; break;                  // Zero Page RAM
             case <= IEReg: Memory[address] = data; break;                  // Interrupt Enable register (IE)
+            default:
         }
     }
 
-    private byte ReadIO(ushort address)
+    byte ReadIO(ushort address)
     {
         return address switch
         {
@@ -324,7 +324,7 @@ public class Emulator
         };
     }
 
-    private void WriteIO(ushort address, byte data)
+    void WriteIO(ushort address, byte data)
     {
         switch (address)
         {
@@ -339,7 +339,7 @@ public class Emulator
 
     }
 
-    private void OamTransfer(byte data)
+    void OamTransfer(byte data)
     {
         ushort offset = (ushort)(data << 8);
         for (byte i = 0; i < 160; i++)
@@ -348,7 +348,7 @@ public class Emulator
         }
     }
 
-    private void SerialTransfer(ushort address, byte data)
+    void SerialTransfer(ushort address, byte data)
     {
         Memory[address] = data;
     }
@@ -429,7 +429,7 @@ public class Emulator
         Write(IEReg, 0x00);
     }
 
-    public void Save()
+    public static void Save()
     {
         // mbc?.Save(romPath);
     }

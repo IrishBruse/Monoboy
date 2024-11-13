@@ -1,20 +1,19 @@
 ﻿namespace Monoboy.Cartridge;
 
 using System;
-using System.IO;
 
 public class MemoryBankController3 : IMemoryBankController
 {
     // Timer
-    private byte seconds;   // RTC S
-    private byte minutes;   // RTC M
-    private byte hours;     // RTC H
-    private byte days;      // RTC DL
-    private byte daysCarry; // RTC DH
+    byte seconds;   // RTC S
+    byte minutes;   // RTC M
+    byte hours;     // RTC H
+    byte days;      // RTC DL
+    byte daysCarry; // RTC DH
 
     public byte[] Rom { get; set; }
 
-    private byte[] ram = new byte[0x8000];
+    byte[] ram = new byte[0x8000];
 
     public byte RomBank { get; set; } = 1;
 

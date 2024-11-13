@@ -7,7 +7,7 @@ public class Memory
         data = new byte[size];
     }
 
-    private byte[] data;
+    byte[] data;
 
     public byte this[int i]
     {

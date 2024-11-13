@@ -6,8 +6,8 @@ using System.Runtime.InteropServices.JavaScript;
 
 public partial class Program
 {
-    private static Stopwatch timer = new();
-    private static Emulator emulator;
+    static Stopwatch timer = new();
+    static Emulator emulator;
 
     public static void Main()
     {

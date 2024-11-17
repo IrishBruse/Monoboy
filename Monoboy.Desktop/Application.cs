@@ -1,7 +1,10 @@
 namespace Monoboy.Desktop;
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 
 using Monoboy.Constants;
 using Monoboy.Utility;
@@ -10,80 +13,118 @@ using NativeFileDialogSharp;
 
 using Raylib_cs;
 
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-
-using static Monoboy.Constants.Bit;
-
-using Color = Raylib_cs.Color;
-
 public class Application
 {
     Emulator emulator;
     Stopwatch timer = new();
 
-    int frame;
     bool speedup;
     bool paused;
 
     public Application()
     {
-        emulator = new(Boot.Bootix);
+        byte[] dmgbootRom = GetDataFile("dmg0_boot.bin");
+        foreach (byte b in dmgbootRom)
+        {
+            Console.Write(b.ToString("X2") + ", ");
+        }
+
+        // byte[] bootRom = GetDataFile("bootix_dmg.bin");
+        emulator = new(dmgbootRom);
+        // emulator.Open("/mnt/data/Emulation/GB/test/mooneye-test-suite/acceptance/intr_timing.gb");
+        emulator.Open("/mnt/data/Emulation/GB/Tetris.gb");
         emulator.SkipBootRom();
     }
 
     public void Run()
     {
-        Raylib.InitWindow(800, 480, "Hello World");
+        Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint | ConfigFlags.Msaa4xHint);
+        Raylib.InitWindow(Emulator.WindowWidth * 4, Emulator.WindowHeight * 4, "Monoboy");
+        byte[] icon = GetDataFile("Icon.png");
+        Raylib.SetWindowIcon(Raylib.LoadImageFromMemory(".png", icon));
+
+        Raylib.InitAudioDevice();
+
+        var framebufferImage = Raylib.GenImageColor(Emulator.WindowWidth, Emulator.WindowHeight, Color.Red);
+        var framebuffer = Raylib.LoadTextureFromImage(framebufferImage);
+
+        Raylib.SetExitKey(0);
+        Raylib.SetTargetFPS(60);
 
         while (!Raylib.WindowShouldClose())
         {
+            int width = Raylib.GetScreenWidth();
+            int height = Raylib.GetScreenHeight();
+
             Update();
 
+            if (Raylib.IsFileDropped())
+            {
+                string[] files = Raylib.GetDroppedFiles();
+
+                if (files.Length == 1)
+                {
+                    emulator.Open(files[0]);
+                }
+            }
+
+            Raylib.UpdateTexture(framebuffer, emulator.Framebuffer);
+
             Raylib.BeginDrawing();
-            Raylib.ClearBackground(Color.White);
+            {
+                Raylib.ClearBackground(new Color(0xD0, 0xD0, 0x58, 0xFF));
+                int scale = Math.Min(Math.Max(width / Emulator.WindowWidth, 1), Math.Max(height / Emulator.WindowHeight, 1));
+                Raylib.DrawTextureEx(framebuffer, new((width - (Emulator.WindowWidth * scale)) * 0.5f, (height - (Emulator.WindowHeight * scale)) * 0.5f), 0, scale, Color.White);
 
-            Raylib.DrawText("Hello, world!", 12, 12, 20, Color.Black);
+                var reg = emulator.Register;
+                string text = "A:" + reg.A.ToString("X2") + " F:" + reg.F.ToString("B8") + "\n\n" +
+                "B:" + reg.B.ToString("X2") + " C:" + reg.C.ToString("X2") + "\n\n" +
+                "D:" + reg.D.ToString("X2") + " E:" + reg.E.ToString("X2") + "\n\n" +
+                "H:" + reg.H.ToString("X2") + " L:" + reg.L.ToString("X2");
 
+                Raylib.DrawText(text, 4, 0, 25, Color.Black);
+            }
             Raylib.EndDrawing();
         }
 
+        Raylib.CloseAudioDevice();
         Raylib.CloseWindow();
 
         Emulator.Save();
     }
 
-    int milis;
+    static byte[] GetDataFile(string path)
+    {
+        string prefix = "Monoboy.Desktop.Data.";
+        var reader = new BinaryReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(prefix + path));
+        return reader.ReadBytes((int)reader.BaseStream.Length);
+    }
+
+    Queue<long> frameTimes = new([0]);
 
     void Update()
     {
-        string title = !string.IsNullOrEmpty(emulator.GameTitle) ? $" - {emulator.GameTitle}" : "";
-        string pausedTitle = paused ? " - Paused" : "";
-
-        Raylib.SetWindowTitle("Monoboy" + title + pausedTitle + " - " + milis + "ms");
-
         if (paused)
         {
             return;
         }
 
+        // Console.WriteLine(Enumerable.Average(frameTimes));
+
         EmulatorInput();
         KeyDown();
 
-        if (frame >= 3)
-        {
-            frame = 0;
-            milis = (int)(timer.ElapsedMilliseconds / 3);
-            timer.Reset();
-        }
-        else
-        {
-            frame++;
-        }
-
-        timer.Start();
+        timer.Restart();
         emulator.StepFrame();
         timer.Stop();
+
+        frameTimes.Enqueue(timer.ElapsedMilliseconds);
+
+
+        if (frameTimes.Count > 30)
+        {
+            _ = frameTimes.Dequeue();
+        }
 
         if (speedup)
         {
@@ -96,15 +137,15 @@ public class Application
 
     void EmulatorInput()
     {
-        bool right = Raylib.IsKeyPressed(KeyboardKey.D) || Raylib.IsKeyPressed(KeyboardKey.Right);
-        bool left = Raylib.IsKeyPressed(KeyboardKey.A) || Raylib.IsKeyPressed(KeyboardKey.Left);
-        bool up = Raylib.IsKeyPressed(KeyboardKey.W) || Raylib.IsKeyPressed(KeyboardKey.Up);
-        bool down = Raylib.IsKeyPressed(KeyboardKey.S) || Raylib.IsKeyPressed(KeyboardKey.Down);
+        bool right = Raylib.IsKeyDown(KeyboardKey.D) || Raylib.IsKeyDown(KeyboardKey.Right);
+        bool left = Raylib.IsKeyDown(KeyboardKey.A) || Raylib.IsKeyDown(KeyboardKey.Left);
+        bool up = Raylib.IsKeyDown(KeyboardKey.W) || Raylib.IsKeyDown(KeyboardKey.Up);
+        bool down = Raylib.IsKeyDown(KeyboardKey.S) || Raylib.IsKeyDown(KeyboardKey.Down);
 
-        bool a = Raylib.IsKeyPressed(KeyboardKey.Space);
-        bool b = Raylib.IsKeyPressed(KeyboardKey.LeftShift);
-        bool select = Raylib.IsKeyPressed(KeyboardKey.Enter);
-        bool start = Raylib.IsKeyPressed(KeyboardKey.Escape);
+        bool a = Raylib.IsKeyDown(KeyboardKey.Space);
+        bool b = Raylib.IsKeyDown(KeyboardKey.LeftShift);
+        bool select = Raylib.IsKeyDown(KeyboardKey.Escape);
+        bool start = Raylib.IsKeyDown(KeyboardKey.Enter);
 
         if (Raylib.IsGamepadAvailable(0))
         {
@@ -144,7 +185,7 @@ public class Application
     {
         speedup = Raylib.IsKeyDown(KeyboardKey.F);
 
-        if (Raylib.IsKeyPressed(KeyboardKey.F))
+        if (Raylib.IsKeyPressed(KeyboardKey.P))
         {
             paused = !paused;
         }
@@ -154,15 +195,16 @@ public class Application
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.F5))
         {
-            File.WriteAllBytes("Memory.bin", emulator.Memory);
-        }
-        else if (Raylib.IsKeyPressed(KeyboardKey.F6))
-        {
-            DumpBackground();
-        }
-        else if (Raylib.IsKeyPressed(KeyboardKey.F7))
-        {
-            DumpTileset();
+            _ = Directory.CreateDirectory("dump");
+            File.WriteAllBytes("dump/ram.bin", emulator.Memory.Range(0x0000, 0xFFFF));
+            File.WriteAllBytes("dump/vram.bin", emulator.Memory.Range(0x8000, 0x9FFF));
+            File.WriteAllBytes("dump/wram.bin", emulator.Memory.Range(0xC000, 0xDFFF));
+            File.WriteAllBytes("dump/oam.bin", emulator.Memory.Range(0xFE00, 0xFE9F));
+            File.WriteAllBytes("dump/io.bin", emulator.Memory.Range(0xFF00, 0xFF7F));
+            File.WriteAllBytes("dump/highram.bin", emulator.Memory.Range(0xFF00, 0xFF7F));
+
+            DumpBackground("dump/background.png");
+            DumpTileset("dump/tileset.png");
         }
     }
 
@@ -175,9 +217,9 @@ public class Application
         }
     }
 
-    void DumpBackground()
+    void DumpBackground(string path)
     {
-        Image<Rgba32> backgroundImage = new(256, 256, new Rgba32(Pallet.GetColor(0)));
+        Image backgroundImage = Raylib.GenImageColor(256, 256, Color.Red);
 
         bool tileset = emulator.Read(0xFF40).GetBit(Flags.Tileset);
         bool tilemap = emulator.Read(0xFF40).GetBit(Flags.Tilemap);
@@ -201,19 +243,22 @@ public class Application
                 byte data1 = emulator.Read((ushort)(0x8000 + vramAddress + line));
                 byte data2 = emulator.Read((ushort)(0x8000 + vramAddress + line + 1));
 
-                byte bit = (byte)(Bit0 << (((x % 8) - 7) * 0xff));
+                byte bit = (byte)(Bit.Bit0 << (((x % 8) - 7) * 0xff));
                 byte palletIndex = (byte)((((data2 & (bit)) != 0 ? 1 : 0) << 1) | ((data1 & (bit)) != 0 ? 1 : 0));
-                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & Bit01);
-                backgroundImage[x, y] = new(packed: Pallet.GetColor(colorIndex));
+                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & Bit.Bit01);
+
+                var pal = Pallet.GetColor(colorIndex);
+                var col = new Color((byte)(pal & 0xFF), (byte)((pal >> 8) & 0xFF), (byte)((pal >> 16) & 0xFF), (byte)0xFF);
+                Raylib.ImageDrawPixel(ref backgroundImage, x, y, col);
             }
         }
 
-        backgroundImage.SaveAsPng("Background.png");
+        _ = Raylib.ExportImage(backgroundImage, path);
     }
 
-    void DumpTileset()
+    void DumpTileset(string path)
     {
-        Image<Rgba32> tilesetImage = new(128, 192, new Rgba32(Pallet.GetColor(0)));
+        Image tilesetImage = Raylib.GenImageColor(128, 192, Color.Red);
 
         for (int y = 0; y < 192; y++)
         {
@@ -231,13 +276,16 @@ public class Application
                 byte data1 = emulator.Read((ushort)(0x8000 + tileGraphicAddress + line));
                 byte data2 = emulator.Read((ushort)(0x8000 + tileGraphicAddress + line + 1));
 
-                byte bit = (byte)(Bit0 << (((x % 8) - 7) * 0xff));
+                byte bit = (byte)(Bit.Bit0 << (((x % 8) - 7) * 0xff));
                 byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & Bit01);
-                tilesetImage[x, y] = new(Pallet.GetColor(colorIndex));
+                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & Bit.Bit01);
+
+                var pal = Pallet.GetColor(colorIndex);
+                var col = new Color((byte)(pal & 0xFF), (byte)((pal >> 8) & 0xFF), (byte)((pal >> 16) & 0xFF), (byte)0xFF);
+                Raylib.ImageDrawPixel(ref tilesetImage, x, y, col);
             }
         }
 
-        tilesetImage.SaveAsPng("Tileset.png");
+        _ = Raylib.ExportImage(tilesetImage, path);
     }
 }

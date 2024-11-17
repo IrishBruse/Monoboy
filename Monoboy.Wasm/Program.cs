@@ -12,7 +12,8 @@ public partial class Program
     public static void Main()
     {
         Console.WriteLine("Wasm C# main");
-        emulator = new Emulator(Boot.Bootix);
+        emulator = new Emulator([]);
+        emulator.SkipBootRom();
         emulator.StepFrame();
     }
 

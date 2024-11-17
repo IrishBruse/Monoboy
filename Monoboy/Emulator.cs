@@ -8,8 +8,7 @@ using Monoboy.Constants;
 
 public class Emulator
 {
-    public const int CpuCyclesPerSecond = 0x100000;
-    public const int CyclesPerFrame = 0x4494;
+    public const int CyclesPerFrame = 70224 / 4; // 17556 M-Cycles
     public const byte WindowWidth = 160;
     public const byte WindowHeight = 144;
     const int IFReg = 0xFF0F;
@@ -22,7 +21,7 @@ public class Emulator
     byte[] bios;
 
     // Hardware
-    Register register;
+    public Register Register { get; set; }
     public Memory Memory { get; set; }
     IMemoryBankController mbc;
     bool biosEnabled = true;
@@ -42,7 +41,9 @@ public class Emulator
     internal bool Ime { get; set; } // Master interupt enabled
     internal bool ImeDelay { get; set; } // Master interupt enabled delay
 
+    /// <summary> Machine Cycles </summary>
     internal int Cycles { get; set; }
+    /// <summary> Machine Cycles </summary>
     internal long TotalCycles { get; set; }
 
     public Emulator(byte[] bios)
@@ -51,9 +52,9 @@ public class Emulator
         Memory = new Memory(0x10000);
         Framebuffer = new byte[WindowWidth * WindowHeight * 4];
 
-        register = new Register();
+        Register = new Register();
 
-        cpu = new Cpu(register, this);
+        cpu = new Cpu(Register, this);
         timer = new Timer(Memory, cpu);
         ppu = new Ppu(Memory, this, cpu, Framebuffer);
         joypad = new Joypad(cpu);
@@ -61,24 +62,54 @@ public class Emulator
         Reset();
     }
 
-    public byte Step()
+    public void Step()
     {
-        byte ticks = cpu.Step();
-        Cycles += ticks;
-        TotalCycles += ticks;
+        byte op = cpu.NextByte();
 
-        timer.Step(ticks);
-        ppu.Step(ticks);
+        if (Ime)
+        {
+            Ime = false;
 
-        cpu.HandleInterupts();
+            Console.WriteLine("Handling Interupts: " + (IE & IF).ToString("B8"));
+
+            for (byte i = 5; i > 0; i--)
+            {
+                if ((((IE & IF) >> i) & 1) == 1)
+                {
+                    Cycles += 2;
+                    Push(Register.PC);
+                    Cycles += 2;
+                    Register.PC = (ushort)(0x40 + (0x8 * i));
+                    Cycles += 1;
+
+                    Ime = false;
+                    IF = IF.SetBit((byte)(0b1 << i), false);
+                    break;
+                }
+            }
+        }
+
+        if (Halted)
+        {
+            if (IF != 0)
+            {
+                Register.PC++;
+                Halted = false;
+            }
+        }
+
+
+
+        int mCycles = cpu.Execute(op);
+
+        timer.Step(mCycles);
+        ppu.Step(mCycles);
 
         // Disable the bios/boot rom in the bus
-        if (biosEnabled && register.PC >= 0x100)
+        if (biosEnabled && Register.PC >= 0x100)
         {
             biosEnabled = false;
         }
-
-        return ticks;
     }
 
     public void StepFrame()
@@ -90,7 +121,7 @@ public class Emulator
 
         while (Cycles < CyclesPerFrame)
         {
-            Cycles += Step();
+            Step();
         }
         Cycles -= CyclesPerFrame;
     }
@@ -114,8 +145,6 @@ public class Emulator
         Reset();
 
         byte cartridgeType = data[0x147];
-
-        Console.WriteLine(cartridgeType);
 
         GameTitle = "";
 
@@ -206,7 +235,7 @@ public class Emulator
             }
         }
 
-        register.Reset();
+        Register.Reset();
 
         // Cpu and Interrupt
         Halted = false;
@@ -235,52 +264,53 @@ public class Emulator
                 return bios[address];
             }
 
-            if (address is >= 0x0104 and <= 0x0133)
-            {
-                return new byte[]{
-                    0b11001110,0b11101101,
-                    0b00110111,0b01111011,
-                    0b00000000,0b00110110,
-                    0b00000000,0b11000110,
-                    0b00000000,0b11011110,
-                    0b00000000,0b10001101,
-                    0b00000000,0b11111001,
-                    0b00110011,0b00111011,
-                    0b00000000,0b11100011,
-                    0b00000000,0b00110110,
-                    0b00000000,0b11000110,
-                    0b00000000,0b11011101,
-                    0b11011100,0b11000000,
-                    0b10110011,0b00110000,
-                    0b01100110,0b00110000,
-                    0b01100110,0b11000000,
-                    0b11001100,0b11000000,
-                    0b11011101,0b11000000,
-                    0b10011001,0b11110000,
-                    0b10111011,0b00110000,
-                    0b00110011,0b11100000,
-                    0b01100110,0b00110000,
-                    0b01100110,0b11000000,
-                    0b11010111,0b00111110,
-                }
-            [address - 0x0104];
-            }
+            // if (address is >= 0x0104 and <= 0x0133)
+            // {
+            //     // Monoboy logo
+            //     return new byte[]{
+            //         0b11001110,0b11101101,
+            //         0b00110111,0b01111011,
+            //         0b00000000,0b00110110,
+            //         0b00000000,0b11000110,
+            //         0b00000000,0b11011110,
+            //         0b00000000,0b10001101,
+            //         0b00000000,0b11111001,
+            //         0b00110011,0b00111011,
+            //         0b00000000,0b11100011,
+            //         0b00000000,0b00110110,
+            //         0b00000000,0b11000110,
+            //         0b00000000,0b11011101,
+            //         0b11011100,0b11000000,
+            //         0b10110011,0b00110000,
+            //         0b01100110,0b00110000,
+            //         0b01100110,0b11000000,
+            //         0b11001100,0b11000000,
+            //         0b11011101,0b11000000,
+            //         0b10011001,0b11110000,
+            //         0b10111011,0b00110000,
+            //         0b00110011,0b11100000,
+            //         0b01100110,0b00110000,
+            //         0b01100110,0b11000000,
+            //         0b11010111,0b00111110,
+            //     }
+            //     [address - 0x0104];
+            // }
         }
 
         return address switch
         {
             <= 0x3FFF => mbc?.ReadBank00(address) ?? 0,       // 16 KiB ROM bank 00
             <= 0x7FFF => mbc?.ReadBankNN(address) ?? 0,       // 16 KiB ROM Bank 01~NN
-            <= 0x9FFF => Memory[address],               // 8 KiB Video RAM (VRAM)
+            <= 0x9FFF => Memory[address],                     // 8 KiB Video RAM (VRAM)
             <= 0xBFFF => mbc?.ReadRam(address) ?? 0,          // 8 KiB External RAM
-            <= 0xCFFF => Memory[address],               // 4 KiB Work RAM (WRAM)
-            <= 0xDFFF => Memory[address],               // 4 KiB Work RAM (WRAM)
-            <= 0xFDFF => Memory[address - 0x2000],      // Mirror of C000~DDFF (ECHO RAM)
-            <= 0xFE9F => Memory[address],               // Sprite attribute table (OAM)
-            <= 0xFEFF => 0x00,                          // Not Usable
-            <= 0xFF7F => ReadIO(address),               // I/O Registers
-            <= 0xFFFE => Memory[address],               // High RAM (HRAM)
-            IEReg => Memory[address],                  // Interrupt Enable register (IE)
+            <= 0xCFFF => Memory[address],                     // 4 KiB Work RAM (WRAM)
+            <= 0xDFFF => Memory[address],                     // 4 KiB Work RAM (WRAM)
+            <= 0xFDFF => Memory[address - 0x2000],            // Mirror of C000~DDFF (ECHO RAM)
+            <= 0xFE9F => Memory[address],                     // Sprite attribute table (OAM)
+            <= 0xFEFF => 0x00,                                // Not Usable
+            <= 0xFF7F => ReadIO(address),                     // I/O Registers
+            <= 0xFFFE => Memory[address],                     // High RAM (HRAM)
+            IEReg => Memory[address],                         // Interrupt Enable register (IE)
         };
     }
 
@@ -297,7 +327,7 @@ public class Emulator
             case <= 0xFEFF: break;                                          // Not Usable
             case <= 0xFF7F: WriteIO(address, data); break;                  // I/O Ports
             case <= 0xFFFE: Memory[address] = data; break;                  // Zero Page RAM
-            case <= IEReg: Memory[address] = data; break;                  // Interrupt Enable register (IE)
+            case <= IEReg: Memory[address] = data; break;                   // Interrupt Enable register (IE)
             default:
         }
     }
@@ -357,76 +387,64 @@ public class Emulator
     {
         biosEnabled = false;
 
-        register.ZFlag = true;
-        register.NFlag = false;
-        register.HFlag = false;
-        register.CFlag = false;
+        // DMG0 Boot
 
-        register.A = 0x01;
-        register.B = 0x00;
-        register.C = 0x13;
-        register.D = 0x00;
-        register.E = 0xD8;
-        register.H = 0x01;
-        register.L = 0x4D;
-        register.PC = 0x0100;
-        register.SP = 0xFFFE;
+        // https://gbdev.io/pandocs/Power_Up_Sequence.html?highlight=Register%20name#cpu-registers
+        Register.A = 0x01;
+        Register.F = 0b0000;
+        Register.B = 0xFF;
+        Register.C = 0x13;
+        Register.D = 0x00;
+        Register.E = 0xC1;
+        Register.H = 0x84;
+        Register.L = 0x03;
 
-        Write(0xFF00, 0xCF);
-        Write(0xFF01, 0x00);
-        Write(0xFF02, 0x7E);
-        Write(0xFF04, 0xAB);
-        Write(0xFF05, 0x00);
-        Write(0xFF06, 0x00);
-        Write(0xFF07, 0xF8);
-        Write(IFReg, 0xE1);
-        Write(0xFF10, 0x80);
-        Write(0xFF11, 0xBF);
-        Write(0xFF12, 0xF3);
-        Write(0xFF13, 0xFF);
-        Write(0xFF14, 0xBF);
-        Write(0xFF16, 0x3F);
-        Write(0xFF17, 0x00);
-        Write(0xFF18, 0xFF);
-        Write(0xFF19, 0xBF);
-        Write(0xFF1A, 0x7F);
-        Write(0xFF1B, 0xFF);
-        Write(0xFF1C, 0x9F);
-        Write(0xFF1D, 0xFF);
-        Write(0xFF1E, 0xBF);
-        Write(0xFF20, 0xFF);
-        Write(0xFF21, 0x00);
-        Write(0xFF22, 0x00);
-        Write(0xFF23, 0xBF);
-        Write(0xFF24, 0x77);
-        Write(0xFF25, 0xF3);
-        Write(0xFF26, 0xF1);
-        Write(0xFF40, 0x91);
-        Write(0xFF41, 0x85);
-        Write(0xFF42, 0x00);
-        Write(0xFF43, 0x00);
-        Write(0xFF44, 0x00);
-        Write(0xFF45, 0x00);
-        Write(0xFF46, 0xFF);
-        Write(0xFF47, 0xFC);
-        Write(0xFF48, 0xFF);
-        Write(0xFF49, 0xFF);
-        Write(0xFF4A, 0x00);
-        Write(0xFF4B, 0x00);
-        Write(0xFF4D, 0xFF);
-        Write(0xFF4F, 0xFF);
-        Write(0xFF51, 0xFF);
-        Write(0xFF52, 0xFF);
-        Write(0xFF53, 0xFF);
-        Write(0xFF54, 0xFF);
-        Write(0xFF55, 0xFF);
-        Write(0xFF56, 0xFF);
-        Write(0xFF68, 0xFF);
-        Write(0xFF69, 0xFF);
-        Write(0xFF6A, 0xFF);
-        Write(0xFF6B, 0xFF);
-        Write(0xFF70, 0xFF);
-        Write(IEReg, 0x00);
+        Register.PC = 0x0100;
+        Register.SP = 0xFFFE;
+
+        // https://gbdev.io/pandocs/Power_Up_Sequence.html?highlight=Register%20name#hardware-registers
+        Write(Reg.P1, 0xCF);
+        Write(Reg.SB, 0x0);
+        Write(Reg.SC, 0x7E);
+        Write(Reg.DIV, 0x18);
+        Write(Reg.TIMA, 0x0);
+        Write(Reg.TMA, 0x0);
+        Write(Reg.TAC, 0xF8);
+        Write(Reg.IF, 0xE1);
+        Write(Reg.NR10, 0x80);
+        Write(Reg.NR11, 0xBF);
+        Write(Reg.NR12, 0xF3);
+        Write(Reg.NR13, 0xFF);
+        Write(Reg.NR14, 0xBF);
+        Write(Reg.NR21, 0x3F);
+        Write(Reg.NR22, 0x0);
+        Write(Reg.NR23, 0xFF);
+        Write(Reg.NR24, 0xBF);
+        Write(Reg.NR30, 0x7F);
+        Write(Reg.NR31, 0xFF);
+        Write(Reg.NR32, 0x9F);
+        Write(Reg.NR33, 0xFF);
+        Write(Reg.NR34, 0xBF);
+        Write(Reg.NR41, 0xFF);
+        Write(Reg.NR42, 0x0);
+        Write(Reg.NR43, 0x0);
+        Write(Reg.NR44, 0xBF);
+        Write(Reg.NR50, 0x77);
+        Write(Reg.NR51, 0xF3);
+        Write(Reg.NR52, 0xF1);
+        Write(Reg.LCDC, 0x91);
+        Write(Reg.STAT, 0x81);
+        Write(Reg.SCY, 0x0);
+        Write(Reg.SCX, 0x0);
+        Write(Reg.LY, 0x91);
+        Write(Reg.LYC, 0x0);
+        Write(Reg.DMA, 0xFF);
+        Write(Reg.BGP, 0xFC);
+        Write(Reg.OBP0, (byte)Random.Shared.Next());
+        Write(Reg.OBP1, (byte)Random.Shared.Next());
+        Write(Reg.WY, 0x0);
+        Write(Reg.WX, 0x0);
+        Write(Reg.IE, 0x0);
     }
 
     public static void Save()

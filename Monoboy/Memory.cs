@@ -1,13 +1,8 @@
 namespace Monoboy;
 
-public class Memory
+public class Memory(int size)
 {
-    public Memory(int size)
-    {
-        data = new byte[size];
-    }
-
-    byte[] data;
+    byte[] data = new byte[size];
 
     public byte this[int i]
     {
@@ -18,6 +13,11 @@ public class Memory
     public static implicit operator byte[](Memory rhs)
     {
         return rhs.data;
+    }
+
+    public byte[] Range(int begin, int end)
+    {
+        return data[begin..end];
     }
 
     public void Reset()

@@ -22,6 +22,7 @@ public static class Pallet
             for (int i = 0; i < 4; i++)
             {
                 pallet[i] = Convert.ToUInt32(lines[i], 16);
+                Console.WriteLine(pallet[i].ToString("X4"));
             }
         }
         else

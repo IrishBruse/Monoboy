@@ -7,14 +7,14 @@
             "type": "msedge",
             "url": "http://localhost:8080",
             "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "Build Monoboy.Wasm",
+            "preLaunchTask": "Build Monoboy.Wasm"
         },
         {
             "name": "Monoboy.Desktop",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "Build Monoboy.Desktop",
-            "program": "${workspaceFolder}/Monoboy.Desktop/bin/Debug/net7.0/Monoboy.Desktop.dll",
+            "program": "${workspaceFolder}/Monoboy.Desktop/bin/Debug/net8.0/Monoboy.Desktop.dll",
             "cwd": "${workspaceFolder}/Monoboy.Desktop",
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",

@@ -25,9 +25,9 @@ public class Timer
         this.cpu = cpu;
     }
 
-    public void Step(int ticks)
+    public void Step(int mCycles)
     {
-        DivCounter += ticks;
+        DivCounter += mCycles;
         if (DivCounter >= 256 / 4)
         {
             Div++;
@@ -36,7 +36,7 @@ public class Timer
 
         if (TacEnabled)
         {
-            timerCounter += ticks;
+            timerCounter += mCycles;
 
             while (timerCounter >= TimerFrequancy[TacFrequancy])
             {

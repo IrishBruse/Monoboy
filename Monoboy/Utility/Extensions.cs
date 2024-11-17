@@ -36,17 +36,6 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Set bit
-    /// </summary>
-    /// <param name="bit">The bit to set</param>
-    /// <returns></returns>
-    public static byte SetBits(this byte data, byte mask, byte value)
-    {
-        byte untouched = (byte)(data & ~mask);
-        return (byte)(untouched | (mask & value));
-    }
-
-    /// <summary>
     /// Get bit Value as bool
     /// </summary>
     /// <param name="bit">The bit returned</param>
@@ -56,24 +45,4 @@ public static class Extensions
         return (data & bit) != 0;
     }
 
-    /// <summary>
-    /// Get bit Value as bool
-    /// </summary>
-    /// <param name="bit">The bit returned</param>
-    /// <returns></returns>
-    public static byte GetBits(this byte data, byte bits)
-    {
-        return (byte)(data & bits);
-    }
-
-    /// <summary>
-    /// Combines the bytes into a ushort
-    /// </summary>
-    /// <param name="low">The lower byte to combine</param>
-    /// <param name="high">The higher byte to combine</param>
-    /// <returns></returns>
-    public static ushort Combine(this byte low, byte high)
-    {
-        return (ushort)((high << 8) | low);
-    }
 }

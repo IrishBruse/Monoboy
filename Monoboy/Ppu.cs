@@ -9,7 +9,7 @@ public class Ppu
 {
     public byte LCDC { get => memory[0xFF40]; set => memory[0xFF40] = value; }
     public byte Stat { get => memory[0xFF41]; set => memory[0xFF41] = value; }
-    public byte StatMode { get => (byte)(memory[0xFF41] & 0b00000011); set => memory[0xFF41] = memory[0xFF41].SetBits(0b00000011, value); }
+    public byte StatMode { get => (byte)(memory[0xFF41] & 0b00000011); set => memory[0xFF41] = memory[0xFF41] = (byte)(0b00000011 & value); }
     public byte SCY { get => memory[0xFF42]; set => memory[0xFF42] = value; }
     public byte SCX { get => memory[0xFF43]; set => memory[0xFF43] = value; }
     public byte WX { get => (byte)(memory[0xFF4B] - 6); set => memory[0xFF4B] = value; }
@@ -184,7 +184,7 @@ public class Ppu
             byte data1 = memory[VramAddress + vramAddress + line];
             byte data2 = memory[VramAddress + vramAddress + line + 1];
 
-            byte bit = (byte)(Bit0 << (((x % 8) - 7) * 0xff));
+            byte bit = (byte)(1 << (((x % 8) - 7) * 0xff));
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
             byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & Bit01);
 
@@ -223,7 +223,7 @@ public class Ppu
             byte data1 = memory[VramAddress + offset + line];
             byte data2 = memory[VramAddress + offset + line + 1];
 
-            byte bit = (byte)(Bit0 << (((x % 8) - 7) * 0xff));
+            byte bit = (byte)(1 << (((x % 8) - 7) * 0xff));
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
             byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & Bit01);
 

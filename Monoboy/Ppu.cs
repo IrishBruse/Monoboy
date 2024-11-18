@@ -5,7 +5,7 @@ using Monoboy.Utility;
 
 using static Monoboy.Constants.Bit;
 
-public class Ppu
+public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
 {
     public byte LCDC { get => memory[0xFF40]; set => memory[0xFF40] = value; }
     public byte Stat { get => memory[0xFF41]; set => memory[0xFF41] = value; }
@@ -20,10 +20,10 @@ public class Ppu
     public byte OBP0 { get => memory[0xFF48]; set => memory[0xFF48] = value; }
     public byte OBP1 { get => memory[0xFF49]; set => memory[0xFF49] = value; }
 
-    readonly Memory memory;
-    readonly Emulator emulator;
-    readonly Cpu cpu;
-    readonly byte[] framebuffer;
+    readonly Memory memory = memory;
+    readonly Emulator emulator = emulator;
+    readonly Cpu cpu = cpu;
+    readonly byte[] framebuffer = framebuffer;
     const int ScanLineCycles = 114;
     const int HBlankCycles = 51;
     const int OamCycles = 20;
@@ -31,17 +31,8 @@ public class Ppu
     const int VramAddress = 0x8000;
     int cycles;
 
-    public Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
-    {
-        this.memory = memory;
-        this.emulator = emulator;
-        this.cpu = cpu;
-        this.framebuffer = framebuffer;
-    }
-
     public void Step(int ticks)
     {
-
         if (LCDC.GetBit(Flags.LCDEnabled) == false)
         {
             LY = 0;
@@ -109,7 +100,7 @@ public class Ppu
 
         if (LY == LYC)
         {
-            _ = Stat.SetBit(Bit2, true);
+            Stat = Stat.SetBit(0b100, true);
             if (Stat.GetBit(Bit6))
             {
                 cpu.RequestInterrupt(Flags.LCDStat);
@@ -117,7 +108,7 @@ public class Ppu
         }
         else
         {
-            _ = Stat.SetBit(Bit2, false);
+            Stat = Stat.SetBit(0b100, false);
         }
     }
 
@@ -186,7 +177,7 @@ public class Ppu
 
             byte bit = (byte)(1 << (((x % 8) - 7) * 0xff));
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-            byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & Bit01);
+            byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & 0b11);
 
             uint color = Pallet.GetColor(colorIndex);
             int index = i + (Emulator.WindowWidth * LY);
@@ -225,7 +216,7 @@ public class Ppu
 
             byte bit = (byte)(1 << (((x % 8) - 7) * 0xff));
             byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-            byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & Bit01);
+            byte colorIndex = (byte)((BGP >> (palletIndex * 2)) & 0b11);
 
             // framebuffer[i + (Emulator.WindowWidth * LY)] = Pallet.GetColor(colorIndex);
 
@@ -272,11 +263,11 @@ public class Ppu
                     int hi = (data2 >> pixelBit) & 1;
                     int lo = (data1 >> pixelBit) & 1;
                     byte palletIndex = (byte)((hi << 1) | lo);
-                    byte colorIndex = (byte)((obp >> (palletIndex * 2)) & Bit01);
+                    byte colorIndex = (byte)((obp >> (palletIndex * 2)) & 0b11);
 
                     if (x + r is >= 0 and < Emulator.WindowWidth)
                     {
-                        uint color = Pallet.GetColor((byte)(BGP & Bit01));
+                        uint color = Pallet.GetColor((byte)(BGP & 0b11));
                         int index = x + r + (Emulator.WindowWidth * LY);
                         bool conditional =
                             framebuffer[(index * 4) + 0] == (byte)color &&

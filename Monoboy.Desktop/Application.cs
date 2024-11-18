@@ -76,7 +76,7 @@ public class Application
                 int scale = Math.Min(Math.Max(width / Emulator.WindowWidth, 1), Math.Max(height / Emulator.WindowHeight, 1));
                 Raylib.DrawTextureEx(framebuffer, new((width - (Emulator.WindowWidth * scale)) * 0.5f, (height - (Emulator.WindowHeight * scale)) * 0.5f), 0, scale, Color.White);
 
-                var reg = emulator.Register;
+                var reg = emulator.Registers;
                 string text = "A:" + reg.A.ToString("X2") + " F:" + reg.F.ToString("B8") + "\n\n" +
                 "B:" + reg.B.ToString("X2") + " C:" + reg.C.ToString("X2") + "\n\n" +
                 "D:" + reg.D.ToString("X2") + " E:" + reg.E.ToString("X2") + "\n\n" +
@@ -243,9 +243,9 @@ public class Application
                 byte data1 = emulator.Read((ushort)(0x8000 + vramAddress + line));
                 byte data2 = emulator.Read((ushort)(0x8000 + vramAddress + line + 1));
 
-                byte bit = (byte)(Bit.Bit0 << (((x % 8) - 7) * 0xff));
+                byte bit = (byte)(1 << (((x % 8) - 7) * 0xff));
                 byte palletIndex = (byte)((((data2 & (bit)) != 0 ? 1 : 0) << 1) | ((data1 & (bit)) != 0 ? 1 : 0));
-                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & Bit.Bit01);
+                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & 0b11);
 
                 var pal = Pallet.GetColor(colorIndex);
                 var col = new Color((byte)(pal & 0xFF), (byte)((pal >> 8) & 0xFF), (byte)((pal >> 16) & 0xFF), (byte)0xFF);
@@ -276,9 +276,9 @@ public class Application
                 byte data1 = emulator.Read((ushort)(0x8000 + tileGraphicAddress + line));
                 byte data2 = emulator.Read((ushort)(0x8000 + tileGraphicAddress + line + 1));
 
-                byte bit = (byte)(Bit.Bit0 << (((x % 8) - 7) * 0xff));
+                byte bit = (byte)(1 << (((x % 8) - 7) * 0xff));
                 byte palletIndex = (byte)(((data2.GetBit(bit) ? 1 : 0) << 1) | (data1.GetBit(bit) ? 1 : 0));
-                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & Bit.Bit01);
+                byte colorIndex = (byte)((emulator.Read(0xFF47) >> (palletIndex * 2)) & 0b11);
 
                 var pal = Pallet.GetColor(colorIndex);
                 var col = new Color((byte)(pal & 0xFF), (byte)((pal >> 8) & 0xFF), (byte)((pal >> 16) & 0xFF), (byte)0xFF);

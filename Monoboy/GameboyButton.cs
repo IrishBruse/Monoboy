@@ -4,9 +4,9 @@ using Monoboy.Constants;
 
 public enum GameboyButton : byte
 {
-    Right = Bit.Bit0,
-    Left = Bit.Bit1,
-    Up = Bit.Bit2,
+    Right = 0b1,
+    Left = 0b10,
+    Up = 0b100,
     Down = Bit.Bit3,
 
     // Shifted right 4

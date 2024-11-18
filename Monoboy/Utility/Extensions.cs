@@ -27,11 +27,11 @@ public static class Extensions
     {
         if (condition)
         {
-            return data |= bit;
+            return (byte)(data | bit);
         }
         else
         {
-            return data &= (byte)~bit;
+            return (byte)(data & (byte)~bit);
         }
     }
 

@@ -5,6 +5,7 @@ using System.IO;
 
 using Monoboy.Cartridge;
 using Monoboy.Constants;
+using Monoboy.Utility;
 
 public class Emulator
 {
@@ -21,7 +22,7 @@ public class Emulator
     byte[] bios;
 
     // Hardware
-    public Register Register { get; set; }
+    public Register Registers { get; set; }
     public Memory Memory { get; set; }
     IMemoryBankController mbc;
     bool biosEnabled = true;
@@ -39,7 +40,6 @@ public class Emulator
 
     // Interupt
     internal bool Ime { get; set; } // Master interupt enabled
-    internal bool ImeDelay { get; set; } // Master interupt enabled delay
 
     /// <summary> Machine Cycles </summary>
     internal int Cycles { get; set; }
@@ -52,9 +52,9 @@ public class Emulator
         Memory = new Memory(0x10000);
         Framebuffer = new byte[WindowWidth * WindowHeight * 4];
 
-        Register = new Register();
+        Registers = new Register();
 
-        cpu = new Cpu(Register, this);
+        cpu = new Cpu(Registers, this);
         timer = new Timer(Memory, cpu);
         ppu = new Ppu(Memory, this, cpu, Framebuffer);
         joypad = new Joypad(cpu);
@@ -64,49 +64,51 @@ public class Emulator
 
     public void Step()
     {
+        int mCycles = 0;
+
         byte op = cpu.NextByte();
 
+        // Interrupt Handling
         if (Ime)
         {
             Ime = false;
 
-            Console.WriteLine("Handling Interupts: " + (IE & IF).ToString("B8"));
 
-            for (byte i = 5; i > 0; i--)
+            for (byte i = 5; i >= 0; i--)
             {
                 if ((((IE & IF) >> i) & 1) == 1)
                 {
-                    Cycles += 2;
-                    Push(Register.PC);
-                    Cycles += 2;
-                    Register.PC = (ushort)(0x40 + (0x8 * i));
-                    Cycles += 1;
+                    Console.WriteLine("Handling Interupts: " + (IE & IF).ToString("B8"));
+                    cpu.Push(Registers.PC);
+                    Registers.PC = (ushort)(0x40 + (0x8 * i));
 
                     Ime = false;
                     IF = IF.SetBit((byte)(0b1 << i), false);
                     break;
                 }
             }
-        }
 
-        if (Halted)
+            mCycles += 5;
+        }
+        else if (Halted) // Halt Handling
         {
+            Console.WriteLine("Halted");
             if (IF != 0)
             {
-                Register.PC++;
+                Registers.PC++;
                 Halted = false;
             }
         }
-
-
-
-        int mCycles = cpu.Execute(op);
+        else
+        {
+            mCycles = cpu.Execute(op);
+        }
 
         timer.Step(mCycles);
         ppu.Step(mCycles);
 
         // Disable the bios/boot rom in the bus
-        if (biosEnabled && Register.PC >= 0x100)
+        if (biosEnabled && Registers.PC >= 0x100)
         {
             biosEnabled = false;
         }
@@ -208,6 +210,7 @@ public class Emulator
         mbc.Load(data);
         mbc.Save(data);
 
+        Console.WriteLine();
         Console.WriteLine("Cartridge Header Info");
         Console.WriteLine("Title: " + GameTitle);
         Console.WriteLine("CGB flag: " + data[0x143]);
@@ -235,13 +238,12 @@ public class Emulator
             }
         }
 
-        Register.Reset();
+        Registers.Reset();
 
         // Cpu and Interrupt
         Halted = false;
         HaltBug = false;
         Ime = false;
-        ImeDelay = false;
         biosEnabled = true;
 
         timer.Reset();
@@ -266,7 +268,7 @@ public class Emulator
 
             // if (address is >= 0x0104 and <= 0x0133)
             // {
-            //     // Monoboy logo
+            //     // Custom Header Monoboy logo for bootix boot rom
             //     return new byte[]{
             //         0b11001110,0b11101101,
             //         0b00110111,0b01111011,
@@ -390,17 +392,17 @@ public class Emulator
         // DMG0 Boot
 
         // https://gbdev.io/pandocs/Power_Up_Sequence.html?highlight=Register%20name#cpu-registers
-        Register.A = 0x01;
-        Register.F = 0b0000;
-        Register.B = 0xFF;
-        Register.C = 0x13;
-        Register.D = 0x00;
-        Register.E = 0xC1;
-        Register.H = 0x84;
-        Register.L = 0x03;
+        Registers.A = 0x01;
+        Registers.F = 0b0000;
+        Registers.B = 0xFF;
+        Registers.C = 0x13;
+        Registers.D = 0x00;
+        Registers.E = 0xC1;
+        Registers.H = 0x84;
+        Registers.L = 0x03;
 
-        Register.PC = 0x0100;
-        Register.SP = 0xFFFE;
+        Registers.PC = 0x0100;
+        Registers.SP = 0xFFFE;
 
         // https://gbdev.io/pandocs/Power_Up_Sequence.html?highlight=Register%20name#hardware-registers
         Write(Reg.P1, 0xCF);

@@ -3,7 +3,9 @@ namespace Monoboy.Wasm;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices.JavaScript;
+using System.Runtime.Versioning;
 
+[SupportedOSPlatform("browser")]
 public partial class Program
 {
     static Stopwatch timer = new();

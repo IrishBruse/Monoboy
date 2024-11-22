@@ -3,14 +3,14 @@
 using Monoboy.Constants;
 using Monoboy.Utility;
 
-public class Joypad
+public class Joypad(Cpu cpu)
 {
     bool readPad;
     byte buttonState;
     byte padState;
 
     byte joyp;
-    readonly Cpu cpu;
+    readonly Cpu cpu = cpu;
 
     public byte JOYP
     {
@@ -23,27 +23,22 @@ public class Joypad
         set
         {
             joyp = value;
-            if (value.GetBit(Bit.Bit4) == false)
+            if (value.GetBit(0b10000) == false)
             {
                 readPad = true;
             }
-            if (value.GetBit(Bit.Bit5) == false)
+            if (value.GetBit(0b100000) == false)
             {
                 readPad = false;
             }
         }
     }
 
-    public Joypad(Cpu cpu)
-    {
-        this.cpu = cpu;
-    }
-
     public void SetButton(GameboyButton button, bool state)
     {
         byte key = (byte)button;
 
-        if (key > Bit.Bit3)
+        if (key > 0b1000)
         {
             key = (byte)(key >> 4);
 

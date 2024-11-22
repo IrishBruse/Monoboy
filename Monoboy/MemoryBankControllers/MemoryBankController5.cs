@@ -1,10 +1,6 @@
-﻿namespace Monoboy.Cartridge;
+﻿namespace Monoboy.MemoryBankControllers;
 
-using System;
-
-using Monoboy.Constants;
-
-public class MemoryBankController1 : IMemoryBankController
+public class MemoryBankController5 : IMemoryBankController
 {
     public byte[] Rom { get; set; }
 
@@ -22,7 +18,6 @@ public class MemoryBankController1 : IMemoryBankController
     public byte ReadBankNN(ushort address)
     {
         int offset = (0x4000 * romBank) + (address & 0x3FFF);
-
         return Rom[offset];
     }
 
@@ -51,10 +46,11 @@ public class MemoryBankController1 : IMemoryBankController
 
             case ushort when address < 0x4000:
             {
-                romBank = (byte)(data & 0b11111);
+                byte bank = (byte)(data & 0b00011111);
+                romBank = (byte)((romBank & 0b11100000) | bank);
                 if (romBank is 0x00 or 0x20 or 0x40 or 0x60)
                 {
-                    romBank++;
+                    romBank += 1;
                 }
             }
             break;
@@ -65,7 +61,7 @@ public class MemoryBankController1 : IMemoryBankController
 
                 if (bankingMode == BankingMode.Rom)
                 {
-                    romBank = (byte)(romBank | bank);
+                    romBank = (byte)(romBank | (bank << 5));
                     if (romBank is 0x00 or 0x20 or 0x40 or 0x60)
                     {
                         romBank++;
@@ -80,7 +76,6 @@ public class MemoryBankController1 : IMemoryBankController
 
             case ushort when address < 0x8000:
             {
-                Console.WriteLine("test");
                 if ((data & 1) == 0)
                 {
                     bankingMode = BankingMode.Rom;
@@ -96,6 +91,16 @@ public class MemoryBankController1 : IMemoryBankController
         }
     }
 
+    public byte[] GetRam()
+    {
+        return ram;
+    }
+
+    public void SetRam(byte[] ram)
+    {
+        this.ram = ram;
+    }
+
     public void Save(byte[] data)
     {
         // string save = romPath.Replace(".gb", ".sav", true, null);
@@ -106,22 +111,12 @@ public class MemoryBankController1 : IMemoryBankController
     {
         Rom = data;
 
-        // string save = romPath.Replace(".gb", ".sav", true, null);
+        // string save = romPath.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
 
         // if (File.Exists(save))
         // {
         //     ram = File.ReadAllBytes(save);
         // }
-    }
-
-    public byte[] GetRam()
-    {
-        return ram;
-    }
-
-    public void SetRam(byte[] ram)
-    {
-        this.ram = ram;
     }
 
     enum BankingMode

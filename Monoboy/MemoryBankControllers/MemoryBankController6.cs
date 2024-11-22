@@ -1,6 +1,4 @@
-﻿namespace Monoboy.Cartridge;
-
-using static Monoboy.Constants.Bit;
+﻿namespace Monoboy.MemoryBankControllers;
 
 public class MemoryBankController6 : IMemoryBankController
 {

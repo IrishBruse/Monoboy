@@ -56,5 +56,4 @@ public static class Reg
     public const ushort OCPS = 0xFF6A;
     public const ushort OCPD = 0xFF6B;
     public const ushort SVBK = 0xFF70;
-    public const ushort IE = 0xFFFF;
 }

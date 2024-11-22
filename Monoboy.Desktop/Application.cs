@@ -23,26 +23,24 @@ public class Application
 
     public Application()
     {
-        byte[] dmgbootRom = GetDataFile("dmg0_boot.bin");
-        foreach (byte b in dmgbootRom)
-        {
-            Console.Write(b.ToString("X2") + ", ");
-        }
+        // byte[] dmgbootRom = GetEmbeddedFile("Monoboy.Desktop/Data/dmg_boot.bin");
+        // byte[] bootRom = GetDataFile("Monoboy.Desktop/Data/bootix_dmg.bin");
 
-        // byte[] bootRom = GetDataFile("bootix_dmg.bin");
-        emulator = new(dmgbootRom);
-        // emulator.Open("/mnt/data/Emulation/GB/test/mooneye-test-suite/acceptance/intr_timing.gb");
-        emulator.Open("/mnt/data/Emulation/GB/Tetris.gb");
-        emulator.SkipBootRom();
+        emulator = new();
+        emulator.Open("/mnt/data/Emulation/GB/test/mooneye-test-suite/acceptance/intr_timing.gb");
+        // emulator.Open("/mnt/data/Emulation/GB/Tetris.gb");
+        // emulator.Open("/mnt/data/Emulation/GB/test/blargg/oam_bug/rom_singles/1-lcd_sync.gb");
     }
 
     public void Run()
     {
-        Raylib.SetConfigFlags(ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint | ConfigFlags.Msaa4xHint);
-        Raylib.InitWindow(Emulator.WindowWidth * 4, Emulator.WindowHeight * 4, "Monoboy");
-        byte[] icon = GetDataFile("Icon.png");
-        Raylib.SetWindowIcon(Raylib.LoadImageFromMemory(".png", icon));
+        Raylib.SetTraceLogLevel(TraceLogLevel.Error);
 
+        Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
+        Raylib.InitWindow(Emulator.WindowWidth * 4, Emulator.WindowHeight * 4, "Monoboy");
+        byte[] icon = GetEmbeddedFile("Monoboy.Desktop/Data/Icon.png");
+        Raylib.SetWindowIcon(Raylib.LoadImageFromMemory(".png", icon));
+        Raylib.SetWindowMinSize(Emulator.WindowWidth, Emulator.WindowHeight);
         Raylib.InitAudioDevice();
 
         var framebufferImage = Raylib.GenImageColor(Emulator.WindowWidth, Emulator.WindowHeight, Color.Red);
@@ -76,13 +74,13 @@ public class Application
                 int scale = Math.Min(Math.Max(width / Emulator.WindowWidth, 1), Math.Max(height / Emulator.WindowHeight, 1));
                 Raylib.DrawTextureEx(framebuffer, new((width - (Emulator.WindowWidth * scale)) * 0.5f, (height - (Emulator.WindowHeight * scale)) * 0.5f), 0, scale, Color.White);
 
-                var reg = emulator.Registers;
-                string text = "A:" + reg.A.ToString("X2") + " F:" + reg.F.ToString("B8") + "\n\n" +
-                "B:" + reg.B.ToString("X2") + " C:" + reg.C.ToString("X2") + "\n\n" +
-                "D:" + reg.D.ToString("X2") + " E:" + reg.E.ToString("X2") + "\n\n" +
-                "H:" + reg.H.ToString("X2") + " L:" + reg.L.ToString("X2");
+                // var reg = emulator.Registers;
+                // string text = "A:" + reg.A.ToString("X2") + " F:" + reg.F.ToString("B8") + "\n\n" +
+                // "B:" + reg.B.ToString("X2") + " C:" + reg.C.ToString("X2") + "\n\n" +
+                // "D:" + reg.D.ToString("X2") + " E:" + reg.E.ToString("X2") + "\n\n" +
+                // "H:" + reg.H.ToString("X2") + " L:" + reg.L.ToString("X2");
 
-                Raylib.DrawText(text, 4, 0, 25, Color.Black);
+                // Raylib.DrawText(text, 4, 0, 25, Color.Black);
             }
             Raylib.EndDrawing();
         }
@@ -93,10 +91,10 @@ public class Application
         Emulator.Save();
     }
 
-    static byte[] GetDataFile(string path)
+    static byte[] GetEmbeddedFile(string path)
     {
-        string prefix = "Monoboy.Desktop.Data.";
-        var reader = new BinaryReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(prefix + path));
+        string embedPath = path.Replace("/", ".");
+        BinaryReader reader = new(Assembly.GetExecutingAssembly().GetManifestResourceStream(embedPath));
         return reader.ReadBytes((int)reader.BaseStream.Length);
     }
 
@@ -172,15 +170,6 @@ public class Application
         emulator.SetButtonState(GameboyButton.Start, start);
     }
 
-    public void OnFilesDrop(string[] files)
-    {
-        if (files.Length == 0)
-        {
-            return;
-        }
-        emulator.Open(files[0]);
-    }
-
     void KeyDown()
     {
         speedup = Raylib.IsKeyDown(KeyboardKey.F);
@@ -195,16 +184,9 @@ public class Application
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.F5))
         {
-            _ = Directory.CreateDirectory("dump");
-            File.WriteAllBytes("dump/ram.bin", emulator.Memory.Range(0x0000, 0xFFFF));
-            File.WriteAllBytes("dump/vram.bin", emulator.Memory.Range(0x8000, 0x9FFF));
-            File.WriteAllBytes("dump/wram.bin", emulator.Memory.Range(0xC000, 0xDFFF));
-            File.WriteAllBytes("dump/oam.bin", emulator.Memory.Range(0xFE00, 0xFE9F));
-            File.WriteAllBytes("dump/io.bin", emulator.Memory.Range(0xFF00, 0xFF7F));
-            File.WriteAllBytes("dump/highram.bin", emulator.Memory.Range(0xFF00, 0xFF7F));
-
-            DumpBackground("dump/background.png");
-            DumpTileset("dump/tileset.png");
+            emulator.Dump("F5");
+            DumpBackground("dumps/F5/background.png");
+            DumpTileset("dumps/F5/tileset.png");
         }
     }
 
@@ -258,7 +240,7 @@ public class Application
 
     void DumpTileset(string path)
     {
-        Image tilesetImage = Raylib.GenImageColor(128, 192, Color.Red);
+        Image tilesetImage = Raylib.GenImageColor(128, 192, Color.White);
 
         for (int y = 0; y < 192; y++)
         {

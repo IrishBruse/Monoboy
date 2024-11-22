@@ -3,8 +3,8 @@
 using System;
 using System.IO;
 
-using Monoboy.Cartridge;
 using Monoboy.Constants;
+using Monoboy.MemoryBankControllers;
 using Monoboy.Utility;
 
 public class Emulator
@@ -12,8 +12,6 @@ public class Emulator
     public const int CyclesPerFrame = 70224 / 4; // 17556 M-Cycles
     public const byte WindowWidth = 160;
     public const byte WindowHeight = 144;
-    const int IFReg = 0xFF0F;
-    const int IEReg = 0xFFFF;
 
     /// <summary> #AABBGGRR </summary>
     public byte[] Framebuffer { get; set; }
@@ -31,24 +29,42 @@ public class Emulator
     Joypad joypad;
     Timer timer;
 
-    // CPU
-    internal bool Halted { get; set; }
-    internal bool HaltBug { get; set; }
+    public byte IF
+    {
+        get => Read(0xFF0F);
+        set
+        {
+            // Console.WriteLine("IF " + value.ToString("B8"));
+            Write(0xFF0F, value);
+        }
+    }
+    public byte IE
+    {
+        get => Read(0xFFFF);
 
-    public byte IF { get => Read(IFReg); set => Write(IFReg, value); }
-    public byte IE { get => Read(IEReg); set => Write(IEReg, value); }
-
-    // Interupt
-    internal bool Ime { get; set; } // Master interupt enabled
+        set
+        {
+            // Console.WriteLine("IE " + value.ToString("B8"));
+            Write(0xFFFF, value);
+        }
+    }
 
     /// <summary> Machine Cycles </summary>
     internal int Cycles { get; set; }
     /// <summary> Machine Cycles </summary>
     internal long TotalCycles { get; set; }
+    public bool SkipBios { get; }
 
-    public Emulator(byte[] bios)
+    public Emulator(byte[] bios = null)
     {
-        this.bios = bios;
+        if (bios == null)
+        {
+            SkipBios = true;
+        }
+        else
+        {
+            this.bios = bios;
+        }
         Memory = new Memory(0x10000);
         Framebuffer = new byte[WindowWidth * WindowHeight * 4];
 
@@ -64,54 +80,67 @@ public class Emulator
 
     public void Step()
     {
-        int mCycles = 0;
 
-        byte op = cpu.NextByte();
+        byte enabledFlags = (byte)(IE & IF);
 
         // Interrupt Handling
-        if (Ime)
+        if (cpu.Ime && enabledFlags != 0)
         {
-            Ime = false;
-
-
-            for (byte i = 5; i >= 0; i--)
+            for (int i = 0; i <= 5; i++)
             {
-                if ((((IE & IF) >> i) & 1) == 1)
+                if (((enabledFlags >> i) & 1) == 1)
                 {
-                    Console.WriteLine("Handling Interupts: " + (IE & IF).ToString("B8"));
-                    cpu.Push(Registers.PC);
-                    Registers.PC = (ushort)(0x40 + (0x8 * i));
+                    cpu.Ime = false;
 
-                    Ime = false;
-                    IF = IF.SetBit((byte)(0b1 << i), false);
+                    // https://gbdev.io/pandocs/Interrupts.html#interrupt-handling
+
+                    // Two wait states are executed (2 M-cycles pass while nothing happens; presumably the CPU is executing nops during this time).
+                    Tick(2);
+
+                    // The current value of the PC register is pushed onto the stack, consuming 2 more M-cycles.
+                    cpu.Push(Registers.PC);
+                    Tick(2);
+
+                    // The PC register is set to the address of the handler (one of: $40, $48, $50, $58, $60). This consumes one last M-cycle.
+                    Registers.PC = (ushort)(0x40 + (0x8 * i));
+                    Tick(1);
+
+                    IF = IF.SetBit((byte)(1 << i), false);
+
                     break;
                 }
             }
 
-            mCycles += 5;
         }
-        else if (Halted) // Halt Handling
+        else if (cpu.Halted && enabledFlags != 0) // Halt Handling
         {
             Console.WriteLine("Halted");
             if (IF != 0)
             {
                 Registers.PC++;
-                Halted = false;
+                cpu.Halted = false;
             }
         }
         else
         {
-            mCycles = cpu.Execute(op);
+            byte op = cpu.NextByte();
+            Tick(cpu.Execute(op));
         }
 
-        timer.Step(mCycles);
-        ppu.Step(mCycles);
 
         // Disable the bios/boot rom in the bus
         if (biosEnabled && Registers.PC >= 0x100)
         {
             biosEnabled = false;
         }
+    }
+
+    public void Tick(int mCycles)
+    {
+        timer.Step(mCycles);
+        ppu.Step(mCycles);
+        Cycles += mCycles;
+        TotalCycles += mCycles;
     }
 
     public void StepFrame()
@@ -193,7 +222,7 @@ public class Emulator
             0x12 => new MemoryBankController3(),    // MBC3+RAM 2
             0x13 => new MemoryBankController3(),    // MBC3+RAM+BATTERY 2
             0x19 => new MemoryBankController5(),    // MBC5
-            0x1A => new MemoryBankController5(),    // MBC5+RAM
+            0x1A => new MemoryBankController5(),    // MBC5+RAMkl,
             0x1B => new MemoryBankController5(),    // MBC5+RAM+BATTERY
             0x1C => new MemoryBankController5(),    // MBC5+RUMBLE
             0x1D => new MemoryBankController5(),    // MBC5+RUMBLE+RAM
@@ -204,7 +233,7 @@ public class Emulator
             0xFD => new MemoryBankController6(),    // BANDAI TAMA5
             0xFE => new MemoryBankController6(),    // HuC3
             0xFF => new MemoryBankController6(),    // HuC1+RAM+BATTERY
-            _ => throw new NotImplementedException()
+            _ => new MemoryBankController0(),
         };
 
         mbc.Load(data);
@@ -241,15 +270,20 @@ public class Emulator
         Registers.Reset();
 
         // Cpu and Interrupt
-        Halted = false;
-        HaltBug = false;
-        Ime = false;
+        cpu.Halted = false;
+        cpu.HaltBug = false;
         biosEnabled = true;
+        cpu.Ime = false;
 
         timer.Reset();
         ppu.Reset();
         joypad.Reset();
         Memory.Reset();
+
+        if (SkipBios)
+        {
+            SkipBootRom();
+        }
     }
 
     public void SetButtonState(GameboyButton button, bool pressed)
@@ -312,7 +346,7 @@ public class Emulator
             <= 0xFEFF => 0x00,                                // Not Usable
             <= 0xFF7F => ReadIO(address),                     // I/O Registers
             <= 0xFFFE => Memory[address],                     // High RAM (HRAM)
-            IEReg => Memory[address],                         // Interrupt Enable register (IE)
+            0xFFFF => Memory[address],                         // Interrupt Enable register (IE)
         };
     }
 
@@ -329,7 +363,7 @@ public class Emulator
             case <= 0xFEFF: break;                                          // Not Usable
             case <= 0xFF7F: WriteIO(address, data); break;                  // I/O Ports
             case <= 0xFFFE: Memory[address] = data; break;                  // Zero Page RAM
-            case <= IEReg: Memory[address] = data; break;                   // Interrupt Enable register (IE)
+            case <= 0xFFFF: Memory[address] = data; break;                   // Interrupt Enable register (IE)
             default:
         }
     }
@@ -389,17 +423,17 @@ public class Emulator
     {
         biosEnabled = false;
 
-        // DMG0 Boot
+        // DMG Boot
 
         // https://gbdev.io/pandocs/Power_Up_Sequence.html?highlight=Register%20name#cpu-registers
         Registers.A = 0x01;
-        Registers.F = 0b0000;
-        Registers.B = 0xFF;
+        Registers.F = 0b1000_0000;
+        Registers.B = 0x00;
         Registers.C = 0x13;
         Registers.D = 0x00;
-        Registers.E = 0xC1;
-        Registers.H = 0x84;
-        Registers.L = 0x03;
+        Registers.E = 0xD8;
+        Registers.H = 0x01;
+        Registers.L = 0x4D;
 
         Registers.PC = 0x0100;
         Registers.SP = 0xFFFE;
@@ -408,7 +442,7 @@ public class Emulator
         Write(Reg.P1, 0xCF);
         Write(Reg.SB, 0x0);
         Write(Reg.SC, 0x7E);
-        Write(Reg.DIV, 0x18);
+        Write(Reg.DIV, 0xAB);
         Write(Reg.TIMA, 0x0);
         Write(Reg.TMA, 0x0);
         Write(Reg.TAC, 0xF8);
@@ -435,18 +469,18 @@ public class Emulator
         Write(Reg.NR51, 0xF3);
         Write(Reg.NR52, 0xF1);
         Write(Reg.LCDC, 0x91);
-        Write(Reg.STAT, 0x81);
+        Write(Reg.STAT, 0x85);
         Write(Reg.SCY, 0x0);
         Write(Reg.SCX, 0x0);
-        Write(Reg.LY, 0x91);
+        Write(Reg.LY, 0x00);
         Write(Reg.LYC, 0x0);
         Write(Reg.DMA, 0xFF);
         Write(Reg.BGP, 0xFC);
-        Write(Reg.OBP0, (byte)Random.Shared.Next());
-        Write(Reg.OBP1, (byte)Random.Shared.Next());
+        Write(Reg.OBP0, (byte)(Random.Shared.Next(1) == 0 ? 0x00 : 0xFF));
+        Write(Reg.OBP1, (byte)(Random.Shared.Next(1) == 0 ? 0x00 : 0xFF));
         Write(Reg.WY, 0x0);
         Write(Reg.WX, 0x0);
-        Write(Reg.IE, 0x0);
+        Write(0xFFFF, 0x0);
     }
 
     public static void Save()
@@ -454,4 +488,40 @@ public class Emulator
         // mbc?.Save(romPath);
     }
 
+    public bool BreakPointsEnabled { get; set; }
+
+    public void BreakPoint(char breakpoint)
+    {
+        if (!BreakPointsEnabled)
+        {
+            return;
+        }
+
+        Console.WriteLine("Breakpoint hit " + breakpoint);
+
+        Dump(breakpoint.ToString());
+    }
+
+    public void Dump(string dumpName)
+    {
+        _ = Directory.CreateDirectory("dumps/" + dumpName);
+        File.WriteAllBytes("dumps/" + dumpName + "/ram.bin", Memory.Range(0x0000, 0xFFFF));
+        File.WriteAllBytes("dumps/" + dumpName + "/vram.bin", Memory.Range(0x8000, 0x9FFF));
+        File.WriteAllBytes("dumps/" + dumpName + "/wram.bin", Memory.Range(0xC000, 0xDFFF));
+        File.WriteAllBytes("dumps/" + dumpName + "/oam.bin", Memory.Range(0xFE00, 0xFE9F));
+        File.WriteAllBytes("dumps/" + dumpName + "/io.bin", Memory.Range(0xFF00, 0xFF7F));
+        File.WriteAllBytes("dumps/" + dumpName + "/highram.bin", Memory.Range(0xFF00, 0xFF7F));
+
+        string regs = $"""
+        A:  {Registers.A:X2}   F: {Registers.F:B4}
+        B:  {Registers.B:X2}   C: {Registers.C:X2}
+        D:  {Registers.D:X2}   E: {Registers.E:X2}
+        HL: {Registers.HL:X4}
+        SP: {Registers.SP:X4}
+        PC: {Registers.PC:X4}
+
+        """;
+
+        File.WriteAllText("dumps/" + dumpName + "/register.txt", regs);
+    }
 }

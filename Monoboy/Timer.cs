@@ -2,28 +2,19 @@
 
 using Monoboy.Constants;
 
-public class Timer
+public class Timer(Memory memory, Cpu cpu)
 {
     public byte Div { get => memory[0xFF04]; set => memory[0xFF04] = value; }
     public byte Tima { get => memory[0xFF05]; set => memory[0xFF05] = value; }
     public byte Tma { get => memory[0xFF06]; set => memory[0xFF06] = value; }
-    public bool TacEnabled => (memory[0xFF07] & Bit.Bit2) != 0;
+    public bool TacEnabled => (memory[0xFF07] & 0b100) != 0;
     public byte TacFrequancy => (byte)(memory[0xFF07] & 0b011);
 
     static readonly int[] TimerFrequancy = { 1024 / 4, 16 / 4, 64 / 4, 256 / 4 };
 
     int timerCounter;
 
-    Memory memory;
-    readonly Cpu cpu;
-
     public int DivCounter { get; set; }
-
-    public Timer(Memory memory, Cpu cpu)
-    {
-        this.memory = memory;
-        this.cpu = cpu;
-    }
 
     public void Step(int mCycles)
     {

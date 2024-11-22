@@ -1,4 +1,4 @@
-﻿namespace Monoboy.Cartridge;
+﻿namespace Monoboy.MemoryBankControllers;
 
 
 public class MemoryBankController2 : IMemoryBankController

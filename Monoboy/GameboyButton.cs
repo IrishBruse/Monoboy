@@ -1,17 +1,14 @@
 namespace Monoboy;
-
-using Monoboy.Constants;
-
 public enum GameboyButton : byte
 {
     Right = 0b1,
     Left = 0b10,
     Up = 0b100,
-    Down = Bit.Bit3,
+    Down = 0b1000,
 
     // Shifted right 4
-    A = Bit.Bit4,
-    B = Bit.Bit5,
-    Select = Bit.Bit6,
-    Start = Bit.Bit7,
+    A = 0b10000,
+    B = 0b100000,
+    Select = 1 << 6,
+    Start = 0b10000000,
 }

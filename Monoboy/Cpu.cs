@@ -1,16 +1,15 @@
 ﻿namespace Monoboy;
 
-using System;
-
 using Monoboy.Constants;
 using Monoboy.Utility;
 
-using static Monoboy.Constants.Bit;
-
 public class Cpu(Register register, Emulator emulator)
 {
-    Register register = register;
-    Emulator emulator = emulator;
+    public bool Ime { get; set; } // Master interupt enabled
+
+    // CPU
+    public bool Halted { get; set; }
+    public bool HaltBug { get; set; }
 
     public int Execute(byte op)
     {
@@ -25,7 +24,7 @@ public class Cpu(Register register, Emulator emulator)
             case 0x26: register.H = NextByte(); break;// LD H,n
             case 0x2E: register.L = NextByte(); break;// LD L,n
 
-            case 0x7F: BreakPoint(0); break;// LD A,r2
+            case 0x7F: emulator.BreakPoint('A'); break;// LD A,r2
             case 0x78: register.A = register.B; break;
             case 0x79: register.A = register.C; break;
             case 0x7A: register.A = register.D; break;
@@ -34,7 +33,7 @@ public class Cpu(Register register, Emulator emulator)
             case 0x7D: register.A = register.L; break;
 
             case 0x47: register.B = register.A; break;// LD B,r2
-            case 0x40: BreakPoint(1); break;
+            case 0x40: emulator.BreakPoint('B'); break;
             case 0x41: register.B = register.C; break;
             case 0x42: register.B = register.D; break;
             case 0x43: register.B = register.E; break;
@@ -43,7 +42,7 @@ public class Cpu(Register register, Emulator emulator)
 
             case 0x4F: register.C = register.A; break;// LD C,r2
             case 0x48: register.C = register.B; break;
-            case 0x49: BreakPoint(2); break;
+            case 0x49: emulator.BreakPoint('C'); break;
             case 0x4A: register.C = register.D; break;
             case 0x4B: register.C = register.E; break;
             case 0x4C: register.C = register.H; break;
@@ -52,7 +51,7 @@ public class Cpu(Register register, Emulator emulator)
             case 0x57: register.D = register.A; break;// LD D,r2
             case 0x50: register.D = register.B; break;
             case 0x51: register.D = register.C; break;
-            case 0x52: BreakPoint(3); break;
+            case 0x52: emulator.BreakPoint('D'); break;
             case 0x53: register.D = register.E; break;
             case 0x54: register.D = register.H; break;
             case 0x55: register.D = register.L; break;
@@ -61,7 +60,7 @@ public class Cpu(Register register, Emulator emulator)
             case 0x58: register.E = register.B; break;
             case 0x59: register.E = register.C; break;
             case 0x5A: register.E = register.D; break;
-            case 0x5B: BreakPoint(4); break;
+            case 0x5B: emulator.BreakPoint('E'); break;
             case 0x5C: register.E = register.H; break;
             case 0x5D: register.E = register.L; break;
 
@@ -333,17 +332,8 @@ public class Cpu(Register register, Emulator emulator)
             default: break;
         }
 
-        int mCycles = Timings.MainTimes[op] + additionalCycles;
 
-        emulator.Cycles += mCycles;
-        emulator.TotalCycles += mCycles;
-
-        return mCycles;
-    }
-
-    void BreakPoint(int breakpoint)
-    {
-        Console.WriteLine("Breakpoint hit " + breakpoint);
+        return Timings.MainTimes[op] + additionalCycles;
     }
 
     byte PrefixedTable()
@@ -478,14 +468,14 @@ public class Cpu(Register register, Emulator emulator)
             case 0x6D: BIT(0b100000, register.L); break;
             case 0x6E: BIT(0b100000, emulator.Read(register.HL)); break;
 
-            case 0x77: BIT(0b1000000, register.A); break;// BIT 6,r
-            case 0x70: BIT(0b1000000, register.B); break;
-            case 0x71: BIT(0b1000000, register.C); break;
-            case 0x72: BIT(0b1000000, register.D); break;
-            case 0x73: BIT(0b1000000, register.E); break;
-            case 0x74: BIT(0b1000000, register.H); break;
-            case 0x75: BIT(0b1000000, register.L); break;
-            case 0x76: BIT(0b1000000, emulator.Read(register.HL)); break;
+            case 0x77: BIT(1 << 6, register.A); break;// BIT 6,r
+            case 0x70: BIT(1 << 6, register.B); break;
+            case 0x71: BIT(1 << 6, register.C); break;
+            case 0x72: BIT(1 << 6, register.D); break;
+            case 0x73: BIT(1 << 6, register.E); break;
+            case 0x74: BIT(1 << 6, register.H); break;
+            case 0x75: BIT(1 << 6, register.L); break;
+            case 0x76: BIT(1 << 6, emulator.Read(register.HL)); break;
 
             case 0x7F: BIT(0b10000000, register.A); break;// BIT 7,r
             case 0x78: BIT(0b10000000, register.B); break;
@@ -550,14 +540,14 @@ public class Cpu(Register register, Emulator emulator)
             case 0xED: register.L = SET(0b100000, register.L); break;
             case 0xEE: emulator.Write(register.HL, SET(0b100000, emulator.Read(register.HL))); break;
 
-            case 0xF7: register.A = SET(0b1000000, register.A); break;// SET 6,r
-            case 0xF0: register.B = SET(0b1000000, register.B); break;
-            case 0xF1: register.C = SET(0b1000000, register.C); break;
-            case 0xF2: register.D = SET(0b1000000, register.D); break;
-            case 0xF3: register.E = SET(0b1000000, register.E); break;
-            case 0xF4: register.H = SET(0b1000000, register.H); break;
-            case 0xF5: register.L = SET(0b1000000, register.L); break;
-            case 0xF6: emulator.Write(register.HL, SET(0b1000000, emulator.Read(register.HL))); break;
+            case 0xF7: register.A = SET(1 << 6, register.A); break;// SET 6,r
+            case 0xF0: register.B = SET(1 << 6, register.B); break;
+            case 0xF1: register.C = SET(1 << 6, register.C); break;
+            case 0xF2: register.D = SET(1 << 6, register.D); break;
+            case 0xF3: register.E = SET(1 << 6, register.E); break;
+            case 0xF4: register.H = SET(1 << 6, register.H); break;
+            case 0xF5: register.L = SET(1 << 6, register.L); break;
+            case 0xF6: emulator.Write(register.HL, SET(1 << 6, emulator.Read(register.HL))); break;
 
             case 0xFF: register.A = SET(0b10000000, register.A); break;// SET 7,r
             case 0xF8: register.B = SET(0b10000000, register.B); break;
@@ -622,14 +612,14 @@ public class Cpu(Register register, Emulator emulator)
             case 0xAD: register.L = RES(0b100000, register.L); break;
             case 0xAE: emulator.Write(register.HL, RES(0b100000, emulator.Read(register.HL))); break;
 
-            case 0xB7: register.A = RES(0b1000000, register.A); break;// RES 6,r
-            case 0xB0: register.B = RES(0b1000000, register.B); break;
-            case 0xB1: register.C = RES(0b1000000, register.C); break;
-            case 0xB2: register.D = RES(0b1000000, register.D); break;
-            case 0xB3: register.E = RES(0b1000000, register.E); break;
-            case 0xB4: register.H = RES(0b1000000, register.H); break;
-            case 0xB5: register.L = RES(0b1000000, register.L); break;
-            case 0xB6: emulator.Write(register.HL, RES(0b1000000, emulator.Read(register.HL))); break;
+            case 0xB7: register.A = RES(1 << 6, register.A); break;// RES 6,r
+            case 0xB0: register.B = RES(1 << 6, register.B); break;
+            case 0xB1: register.C = RES(1 << 6, register.C); break;
+            case 0xB2: register.D = RES(1 << 6, register.D); break;
+            case 0xB3: register.E = RES(1 << 6, register.E); break;
+            case 0xB4: register.H = RES(1 << 6, register.H); break;
+            case 0xB5: register.L = RES(1 << 6, register.L); break;
+            case 0xB6: emulator.Write(register.HL, RES(1 << 6, emulator.Read(register.HL))); break;
 
             case 0xBF: register.A = RES(0b10000000, register.A); break;// RES 7,r
             case 0xB8: register.B = RES(0b10000000, register.B); break;
@@ -1078,7 +1068,8 @@ public class Cpu(Register register, Emulator emulator)
         {
             Push((ushort)(register.PC + 2));
             ushort address = register.PC;
-            JP((ushort)((emulator.Read((ushort)(address + 1)) << 8) | emulator.Read(address)));
+            ushort jumpAddress = u16(emulator.Read(address), emulator.Read((ushort)(address + 1)));
+            JP(jumpAddress);
         }
         else
         {
@@ -1103,26 +1094,26 @@ public class Cpu(Register register, Emulator emulator)
 
     public void DisableInterrupts()
     {
-        emulator.Ime = false;
+        Ime = false;
     }
 
     public void EnableInterrupts()
     {
-        emulator.Ime = true;
+        Ime = true;
     }
 
     public void Halt()
     {
-        if (emulator.Ime == false)
+        if (Ime == false)
         {
-            if ((emulator.IE & emulator.IF & 0b11111) == 0)
+            if ((emulator.IE & emulator.IF) == 0)
             {
-                emulator.Halted = true;
+                Halted = true;
                 register.PC--;
             }
             else
             {
-                emulator.HaltBug = true;
+                HaltBug = true;
             }
         }
     }

@@ -2,8 +2,6 @@
 
 using Monoboy.Utility;
 
-using static Monoboy.Constants.Bit;
-
 public class Register
 {
     public byte A { get; set; }
@@ -65,26 +63,26 @@ public class Register
 
     public bool ZFlag
     {
-        get => (F & Bit7) != 0;
-        set => F = value ? (byte)(F | Bit7) : (byte)(F & 0b01111111);
+        get => (F & (1 << 7)) != 0;
+        set => F = value ? (byte)(F | (1 << 7)) : (byte)(F & 0b01111111);
     }
 
     public bool NFlag
     {
-        get => (F & Bit6) != 0;
-        set => F = value ? (byte)(F | Bit6) : (byte)(F & 0b10111111);
+        get => (F & (1 << 6)) != 0;
+        set => F = value ? (byte)(F | (1 << 6)) : (byte)(F & 0b10111111);
     }
 
     public bool HFlag
     {
-        get => (F & Bit5) != 0;
-        set => F = value ? (byte)(F | Bit5) : (byte)(F & 0b11011111);
+        get => (F & 0b100000) != 0;
+        set => F = value ? (byte)(F | 0b100000) : (byte)(F & 0b11011111);
     }
 
     public bool CFlag
     {
-        get => (F & Bit4) != 0;
-        set => F = value ? (byte)(F | Bit4) : (byte)(F & 0b11101111);
+        get => (F & 0b10000) != 0;
+        set => F = value ? (byte)(F | 0b10000) : (byte)(F & 0b11101111);
     }
 
     internal void Reset()

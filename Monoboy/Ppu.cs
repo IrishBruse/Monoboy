@@ -3,13 +3,11 @@
 using Monoboy.Constants;
 using Monoboy.Utility;
 
-using static Monoboy.Constants.Bit;
-
 public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
 {
     public byte LCDC { get => memory[0xFF40]; set => memory[0xFF40] = value; }
     public byte Stat { get => memory[0xFF41]; set => memory[0xFF41] = value; }
-    public byte StatMode { get => (byte)(memory[0xFF41] & 0b00000011); set => memory[0xFF41] = memory[0xFF41] = (byte)(0b00000011 & value); }
+    public byte StatMode { get => (byte)(memory[0xFF41] & 0b11); set => memory[0xFF41] = memory[0xFF41] = SetBits(memory[0xFF41], 0b00000011, value); }
     public byte SCY { get => memory[0xFF42]; set => memory[0xFF42] = value; }
     public byte SCX { get => memory[0xFF43]; set => memory[0xFF43] = value; }
     public byte WX { get => (byte)(memory[0xFF4B] - 6); set => memory[0xFF4B] = value; }
@@ -19,6 +17,12 @@ public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
     public byte BGP { get => memory[0xFF47]; set => memory[0xFF47] = value; }
     public byte OBP0 { get => memory[0xFF48]; set => memory[0xFF48] = value; }
     public byte OBP1 { get => memory[0xFF49]; set => memory[0xFF49] = value; }
+
+    public static byte SetBits(byte data, byte mask, byte value)
+    {
+        byte untouched = (byte)(data & ~mask);
+        return (byte)(untouched | (mask & value));
+    }
 
     readonly Memory memory = memory;
     readonly Emulator emulator = emulator;
@@ -53,7 +57,7 @@ public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
 
                 if (LY == Emulator.WindowHeight)
                 {
-                    HandleModeChange(Mode.Vblank);
+                    HandleModeChange(Mode.VBlank);
                     cpu.RequestInterrupt(Flags.VBlank);
                     // DrawFrame?.Invoke();
                 }
@@ -64,7 +68,7 @@ public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
             }
             break;
 
-            case Mode.Vblank:
+            case Mode.VBlank:
             if (cycles >= ScanLineCycles)
             {
                 cycles -= ScanLineCycles;
@@ -101,7 +105,7 @@ public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
         if (LY == LYC)
         {
             Stat = Stat.SetBit(0b100, true);
-            if (Stat.GetBit(Bit6))
+            if (Stat.GetBit(1 << 6))
             {
                 cpu.RequestInterrupt(Flags.LCDStat);
             }
@@ -121,15 +125,15 @@ public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
     {
         StatMode = newMode;
 
-        if (newMode == 2 && Stat.GetBit(Bit5))
+        if (newMode == 2 && Stat.GetBit(0b100000))
         {
             cpu.RequestInterrupt(Flags.LCDStat);
         }
-        else if (newMode == 0 && Stat.GetBit(Bit3))
+        else if (newMode == 0 && Stat.GetBit(0b1000))
         {
             cpu.RequestInterrupt(Flags.LCDStat);
         }
-        else if (newMode == 1 && Stat.GetBit(Bit4))
+        else if (newMode == 1 && Stat.GetBit(0b10000))
         {
             cpu.RequestInterrupt(Flags.LCDStat);
         }
@@ -242,11 +246,11 @@ public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
             int x = memory[(ushort)(offset + 1)] - 8;
             byte tileID = memory[(ushort)(offset + 2)];
             byte flags = memory[(ushort)(offset + 3)];
-            byte obp = flags.GetBit(Bit4) ? OBP1 : OBP0;
+            byte obp = flags.GetBit(0b10000) ? OBP1 : OBP0;
 
-            bool mirrorX = flags.GetBit(Bit5);
-            bool mirrorY = flags.GetBit(Bit6);
-            bool aboveBG = flags.GetBit(Bit7);
+            bool mirrorX = flags.GetBit(1 << 5);
+            bool mirrorY = flags.GetBit(1 << 6);
+            bool aboveBG = flags.GetBit(1 << 7);
 
             if (LY >= y && LY < y + spriteSize)
             {

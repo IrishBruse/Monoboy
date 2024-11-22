@@ -1,4 +1,5 @@
-﻿namespace Monoboy.Cartridge;
+﻿namespace Monoboy.MemoryBankControllers;
+
 
 using System;
 

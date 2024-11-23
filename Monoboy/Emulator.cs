@@ -50,8 +50,6 @@ public class Emulator
     }
 
     /// <summary> Machine Cycles </summary>
-    internal int Cycles { get; set; }
-    /// <summary> Machine Cycles </summary>
     internal long TotalCycles { get; set; }
     public bool SkipBios { get; }
 
@@ -65,6 +63,7 @@ public class Emulator
         {
             this.bios = bios;
         }
+
         Memory = new Memory(0x10000);
         Framebuffer = new byte[WindowWidth * WindowHeight * 4];
 
@@ -139,7 +138,6 @@ public class Emulator
     {
         timer.Step(mCycles);
         ppu.Step(mCycles);
-        Cycles += mCycles;
         TotalCycles += mCycles;
     }
 
@@ -150,11 +148,11 @@ public class Emulator
             return;
         }
 
-        while (Cycles < CyclesPerFrame)
+        while (!EnteredVSync)
         {
             Step();
         }
-        Cycles -= CyclesPerFrame;
+        EnteredVSync = false;
     }
 
     public void Open(string rom)
@@ -523,6 +521,7 @@ public class Emulator
     }
 
     public bool BreakPointsEnabled { get; set; }
+    public bool EnteredVSync { get; set; }
 
     public void BreakPoint(char breakpoint)
     {

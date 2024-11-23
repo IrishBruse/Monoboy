@@ -59,7 +59,7 @@ public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
                 {
                     HandleModeChange(Mode.VBlank);
                     cpu.RequestInterrupt(Flags.VBlank);
-                    // DrawFrame?.Invoke();
+                    emulator.EnteredVSync = true;
                 }
                 else
                 {

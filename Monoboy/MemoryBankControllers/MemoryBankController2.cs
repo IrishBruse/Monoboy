@@ -1,9 +1,9 @@
 ﻿namespace Monoboy.MemoryBankControllers;
 
-
 public class MemoryBankController2 : IMemoryBankController
 {
-    public byte[] Rom { get; set; }
+    byte[] rom;
+
     byte[] ram = new byte[0x200];
 
     byte romBank = 1;
@@ -11,13 +11,13 @@ public class MemoryBankController2 : IMemoryBankController
 
     public byte ReadBank00(ushort address)
     {
-        return Rom[address];
+        return rom[address];
     }
 
     public byte ReadBankNN(ushort address)
     {
         int offset = (0x4000 * romBank) + (address & 0x3FFF);
-        return Rom[offset];
+        return rom[offset];
     }
 
     public byte ReadRam(ushort address)
@@ -52,15 +52,11 @@ public class MemoryBankController2 : IMemoryBankController
         }
     }
 
-    public void Save(byte[] data)
-    {
-        // string save = romPath.Replace(".gb", ".sav", true, null);
-        // File.WriteAllBytes(save, ram);
-    }
+    public void Save() { }
 
     public void Load(byte[] data)
     {
-        Rom = data;
+        rom = data;
 
         // string save = romPath.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
 

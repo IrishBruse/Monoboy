@@ -2,18 +2,19 @@
 
 using System;
 
-public class MemoryBankController0 : IMemoryBankController
+// https://gbdev.io/pandocs/nombc.html#no-mbc
+public class NoMemoryBankController : IMemoryBankController
 {
-    public byte[] Rom { get; set; }
+    byte[] rom;
 
     public byte ReadBank00(ushort address)
     {
-        return Rom[address];
+        return rom[address];
     }
 
     public byte ReadBankNN(ushort address)
     {
-        return Rom[address];
+        return rom[address];
     }
 
     public byte ReadRam(ushort address)
@@ -31,13 +32,11 @@ public class MemoryBankController0 : IMemoryBankController
         // Ignore
     }
 
-    public void Save(byte[] data)
-    {
-    }
+    public void Save() { }
 
     public void Load(byte[] data)
     {
-        Rom = data;
+        rom = data;
     }
 
     public byte[] GetRam()

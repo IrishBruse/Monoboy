@@ -171,8 +171,6 @@ public class Emulator
 
     public void Open(byte[] data)
     {
-        mbc?.Save(data);
-
         Reset();
 
         byte cartridgeType = data[0x147];
@@ -205,39 +203,43 @@ public class Emulator
             }
         }
 
+        // https://gbdev.io/pandocs/MBCs#mbcs
+
+        // https://gbdev.io/pandocs/The_Cartridge_Header#0147--cartridge-type
         mbc = cartridgeType switch
         {
-            0x00 => new MemoryBankController0(),    // ROM ONLY
-            0x01 => new MemoryBankController1(),    // MBC1
+            0x00 => new NoMemoryBankController(),   // ROM ONLY
+            0x01 => new MemoryBankController1(),    // MBC1 https://gbdev.io/pandocs/MBC1
             0x02 => new MemoryBankController1(),    // MBC1+RAM
             0x03 => new MemoryBankController1(),    // MBC1+RAM+BATTERY
-            0x05 => new MemoryBankController2(),    // MBC2
+            0x05 => new MemoryBankController2(),    // MBC2 https://gbdev.io/pandocs/MBC2
             0x06 => new MemoryBankController2(),    // MBC2+BATTERY
-            0x0B => new MemoryBankController2(),    // MMM01
+            0x08 => new MemoryBankController2(),    // ROM+RAM
+            0x09 => new MemoryBankController2(),    // ROM+RAM+BATTERY
+            0x0B => new MemoryBankController2(),    // MMM01 https://gbdev.io/pandocs/MMM01
             0x0C => new MemoryBankController2(),    // MMM01+RAM
             0x0D => new MemoryBankController2(),    // MMM01+RAM+BATTERY
             0x0F => new MemoryBankController3(),    // MBC3+TIMER+BATTERY
             0x10 => new MemoryBankController3(),    // MBC3+TIMER+RAM+BATTERY 2
-            0x11 => new MemoryBankController3(),    // MBC3
+            0x11 => new MemoryBankController3(),    // MBC3 https://gbdev.io/pandocs/MBC3
             0x12 => new MemoryBankController3(),    // MBC3+RAM 2
             0x13 => new MemoryBankController3(),    // MBC3+RAM+BATTERY 2
-            0x19 => new MemoryBankController5(),    // MBC5
+            0x19 => new MemoryBankController5(),    // MBC5 https://gbdev.io/pandocs/MBC5
             0x1A => new MemoryBankController5(),    // MBC5+RAMkl,
             0x1B => new MemoryBankController5(),    // MBC5+RAM+BATTERY
             0x1C => new MemoryBankController5(),    // MBC5+RUMBLE
             0x1D => new MemoryBankController5(),    // MBC5+RUMBLE+RAM
             0x1E => new MemoryBankController5(),    // MBC5+RUMBLE+RAM+BATTERY
-            0x20 => new MemoryBankController6(),    // MBC6
-            0x22 => new MemoryBankController6(),    // MBC7+SENSOR+RUMBLE+RAM+BATTERY
-            0xFC => new MemoryBankController6(),    // POCKET CAMERA
-            0xFD => new MemoryBankController6(),    // BANDAI TAMA5
-            0xFE => new MemoryBankController6(),    // HuC3
-            0xFF => new MemoryBankController6(),    // HuC1+RAM+BATTERY
-            _ => new MemoryBankController0(),
+            0x20 => new MemoryBankController6(),    // MBC6 https://gbdev.io/pandocs/MBC6
+            0x22 => new NoMemoryBankController(),   // MBC7+SENSOR+RUMBLE+RAM+BATTERY
+            0xFC => new NoMemoryBankController(),   // POCKET CAMERA
+            0xFD => new NoMemoryBankController(),   // BANDAI TAMA5
+            0xFE => new NoMemoryBankController(),   // HuC3
+            0xFF => new NoMemoryBankController(),   // HuC1+RAM+BATTERY
+            _ => new NoMemoryBankController(),
         };
 
         mbc.Load(data);
-        mbc.Save(data);
 
         Console.WriteLine();
         Console.WriteLine("Cartridge Header Info");
@@ -245,9 +247,41 @@ public class Emulator
         Console.WriteLine("CGB flag: " + data[0x143]);
         Console.WriteLine("New licensee code: " + data[0x144] + "" + data[0x145]);
         Console.WriteLine("SGB flag: " + data[0x146]);
-        Console.WriteLine("Cartridge type: " + data[0x147]);
 
-        mbc.Rom = data;
+        string mbcType = cartridgeType switch
+        {
+            0x00 => "ROM ONLY",
+            0x01 => "MBC1",
+            0x02 => "MBC1+RAM",
+            0x03 => "MBC1+RAM+BATTERY",
+            0x05 => "MBC2",
+            0x06 => "MBC2+BATTERY",
+            0x08 => "ROM+RAM",
+            0x09 => "ROM+RAM+BATTERY",
+            0x0B => "MMM01",
+            0x0C => "MMM01+RAM",
+            0x0D => "MMM01+RAM+BATTERY",
+            0x0F => "MBC3+TIMER+BATTERY",
+            0x10 => "MBC3+TIMER+RAM+BATTERY 2",
+            0x11 => "MBC3",
+            0x12 => "MBC3+RAM 2",
+            0x13 => "MBC3+RAM+BATTERY 2",
+            0x19 => "MBC5",
+            0x1A => "MBC5+RAMkl,",
+            0x1B => "MBC5+RAM+BATTERY",
+            0x1C => "MBC5+RUMBLE",
+            0x1D => "MBC5+RUMBLE+RAM",
+            0x1E => "MBC5+RUMBLE+RAM+BATTERY",
+            0x20 => "MBC6",
+            0x22 => "MBC7+SENSOR+RUMBLE+RAM+BATTERY",
+            0xFC => "POCKET CAMERA",
+            0xFD => "BANDAI TAMA5",
+            0xFE => "HuC3",
+            0xFF => "HuC1+RAM+BATTERY",
+            _ => "Unknown",
+        };
+
+        Console.WriteLine("MBC: " + mbcType);
     }
 
     public void Reset()

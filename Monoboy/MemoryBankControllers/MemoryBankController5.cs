@@ -101,22 +101,11 @@ public class MemoryBankController5 : IMemoryBankController
         this.ram = ram;
     }
 
-    public void Save(byte[] data)
-    {
-        // string save = romPath.Replace(".gb", ".sav", true, null);
-        // File.WriteAllBytes(save, ram);
-    }
+    public void Save() { }
 
     public void Load(byte[] data)
     {
         Rom = data;
-
-        // string save = romPath.Replace("Roms", "Saves").Replace(".gb", ".sav", true, null);
-
-        // if (File.Exists(save))
-        // {
-        //     ram = File.ReadAllBytes(save);
-        // }
     }
 
     enum BankingMode

@@ -91,22 +91,11 @@ public class MemoryBankController6 : IMemoryBankController
         }
     }
 
-    public void Save(byte[] data)
-    {
-        // string save = romPath.Replace(".gb", ".sav", true, null);
-        // File.WriteAllBytes(save, ram);
-    }
+    public void Save() { }
 
     public void Load(byte[] data)
     {
         Rom = data;
-
-        // string save = romPath.Replace(".gb", ".sav", true, null);
-
-        // if (File.Exists(save))
-        // {
-        //     ram = File.ReadAllBytes(save);
-        // }
     }
 
     public byte[] GetRam()

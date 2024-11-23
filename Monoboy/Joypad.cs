@@ -10,7 +10,6 @@ public class Joypad(Cpu cpu)
     byte padState;
 
     byte joyp;
-    readonly Cpu cpu = cpu;
 
     public byte JOYP
     {

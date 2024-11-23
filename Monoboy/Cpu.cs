@@ -257,8 +257,8 @@ public class Cpu(Register register, Emulator emulator)
             case 0x3F: CCF(); break;// CCF
             case 0x37: SCF(); break;// SCF
 
-            case 0xF3: DisableInterrupts(); break;// DI
-            case 0xFB: EnableInterrupts(); break;// EI
+            case 0xF3: Ime = false; break;// DI
+            case 0xFB: Ime = true; break;// EI
 
             case 0xC3: JP(true); break;// JP nn
 
@@ -294,7 +294,7 @@ public class Cpu(Register register, Emulator emulator)
             case 0xC8: RET(register.ZFlag); break;
             case 0xD0: RET(register.CFlag == false); break;
             case 0xD8: RET(register.CFlag); break;
-            case 0xD9: RET(true); EnableInterrupts(); break;// RETI
+            case 0xD9: RET(true); Ime = true; break;// RETI
 
             case 0x07: RLCA(); break;   // RLCA
             case 0x17: RLA(); break;    // RLA
@@ -1089,17 +1089,6 @@ public class Cpu(Register register, Emulator emulator)
     {
         Push(register.PC);
         register.PC = n;
-    }
-
-
-    public void DisableInterrupts()
-    {
-        Ime = false;
-    }
-
-    public void EnableInterrupts()
-    {
-        Ime = true;
     }
 
     public void Halt()

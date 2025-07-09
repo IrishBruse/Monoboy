@@ -34,7 +34,7 @@ public class Register
 
         set
         {
-            B = value.High();
+            B = value.High();// TODO: Remove
             C = value.Low();
         }
     }

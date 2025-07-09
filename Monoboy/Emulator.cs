@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 
 using Monoboy.Constants;
 using Monoboy.MemoryBankControllers;
@@ -15,13 +16,11 @@ public class Emulator
 
     /// <summary> #AABBGGRR </summary>
     public byte[] Framebuffer { get; set; }
-    public string GameTitle { get; private set; }
-
-    byte[] bios;
+    public bool SkipBios { get; }
 
     // Hardware
-    public Register Registers { get; set; }
-    public Memory Memory { get; set; }
+    Register Registers { get; set; }
+    Memory Memory { get; set; }
     IMemoryBankController mbc;
     bool biosEnabled = true;
     Cpu cpu;
@@ -29,7 +28,11 @@ public class Emulator
     Joypad joypad;
     Timer timer;
 
-    public byte IF
+    CartridgeHeader? cartridge;
+
+    byte[] bios;
+
+    internal byte IF
     {
         get => Read(0xFF0F);
         set
@@ -38,7 +41,7 @@ public class Emulator
             Write(0xFF0F, value);
         }
     }
-    public byte IE
+    internal byte IE
     {
         get => Read(0xFFFF);
 
@@ -51,7 +54,6 @@ public class Emulator
 
     /// <summary> Machine Cycles </summary>
     internal long TotalCycles { get; set; }
-    public bool SkipBios { get; }
 
     public Emulator(byte[] bios = null)
     {
@@ -79,6 +81,10 @@ public class Emulator
 
     public void Step()
     {
+        if (cartridge == null)
+        {
+            return;
+        }
 
         byte enabledFlags = (byte)(IE & IF);
 
@@ -134,7 +140,7 @@ public class Emulator
         }
     }
 
-    public void Tick(int mCycles)
+    internal void Tick(int mCycles)
     {
         timer.Step(mCycles);
         ppu.Step(mCycles);
@@ -143,7 +149,7 @@ public class Emulator
 
     public void StepFrame()
     {
-        if (mbc == null && biosEnabled == false)
+        if (cartridge == null)
         {
             return;
         }
@@ -155,56 +161,58 @@ public class Emulator
         EnteredVSync = false;
     }
 
-    public void Open(string rom)
-    {
-        byte[] data = File.ReadAllBytes(rom);
-        Open(data);
+    FileSystemWatcher watcher;
 
-        string saveFile = rom.Replace(".gb", ".sav");
-        if (File.Exists(saveFile))
+    public void Watch(string file)
+    {
+        Open(file);
+
+        // Create a new FileSystemWatcher and set its properties.
+        watcher = new(Path.GetDirectoryName(file))
         {
-            mbc.SetRam(File.ReadAllBytes(saveFile));
-        }
+            NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.Attributes,
+            EnableRaisingEvents = true,
+            Filter = Path.GetFileName(file),
+        };
+
+        // Add event handlers.
+        watcher.Changed += (s, e) =>
+        {
+            Console.WriteLine("test " + e.FullPath);
+            Open(e.FullPath);
+        };
+    }
+
+    public void Open(string path)
+    {
+        Console.WriteLine("Opening ROM " + path);
+        Open(File.ReadAllBytes(path));
     }
 
     public void Open(byte[] data)
     {
+        cartridge = new();
+
         Reset();
 
-        byte cartridgeType = data[0x147];
-
-        GameTitle = "";
-
-        bool lower = false;
-
-        // Clean up title
-        foreach (byte item in data[0x134..(0x134 + 0xf)])
-        {
-            if (item == 0)
-            {
-                break;
-            }
-
-            if (lower)
-            {
-                GameTitle += char.ToLowerInvariant((char)item);
-            }
-            else
-            {
-                GameTitle += (char)item;
-                lower = true;
-            }
-
-            if (item == 32)
-            {
-                lower = false;
-            }
-        }
+        cartridge.EntryPoint = data[0x100..0x104];
+        cartridge.NintendoLogo = data[0x104..0x133];
+        cartridge.Title = Encoding.ASCII.GetString(data[0x134..0x13E]);
+        cartridge.ManufacturerCode = Encoding.ASCII.GetString(data[0x13F..0x142]);
+        cartridge.CGB = data[0x143];
+        cartridge.LicenseCode = Encoding.ASCII.GetString(data[0x144..0x145]);
+        cartridge.SGB = data[0x146];
+        cartridge.CartridgeType = data[0x147];
+        cartridge.RomSize = data[0x148];
+        cartridge.RamSize = data[0x149];
+        cartridge.DestinationCode = data[0x14A];
+        cartridge.OldLicenseeCode = data[0x14B];
+        cartridge.Version = data[0x14C];
 
         // https://gbdev.io/pandocs/MBCs#mbcs
 
         // https://gbdev.io/pandocs/The_Cartridge_Header#0147--cartridge-type
-        mbc = cartridgeType switch
+        mbc = cartridge.CartridgeType switch
         {
             0x00 => new NoMemoryBankController(),   // ROM ONLY
             0x01 => new MemoryBankController1(),    // MBC1 https://gbdev.io/pandocs/MBC1
@@ -239,47 +247,7 @@ public class Emulator
 
         mbc.Load(data);
 
-        Console.WriteLine();
-        Console.WriteLine("Cartridge Header Info");
-        Console.WriteLine("Title: " + GameTitle);
-        Console.WriteLine("CGB flag: " + data[0x143]);
-        Console.WriteLine("New licensee code: " + data[0x144] + "" + data[0x145]);
-        Console.WriteLine("SGB flag: " + data[0x146]);
-
-        string mbcType = cartridgeType switch
-        {
-            0x00 => "ROM ONLY",
-            0x01 => "MBC1",
-            0x02 => "MBC1+RAM",
-            0x03 => "MBC1+RAM+BATTERY",
-            0x05 => "MBC2",
-            0x06 => "MBC2+BATTERY",
-            0x08 => "ROM+RAM",
-            0x09 => "ROM+RAM+BATTERY",
-            0x0B => "MMM01",
-            0x0C => "MMM01+RAM",
-            0x0D => "MMM01+RAM+BATTERY",
-            0x0F => "MBC3+TIMER+BATTERY",
-            0x10 => "MBC3+TIMER+RAM+BATTERY 2",
-            0x11 => "MBC3",
-            0x12 => "MBC3+RAM 2",
-            0x13 => "MBC3+RAM+BATTERY 2",
-            0x19 => "MBC5",
-            0x1A => "MBC5+RAMkl,",
-            0x1B => "MBC5+RAM+BATTERY",
-            0x1C => "MBC5+RUMBLE",
-            0x1D => "MBC5+RUMBLE+RAM",
-            0x1E => "MBC5+RUMBLE+RAM+BATTERY",
-            0x20 => "MBC6",
-            0x22 => "MBC7+SENSOR+RUMBLE+RAM+BATTERY",
-            0xFC => "POCKET CAMERA",
-            0xFD => "BANDAI TAMA5",
-            0xFE => "HuC3",
-            0xFF => "HuC1+RAM+BATTERY",
-            _ => "Unknown",
-        };
-
-        Console.WriteLine("MBC: " + mbcType);
+        Console.WriteLine(cartridge.ToString());
     }
 
     public void Reset()
@@ -332,45 +300,45 @@ public class Emulator
                 return bios[address];
             }
 
-            // if (address is >= 0x0104 and <= 0x0133)
-            // {
-            //     // Custom Header Monoboy logo for bootix boot rom
-            //     return new byte[]{
-            //         0b11001110,0b11101101,
-            //         0b00110111,0b01111011,
-            //         0b00000000,0b00110110,
-            //         0b00000000,0b11000110,
-            //         0b00000000,0b11011110,
-            //         0b00000000,0b10001101,
-            //         0b00000000,0b11111001,
-            //         0b00110011,0b00111011,
-            //         0b00000000,0b11100011,
-            //         0b00000000,0b00110110,
-            //         0b00000000,0b11000110,
-            //         0b00000000,0b11011101,
-            //         0b11011100,0b11000000,
-            //         0b10110011,0b00110000,
-            //         0b01100110,0b00110000,
-            //         0b01100110,0b11000000,
-            //         0b11001100,0b11000000,
-            //         0b11011101,0b11000000,
-            //         0b10011001,0b11110000,
-            //         0b10111011,0b00110000,
-            //         0b00110011,0b11100000,
-            //         0b01100110,0b00110000,
-            //         0b01100110,0b11000000,
-            //         0b11010111,0b00111110,
-            //     }
-            //     [address - 0x0104];
-            // }
+            if (CustomCartridgeLogo && address >= 0x0104 && address <= 0x0133)
+            {
+                // Custom Cartridge Header Monoboy logo for bootix boot rom
+                return new byte[]{
+                    0b11001110,0b11101101,
+                    0b00110111,0b01111011,
+                    0b00000000,0b00110110,
+                    0b00000000,0b11000110,
+                    0b00000000,0b11011110,
+                    0b00000000,0b10001101,
+                    0b00000000,0b11111001,
+                    0b00110011,0b00111011,
+                    0b00000000,0b11100011,
+                    0b00000000,0b00110110,
+                    0b00000000,0b11000110,
+                    0b00000000,0b11011101,
+                    0b11011100,0b11000000,
+                    0b10110011,0b00110000,
+                    0b01100110,0b00110000,
+                    0b01100110,0b11000000,
+                    0b11001100,0b11000000,
+                    0b11011101,0b11000000,
+                    0b10011001,0b11110000,
+                    0b10111011,0b00110000,
+                    0b00110011,0b11100000,
+                    0b01100110,0b00110000,
+                    0b01100110,0b11000000,
+                    0b11010111,0b00111110,
+                }
+                [address - 0x0104];
+            }
         }
 
         return address switch
         {
-            <= 0x3FFF => mbc?.ReadBank00(address) ?? 0,       // 16 KiB ROM bank 00
-            <= 0x7FFF => mbc?.ReadBankNN(address) ?? 0,       // 16 KiB ROM Bank 01~NN
+            <= 0x3FFF => mbc.ReadBank00(address),       // 16 KiB ROM bank 00
+            <= 0x7FFF => mbc.ReadBankNN(address),       // 16 KiB ROM Bank 01~NN
             <= 0x9FFF => Memory[address],                     // 8 KiB Video RAM (VRAM)
-            <= 0xBFFF => mbc?.ReadRam(address) ?? 0,          // 8 KiB External RAM
+            <= 0xBFFF => mbc.ReadRam(address),          // 8 KiB External RAM
             <= 0xCFFF => Memory[address],                     // 4 KiB Work RAM (WRAM)
             <= 0xDFFF => Memory[address],                     // 4 KiB Work RAM (WRAM)
             <= 0xFDFF => Memory[address - 0x2000],            // Mirror of C000~DDFF (ECHO RAM)
@@ -386,9 +354,9 @@ public class Emulator
     {
         switch (address)
         {
-            case <= 0x7FFF: mbc?.WriteBank(address, data); break;           // 16KB ROM Bank > 00 (in cartridge, every other bank)
+            case <= 0x7FFF: mbc.WriteBank(address, data); break;           // 16KB ROM Bank > 00 (in cartridge, every other bank)
             case <= 0x9FFF: Memory[address] = data; break;                  // 8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
-            case <= 0xBFFF: mbc?.WriteRam(address, data); break;            // 8KB External RAM (in cartridge, switchable bank, if any)
+            case <= 0xBFFF: mbc.WriteRam(address, data); break;            // 8KB External RAM (in cartridge, switchable bank, if any)
             case <= 0xDFFF: Memory[address] = data; break;                  // 4KB Work RAM Bank 0 (WRAM) (switchable bank 1-7 in CGB Mode)
             case <= 0xFDFF: Memory[address] = data; break;                  // Same as C000-DDFF (ECHO) (typically not used)
             case <= 0xFE9F: Memory[address] = data; break;                  // Sprite Attribute Table (OAM)
@@ -515,15 +483,12 @@ public class Emulator
         Write(0xFFFF, 0x0);
     }
 
-    public static void Save()
-    {
-        // mbc?.Save(romPath);
-    }
-
     public bool BreakPointsEnabled { get; set; }
-    public bool EnteredVSync { get; set; }
+    public bool CustomCartridgeLogo { get; set; }
 
-    public void BreakPoint(char breakpoint)
+    internal bool EnteredVSync { get; set; }
+
+    internal void BreakPoint(char breakpoint)
     {
         if (!BreakPointsEnabled)
         {

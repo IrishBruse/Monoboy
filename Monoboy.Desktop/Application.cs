@@ -1,9 +1,8 @@
 namespace Monoboy.Desktop;
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 using Monoboy.Constants;
@@ -16,25 +15,24 @@ using Raylib_cs;
 public class Application
 {
     Emulator emulator;
-    Stopwatch timer = new();
 
     bool speedup;
     bool paused;
 
     public Application()
     {
-        // byte[] dmgbootRom = GetEmbeddedFile("Monoboy.Desktop/Data/dmg_boot.bin");
-        // byte[] bootRom = GetDataFile("Monoboy.Desktop/Data/bootix_dmg.bin");
-
         emulator = new();
-        emulator.Open("/mnt/data/Emulation/GB/test/mooneye-test-suite/acceptance/intr_timing.gb");
-        // emulator.Open("/mnt/data/Emulation/GB/Tetris.gb");
-        // emulator.Open("/mnt/data/Emulation/GB/test/blargg/oam_bug/rom_singles/1-lcd_sync.gb");
+
+        if (Environment.GetCommandLineArgs().Contains("--custom-boot"))
+        {
+            emulator = new(GetEmbeddedFile("Monoboy.Desktop/Data/bootix_dmg.bin"));
+            emulator.CustomCartridgeLogo = true;
+        }
     }
 
     public void Run()
     {
-        Raylib.SetTraceLogLevel(TraceLogLevel.Error);
+        Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
 
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(Emulator.WindowWidth * 4, Emulator.WindowHeight * 4, "Monoboy");
@@ -62,7 +60,7 @@ public class Application
 
                 if (files.Length == 1)
                 {
-                    emulator.Open(files[0]);
+                    emulator.Open(File.ReadAllBytes(files[0]));
                 }
             }
 
@@ -73,22 +71,12 @@ public class Application
                 Raylib.ClearBackground(new Color(0xD0, 0xD0, 0x58, 0xFF));
                 int scale = Math.Min(Math.Max(width / Emulator.WindowWidth, 1), Math.Max(height / Emulator.WindowHeight, 1));
                 Raylib.DrawTextureEx(framebuffer, new((width - (Emulator.WindowWidth * scale)) * 0.5f, (height - (Emulator.WindowHeight * scale)) * 0.5f), 0, scale, Color.White);
-
-                // var reg = emulator.Registers;
-                // string text = "A:" + reg.A.ToString("X2") + " F:" + reg.F.ToString("B8") + "\n\n" +
-                // "B:" + reg.B.ToString("X2") + " C:" + reg.C.ToString("X2") + "\n\n" +
-                // "D:" + reg.D.ToString("X2") + " E:" + reg.E.ToString("X2") + "\n\n" +
-                // "H:" + reg.H.ToString("X2") + " L:" + reg.L.ToString("X2");
-
-                // Raylib.DrawText(text, 4, 0, 25, Color.Black);
             }
             Raylib.EndDrawing();
         }
 
         Raylib.CloseAudioDevice();
         Raylib.CloseWindow();
-
-        Emulator.Save();
     }
 
     static byte[] GetEmbeddedFile(string path)
@@ -98,34 +86,23 @@ public class Application
         return reader.ReadBytes((int)reader.BaseStream.Length);
     }
 
-    Queue<long> frameTimes = new([0]);
-
     void Update()
     {
+        EmulatorInput();
+        KeyDown();
+
         if (paused)
         {
             return;
         }
 
-        // Console.WriteLine(Enumerable.Average(frameTimes));
-
-        EmulatorInput();
-        KeyDown();
-
-        timer.Restart();
         emulator.StepFrame();
-        timer.Stop();
-
-        frameTimes.Enqueue(timer.ElapsedMilliseconds);
-
-
-        if (frameTimes.Count > 30)
-        {
-            _ = frameTimes.Dequeue();
-        }
 
         if (speedup)
         {
+            emulator.StepFrame();
+            emulator.StepFrame();
+            emulator.StepFrame();
             emulator.StepFrame();
             emulator.StepFrame();
             emulator.StepFrame();
@@ -174,9 +151,13 @@ public class Application
     {
         speedup = Raylib.IsKeyDown(KeyboardKey.F);
 
-        if (Raylib.IsKeyPressed(KeyboardKey.P))
+        if (Raylib.IsKeyDown(KeyboardKey.LeftShift) && Raylib.IsKeyPressed(KeyboardKey.P))
         {
-            paused = !paused;
+            paused = false;
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.P))
+        {
+            paused = true;
         }
         else if (Raylib.IsKeyDown(KeyboardKey.LeftControl) && Raylib.IsKeyPressed(KeyboardKey.O))
         {
@@ -195,7 +176,7 @@ public class Application
         DialogResult file = Dialog.FileOpen("gb,gbc");
         if (file.IsOk)
         {
-            emulator.Open(file.Path);
+            emulator.Open(File.ReadAllBytes(file.Path));
         }
     }
 

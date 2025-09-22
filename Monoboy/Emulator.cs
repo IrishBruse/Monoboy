@@ -28,7 +28,7 @@ public class Emulator
     Joypad joypad;
     Timer timer;
 
-    CartridgeHeader? cartridge;
+    CartridgeHeader cartridge;
 
     byte[] bios;
 
@@ -37,7 +37,6 @@ public class Emulator
         get => Read(0xFF0F);
         set
         {
-            // Console.WriteLine("IF " + value.ToString("B8"));
             Write(0xFF0F, value);
         }
     }
@@ -47,7 +46,6 @@ public class Emulator
 
         set
         {
-            // Console.WriteLine("IE " + value.ToString("B8"));
             Write(0xFFFF, value);
         }
     }
@@ -161,31 +159,9 @@ public class Emulator
         EnteredVSync = false;
     }
 
-    FileSystemWatcher watcher;
-
-    public void Watch(string file)
-    {
-        Open(file);
-
-        // Create a new FileSystemWatcher and set its properties.
-        watcher = new(Path.GetDirectoryName(file))
-        {
-            NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.Attributes,
-            EnableRaisingEvents = true,
-            Filter = Path.GetFileName(file),
-        };
-
-        // Add event handlers.
-        watcher.Changed += (s, e) =>
-        {
-            Console.WriteLine("test " + e.FullPath);
-            Open(e.FullPath);
-        };
-    }
-
     public void Open(string path)
     {
-        Console.WriteLine("Opening ROM " + path);
+        Console.WriteLine("Opening " + path);
         Open(File.ReadAllBytes(path));
     }
 
@@ -246,8 +222,6 @@ public class Emulator
         };
 
         mbc.Load(data);
-
-        Console.WriteLine(cartridge.ToString());
     }
 
     public void Reset()
@@ -401,7 +375,8 @@ public class Emulator
             case 0xFF46: OamTransfer(data); break;
 
             default: Memory[address] = data; break;
-        };
+        }
+        ;
 
     }
 

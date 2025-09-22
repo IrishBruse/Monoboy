@@ -165,6 +165,8 @@ public class Application
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.F5))
         {
+            Console.WriteLine("Dumping");
+
             emulator.Dump("F5");
             DumpBackground("dumps/F5/background.png");
             DumpTileset("dumps/F5/tileset.png");

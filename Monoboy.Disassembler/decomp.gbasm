@@ -1,15 +1,15 @@
 
-label_0100:
+l0100:
     NOP                  ; 0100: 00
 
-label_0101:
+l0101:
     JP $0150             ; 0101: C3 50 01
 
-label_0150:
+l0150:
     JP $020C             ; 0150: C3 0C 02
     XOR A, A             ; 020C: AF
 
-label_020D:
+l020D:
     LD HL, $DFFF         ; 020D: 21 FF DF
     LD C, $10            ; 0210: 0E 10
     LD B, $00            ; 0212: 06 00
@@ -19,17 +19,17 @@ label_020D:
     DEC C                ; 0218: 0D
     JR NZ, -7            ; 0219: 20 F9
 
-label_021B:
+l021B:
     LD A, $01            ; 021B: 3E 01
     DI                   ; 021D: F3
     LDH $0F, A           ; 021E: E0 0F
     LDH $FF, A           ; 0220: E0 FF
     XOR A, A             ; 0222: AF
 
-label_0223:
+l0223:
     LDH $42, A           ; 0223: E0 42
 
-label_0225:
+l0225:
     LDH $43, A           ; 0225: E0 43
     LDH $A4, A           ; 0227: E0 A4
     LDH $41, A           ; 0229: E0 41
@@ -55,7 +55,7 @@ label_0225:
     LD HL, $77           ; 0250: 36 77
     LD A, $01            ; 0252: 3E 01
 
-label_0254:
+l0254:
     LD $2000, A          ; 0254: EA 00 20
     LD SP, $CFFF         ; 0257: 31 FF CF
     XOR A, A             ; 025A: AF
@@ -100,7 +100,7 @@ label_0254:
     DEC B                ; 029D: 05
     JR NZ, -6            ; 029E: 20 FA
 
-label_02A0:
+l02A0:
     CALL $2795           ; 02A0: CD 95 27
     LD HL, $9BFF         ; 2795: 21 FF 9B
     LD BC, $0400         ; 2798: 01 00 04
@@ -120,7 +120,7 @@ label_02A0:
     JR NZ, -8            ; 27AA: 20 F8
     RET                  ; 27AC: C9
 
-label_27AD:
+l27AD:
     CALL $27C3           ; 27AD: CD C3 27
     LD HL, $415F         ; 27C3: 21 5F 41
     LD BC, $0138         ; 27C6: 01 38 01
@@ -136,5 +136,5 @@ label_27AD:
     JR NZ, -10           ; 27D4: 20 F6
     RET                  ; 27D6: C9
 
-label_27D7:
+l27D7:
     CALL $27C3           ; 27D7: CD C3 27

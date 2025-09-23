@@ -36,7 +36,7 @@ public class Dis
             if (labels.Contains(pc))
             {
                 output.AppendLine();
-                output.AppendLine($"label_{pc:X4}:");
+                output.AppendLine($"l{pc:X4}:");
             }
             output.AppendLine("    " + intr);
         }
@@ -46,7 +46,7 @@ public class Dis
     public void Disassemble()
     {
         int iterations = 0;
-        while (iterations < 10_000)
+        while (iterations < 100_000)
         {
             Instruction instr = Decode();
             WriteInstruction(instr);
@@ -88,7 +88,8 @@ public class Dis
 
                 case Operand.a8:
                 Append($"${data[pc + 1]:X2}");
-                labels.Add((ushort)(pc + (sbyte)data[pc]));
+                ushort val = (ushort)(pc + (sbyte)data[pc]);
+                labels.Add(val);
                 break;
 
                 case Operand.n16:

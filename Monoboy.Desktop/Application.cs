@@ -21,12 +21,19 @@ public class Application
 
     public Application()
     {
-        emulator = new();
+        string[] args = Environment.GetCommandLineArgs();
 
-        if (Environment.GetCommandLineArgs().Contains("--custom-boot"))
+        if (args.Contains("--custom-boot"))
         {
-            emulator = new(GetEmbeddedFile("Monoboy.Desktop/Data/bootix_dmg.bin"));
-            emulator.CustomCartridgeLogo = true;
+            emulator = new(GetEmbeddedFile("Monoboy.Desktop/Data/bootix_dmg.bin"))
+            {
+                CustomCartridgeLogo = true
+            };
+        }
+        else
+        {
+            emulator = new();
+            emulator.Open(args[1]);
         }
     }
 

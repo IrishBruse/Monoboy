@@ -1,16 +1,10 @@
-﻿namespace Monoboy;
-
-using System.IO;
+﻿namespace Monoboy.Disassembler;
 
 public class Program
 {
     public static void Main(string[] args)
     {
-        byte[] data = File.ReadAllBytes("../roms/Tetris.gb");
-
-        foreach (var b in data)
-        {
-            Console.WriteLine(b);
-        }
+        var dis = new Dis();
+        dis.Decompile("../roms/Tetris.gb");
     }
 }

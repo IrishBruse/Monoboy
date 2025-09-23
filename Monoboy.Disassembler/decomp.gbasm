@@ -1,0 +1,140 @@
+
+label_0100:
+    NOP                  ; 0100: 00
+
+label_0101:
+    JP $0150             ; 0101: C3 50 01
+
+label_0150:
+    JP $020C             ; 0150: C3 0C 02
+    XOR A, A             ; 020C: AF
+
+label_020D:
+    LD HL, $DFFF         ; 020D: 21 FF DF
+    LD C, $10            ; 0210: 0E 10
+    LD B, $00            ; 0212: 06 00
+    LD HL, A             ; 0214: 32
+    DEC B                ; 0215: 05
+    JR NZ, -4            ; 0216: 20 FC
+    DEC C                ; 0218: 0D
+    JR NZ, -7            ; 0219: 20 F9
+
+label_021B:
+    LD A, $01            ; 021B: 3E 01
+    DI                   ; 021D: F3
+    LDH $0F, A           ; 021E: E0 0F
+    LDH $FF, A           ; 0220: E0 FF
+    XOR A, A             ; 0222: AF
+
+label_0223:
+    LDH $42, A           ; 0223: E0 42
+
+label_0225:
+    LDH $43, A           ; 0225: E0 43
+    LDH $A4, A           ; 0227: E0 A4
+    LDH $41, A           ; 0229: E0 41
+    LDH $01, A           ; 022B: E0 01
+    LDH $02, A           ; 022D: E0 02
+    LD A, $80            ; 022F: 3E 80
+    LDH $40, A           ; 0231: E0 40
+    LDH A, $44           ; 0233: F0 44
+    CP A, $94            ; 0235: FE 94
+    JR NZ, -6            ; 0237: 20 FA
+    LD A, $03            ; 0239: 3E 03
+    LDH $40, A           ; 023B: E0 40
+    LD A, $E4            ; 023D: 3E E4
+    LDH $47, A           ; 023F: E0 47
+    LDH $48, A           ; 0241: E0 48
+    LD A, $C4            ; 0243: 3E C4
+    LDH $49, A           ; 0245: E0 49
+    LD HL, $FF26         ; 0247: 21 26 FF
+    LD A, $80            ; 024A: 3E 80
+    LD HL, A             ; 024C: 32
+    LD A, $FF            ; 024D: 3E FF
+    LD HL, A             ; 024F: 32
+    LD HL, $77           ; 0250: 36 77
+    LD A, $01            ; 0252: 3E 01
+
+label_0254:
+    LD $2000, A          ; 0254: EA 00 20
+    LD SP, $CFFF         ; 0257: 31 FF CF
+    XOR A, A             ; 025A: AF
+    LD HL, $DFFF         ; 025B: 21 FF DF
+    LD B, $00            ; 025E: 06 00
+    LD HL, A             ; 0260: 32
+    DEC B                ; 0261: 05
+    JR NZ, -4            ; 0262: 20 FC
+    LD HL, $CFFF         ; 0264: 21 FF CF
+    LD C, $10            ; 0267: 0E 10
+    LD B, $00            ; 0269: 06 00
+    LD HL, A             ; 026B: 32
+    DEC B                ; 026C: 05
+    JR NZ, -4            ; 026D: 20 FC
+    DEC C                ; 026F: 0D
+    JR NZ, -7            ; 0270: 20 F9
+    LD HL, $9FFF         ; 0272: 21 FF 9F
+    LD C, $20            ; 0275: 0E 20
+    XOR A, A             ; 0277: AF
+    LD B, $00            ; 0278: 06 00
+    LD HL, A             ; 027A: 32
+    DEC B                ; 027B: 05
+    JR NZ, -4            ; 027C: 20 FC
+    DEC C                ; 027E: 0D
+    JR NZ, -7            ; 027F: 20 F9
+    LD HL, $FEFF         ; 0281: 21 FF FE
+    LD B, $00            ; 0284: 06 00
+    LD HL, A             ; 0286: 32
+    DEC B                ; 0287: 05
+    JR NZ, -4            ; 0288: 20 FC
+    LD HL, $FFFE         ; 028A: 21 FE FF
+    LD B, $80            ; 028D: 06 80
+    LD HL, A             ; 028F: 32
+    DEC B                ; 0290: 05
+    JR NZ, -4            ; 0291: 20 FC
+    LD C, $B6            ; 0293: 0E B6
+    LD B, $0C            ; 0295: 06 0C
+    LD HL, $2A7F         ; 0297: 21 7F 2A
+    LD A, HL             ; 029A: 2A
+    LD C, A              ; 029B: E2
+    INC C                ; 029C: 0C
+    DEC B                ; 029D: 05
+    JR NZ, -6            ; 029E: 20 FA
+
+label_02A0:
+    CALL $2795           ; 02A0: CD 95 27
+    LD HL, $9BFF         ; 2795: 21 FF 9B
+    LD BC, $0400         ; 2798: 01 00 04
+    LD A, $2F            ; 279B: 3E 2F
+    LD HL, A             ; 279D: 32
+    DEC BC               ; 279E: 0B
+    LD A, B              ; 279F: 78
+    OR A, C              ; 27A0: B1
+    JR NZ, -8            ; 27A1: 20 F8
+    RET                  ; 27A3: C9
+    LD A, HL             ; 27A4: 2A
+    LD DE, A             ; 27A5: 12
+    INC DE               ; 27A6: 13
+    DEC BC               ; 27A7: 0B
+    LD A, B              ; 27A8: 78
+    OR A, C              ; 27A9: B1
+    JR NZ, -8            ; 27AA: 20 F8
+    RET                  ; 27AC: C9
+
+label_27AD:
+    CALL $27C3           ; 27AD: CD C3 27
+    LD HL, $415F         ; 27C3: 21 5F 41
+    LD BC, $0138         ; 27C6: 01 38 01
+    LD DE, $8000         ; 27C9: 11 00 80
+    LD A, HL             ; 27CC: 2A
+    LD DE, A             ; 27CD: 12
+    INC DE               ; 27CE: 13
+    LD DE, A             ; 27CF: 12
+    INC DE               ; 27D0: 13
+    DEC BC               ; 27D1: 0B
+    LD A, B              ; 27D2: 78
+    OR A, C              ; 27D3: B1
+    JR NZ, -10           ; 27D4: 20 F6
+    RET                  ; 27D6: C9
+
+label_27D7:
+    CALL $27C3           ; 27D7: CD C3 27

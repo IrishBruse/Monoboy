@@ -15,13 +15,19 @@ using Spectre.Console;
 
 /// <summary>
 /// Debugger TUI: left = disassembly; center = register grid; right = memory dump (full height, flush right).
-/// Resize uses Console size each frame.
+/// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane; Page Up/Down jump by ~one screen.
 /// </summary>
 public static class TuiDebugger
 {
     const ushort MemoryBase = 0x0000;
 
     static readonly Regex SpectreTag = new(@"\[[^\]]*\]", RegexOptions.Compiled);
+
+    enum DebuggerPaneFocus
+    {
+        Disassembly,
+        Memory,
+    }
 
     public static void Run(string[] args)
     {
@@ -43,6 +49,7 @@ public static class TuiDebugger
 
         int disasmSkip = 0;
         int memRowSkip = 0;
+        var paneFocus = DebuggerPaneFocus.Disassembly;
         bool quit = false;
         bool needsRedraw = true;
         int lastTermW = -1;
@@ -67,6 +74,7 @@ public static class TuiDebugger
                 {
                     needsRedraw = true;
                     var key = Console.ReadKey(intercept: true);
+                    int pageJump = Math.Max(8, h - 3);
                     switch (key.Key)
                     {
                         case ConsoleKey.S:
@@ -88,23 +96,56 @@ public static class TuiDebugger
                         case ConsoleKey.Escape:
                         quit = true;
                         break;
+                        case ConsoleKey.Tab:
+                        paneFocus = paneFocus == DebuggerPaneFocus.Disassembly
+                            ? DebuggerPaneFocus.Memory
+                            : DebuggerPaneFocus.Disassembly;
+                        break;
+                        case ConsoleKey.LeftArrow:
+                        case ConsoleKey.UpArrow:
+                        if (paneFocus == DebuggerPaneFocus.Disassembly)
+                        {
+                            disasmSkip = Math.Max(0, disasmSkip - 1);
+                        }
+                        else
+                        {
+                            memRowSkip = Math.Max(0, memRowSkip - 1);
+                        }
+
+                        break;
+                        case ConsoleKey.RightArrow:
+                        case ConsoleKey.DownArrow:
+                        if (paneFocus == DebuggerPaneFocus.Disassembly)
+                        {
+                            disasmSkip++;
+                        }
+                        else
+                        {
+                            memRowSkip++;
+                        }
+
+                        break;
                         case ConsoleKey.PageDown:
-                        disasmSkip += 3;
+                        if (paneFocus == DebuggerPaneFocus.Disassembly)
+                        {
+                            disasmSkip += pageJump;
+                        }
+                        else
+                        {
+                            memRowSkip += pageJump;
+                        }
+
                         break;
                         case ConsoleKey.PageUp:
-                        disasmSkip = Math.Max(0, disasmSkip - 3);
-                        break;
-                        case ConsoleKey.Oem4:
-                        memRowSkip = Math.Max(0, memRowSkip - 4);
-                        break;
-                        case ConsoleKey.Oem6:
-                        memRowSkip += 4;
-                        break;
-                        case ConsoleKey.OemComma:
-                        memRowSkip = Math.Max(0, memRowSkip - 4);
-                        break;
-                        case ConsoleKey.OemPeriod:
-                        memRowSkip += 4;
+                        if (paneFocus == DebuggerPaneFocus.Disassembly)
+                        {
+                            disasmSkip = Math.Max(0, disasmSkip - pageJump);
+                        }
+                        else
+                        {
+                            memRowSkip = Math.Max(0, memRowSkip - pageJump);
+                        }
+
                         break;
                         case ConsoleKey.Home:
                         disasmSkip = 0;
@@ -137,7 +178,7 @@ public static class TuiDebugger
                     Console.SetCursorPosition(0, 0);
                 }
 
-                DrawFrame(emulator, w, h, disasmSkip, memRowSkip);
+                DrawFrame(emulator, w, h, disasmSkip, memRowSkip, paneFocus);
                 needsRedraw = false;
             }
         }
@@ -149,7 +190,7 @@ public static class TuiDebugger
         Console.Clear();
     }
 
-    static void DrawFrame(Emulator emulator, int termW, int termH, int disasmSkip, int memRowSkip)
+    static void DrawFrame(Emulator emulator, int termW, int termH, int disasmSkip, int memRowSkip, DebuggerPaneFocus paneFocus)
     {
         var s = emulator.GetDebugState();
 
@@ -184,7 +225,10 @@ public static class TuiDebugger
             string left;
             if (r == 0)
             {
-                left = PadMarkup("[yellow]── Disassembly ──[/]", leftInner);
+                string disTitle = paneFocus == DebuggerPaneFocus.Disassembly
+                    ? "[bold yellow]── Disassembly ──[/]"
+                    : "[dim]── Disassembly ──[/]";
+                left = PadMarkup(disTitle, leftInner);
             }
             else
             {
@@ -218,18 +262,22 @@ public static class TuiDebugger
             Console.Write(SpectreTag.Replace(frameText, ""));
         }
 
-        DrawPinnedFooter(termW, termH);
+        DrawPinnedFooter(termW, termH, paneFocus);
     }
 
     /// <summary>Last screen row: key hints (first letter of each action in red); no trailing newline so it stays pinned.</summary>
-    static void DrawPinnedFooter(int termW, int termH)
+    static void DrawPinnedFooter(int termW, int termH, DebuggerPaneFocus paneFocus)
     {
         int row = Math.Min(termH - 1, Math.Max(0, Console.WindowHeight - 1));
         int width = Math.Max(1, Math.Min(termW, Console.WindowWidth));
         Console.SetCursorPosition(0, row);
 
-        const string keysMarkup =
-            "  [red]S[/]tep  [red]F[/]rame  [red]R[/]un  [red]Q[/]uit  [red]P[/]review [red]Tab[/] Cycle focus";
+        string focusStr = paneFocus == DebuggerPaneFocus.Disassembly
+            ? "[bold cyan]Disasm[/] [dim grey]│ Mem[/]"
+            : "[dim grey]Disasm │[/] [bold cyan]Mem[/]";
+        string keysMarkup =
+            "  [red]S[/]tep  [red]F[/] frame  [red]R[/] run  [red]Q[/] quit  [red]V[/] preview  [red]Tab[/] focus  [grey]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  "
+            + focusStr;
 
         string plain = Markup.Remove(keysMarkup);
         if (plain.Length >= width)
@@ -467,23 +515,64 @@ public static class TuiDebugger
 
     static string BuildMemoryLine(Emulator emulator, ushort baseAddr, int rowIndex, int maxWidth)
     {
-        ushort addr = (ushort)(baseAddr + rowIndex * 16);
-        var hex = new StringBuilder();
+        ushort rowAddr = (ushort)(baseAddr + rowIndex * 16);
+        var line = new StringBuilder();
+        line.Append("[bold yellow]");
+        line.Append($"{rowAddr:X4}");
+        line.Append("[/]  ");
+
         var ascii = new StringBuilder();
         for (int col = 0; col < 16; col++)
         {
-            byte val = emulator.Read((ushort)(addr + col));
+            ushort absAddr = (ushort)(rowAddr + col);
+            byte val = emulator.Read(absAddr);
             if (col == 8)
             {
-                hex.Append("| ");
+                line.Append("[grey]|[/] ");
             }
-            hex.Append($"{val:X2} ");
-            ascii.Append(val >= 32 && val < 127 ? (char)val : '.');
+
+            if (val == 0)
+            {
+                line.Append("[dim grey]");
+                line.Append($"{val:X2}");
+                line.Append("[/] ");
+            }
+            else
+            {
+                line.Append(NonZeroByteStyle(absAddr));
+                line.Append($"{val:X2}");
+                line.Append("[/] ");
+            }
+
+            if (val >= 32 && val < 127)
+            {
+                ascii.Append("[green]");
+                ascii.Append(Markup.Escape(((char)val).ToString()));
+                ascii.Append("[/]");
+            }
+            else
+            {
+                ascii.Append("[grey].[/]");
+            }
         }
-        string asciiEsc = Markup.Escape(ascii.ToString());
-        string line = $"[bold]{addr:X4}[/]  [cyan]{hex}[/]| {asciiEsc}";
-        return ClipMarkup(line, maxWidth);
+
+        line.Append("[grey]|[/] ");
+        line.Append(ascii);
+        return ClipMarkup(line.ToString(), maxWidth);
     }
+
+    /// <summary>GB-ish map: ROM / VRAM / cart RAM / WRAM+echo / OAM / dead zone / I/O / HRAM.</summary>
+    static string NonZeroByteStyle(ushort absoluteAddr) => absoluteAddr switch
+    {
+        < 0x8000 => "[cyan]",
+        < 0xA000 => "[magenta]",
+        < 0xC000 => "[yellow]",
+        < 0xFE00 => "[blue]",
+        < 0xFEA0 => "[green]",
+        < 0xFF00 => "[grey]",
+        < 0xFF80 => "[orange1]",
+        _ => "[silver]",
+    };
 
     /// <summary>Split <paramref name="total"/> (full width incl. gaps between cols) across weighted columns. Never inflates past <paramref name="total"/> — the old Math.Max(n*5, inner) caused overflow on narrow terminals and line wrap.</summary>
     static int[] DistributeWidths(int total, int gap, int[] weights)

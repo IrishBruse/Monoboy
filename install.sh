@@ -3,15 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_PATH="$SCRIPT_DIR/Monoboy.Desktop/Monoboy.Desktop.csproj"
-PUBLISH_PROFILE="SelfContainedSingleFile"
 INSTALL_DIR="${HOME}/.local/bin"
 INSTALL_PATH="${INSTALL_DIR}/monoboy"
 PUBLISH_DIR="$(mktemp -d)"
-
-cleanup() {
-    rm -rf "$PUBLISH_DIR"
-}
-trap cleanup EXIT
 
 if ! command -v dotnet >/dev/null 2>&1; then
     echo "dotnet SDK is required but was not found on PATH."
@@ -41,11 +35,15 @@ case "$uname_m" in
 esac
 
 echo "Publishing Monoboy for $RID..."
+echo "Publish directory: $PUBLISH_DIR"
 dotnet publish "$PROJECT_PATH" \
     -c Release \
     -r "$RID" \
-    -p:PublishProfile="$PUBLISH_PROFILE" \
+    -p:PublishSingleFile=true \
     -o "$PUBLISH_DIR"
+
+# Remove debug artifacts from the published output.
+rm -f "$PUBLISH_DIR"/*.pdb "$PUBLISH_DIR"/*.dbg
 
 PUBLISHED_BINARY="$PUBLISH_DIR/Monoboy.Desktop"
 if [[ ! -f "$PUBLISHED_BINARY" ]]; then
@@ -56,8 +54,14 @@ fi
 mkdir -p "$INSTALL_DIR"
 install -m 0755 "$PUBLISHED_BINARY" "$INSTALL_PATH"
 
+# Install published native libraries next to the executable so DllImport can resolve them.
+while IFS= read -r native_lib; do
+    install -m 0644 "$native_lib" "$INSTALL_DIR/"
+done < <(compgen -G "$PUBLISH_DIR/*.so*" || true)
+
 echo
 echo "Installed: $INSTALL_PATH"
+echo "Published files kept at: $PUBLISH_DIR"
 echo "Run with:"
 echo "  monoboy --debug"
 echo

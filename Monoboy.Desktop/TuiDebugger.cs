@@ -15,7 +15,7 @@ using Spectre.Console;
 
 /// <summary>
 /// Debugger TUI: left = disassembly; center = register grid; right = memory dump (full height, flush right).
-/// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane; Page Up/Down jump by ~one screen.
+/// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane (disassembly can scroll before the current PC); Page Up/Down jump by ~one screen.
 /// </summary>
 public static class TuiDebugger
 {
@@ -105,7 +105,7 @@ public static class TuiDebugger
                         case ConsoleKey.UpArrow:
                         if (paneFocus == DebuggerPaneFocus.Disassembly)
                         {
-                            disasmSkip = Math.Max(0, disasmSkip - 1);
+                            disasmSkip--;
                         }
                         else
                         {
@@ -139,7 +139,7 @@ public static class TuiDebugger
                         case ConsoleKey.PageUp:
                         if (paneFocus == DebuggerPaneFocus.Disassembly)
                         {
-                            disasmSkip = Math.Max(0, disasmSkip - pageJump);
+                            disasmSkip -= pageJump;
                         }
                         else
                         {
@@ -297,17 +297,32 @@ public static class TuiDebugger
         }
     }
 
-    /// <summary>Build disassembly strings with syntax highlighting; current PC gets a bold marker.</summary>
+    /// <summary>Build disassembly strings with syntax highlighting; current PC gets a bold marker. <paramref name="skip"/> advances the window: positive skips forward in instruction-sized steps from PC; negative walks backward to earlier instruction boundaries.</summary>
     static List<string> BuildDisassemblyLines(Emulator emulator, ushort pc, int skip, int needLines)
     {
         var lines = new List<string>();
         ushort cursor = pc;
-        int consumed = 0;
-        while (consumed < skip)
+        if (skip > 0)
         {
-            _ = DecodeLinePretty(emulator, cursor, out ushort sz);
-            cursor += sz;
-            consumed++;
+            int consumed = 0;
+            while (consumed < skip)
+            {
+                ushort sz = GetInstructionByteSize(emulator, cursor);
+                cursor += sz;
+                consumed++;
+            }
+        }
+        else if (skip < 0)
+        {
+            for (int i = 0; i < -skip; i++)
+            {
+                if (!TryGetPreviousInstructionStart(emulator, cursor, out ushort prev))
+                {
+                    break;
+                }
+
+                cursor = prev;
+            }
         }
 
         int count = Math.Max(needLines + 4, 40);
@@ -320,6 +335,44 @@ public static class TuiDebugger
             cursor += size;
         }
         return lines;
+    }
+
+    /// <summary>Instruction length in bytes, matching <see cref="FormatDisassemblyLineMarkup"/> / <see cref="DecodeLinePretty"/>.</summary>
+    static ushort GetInstructionByteSize(Emulator emulator, ushort addr)
+    {
+        byte op = emulator.Read(addr);
+        if (!Ops.Unprefixed.TryGetValue(op, out var instruction))
+        {
+            return 1;
+        }
+
+        return instruction.Bytes;
+    }
+
+    /// <summary>Finds <paramref name="prevStart"/> such that one instruction beginning at <paramref name="prevStart"/> ends exactly at <paramref name="addr"/>.</summary>
+    static bool TryGetPreviousInstructionStart(Emulator emulator, ushort addr, out ushort prevStart)
+    {
+        const int maxLookback = 4;
+        int a = addr;
+        for (int delta = 1; delta <= maxLookback; delta++)
+        {
+            int candidate = a - delta;
+            if (candidate < 0)
+            {
+                break;
+            }
+
+            ushort c = (ushort)candidate;
+            ushort size = GetInstructionByteSize(emulator, c);
+            if ((int)c + size == a)
+            {
+                prevStart = c;
+                return true;
+            }
+        }
+
+        prevStart = 0;
+        return false;
     }
 
     static string FormatDisassemblyLineMarkup(Emulator emulator, ushort lineAddr, ushort focusPc, out ushort size)
@@ -651,14 +704,13 @@ public static class TuiDebugger
 
     static string DecodeLinePretty(Emulator emulator, ushort pc, out ushort size)
     {
+        size = GetInstructionByteSize(emulator, pc);
         byte op = emulator.Read(pc);
         if (!Ops.Unprefixed.TryGetValue(op, out var instruction))
         {
-            size = 1;
             return $"{pc:X4}: {op:X2}        DB ${op:X2}";
         }
 
-        size = instruction.Bytes;
         string bytes = string.Join(' ', Enumerable.Range(0, instruction.Bytes).Select(x => emulator.Read((ushort)(pc + x)).ToString("X2")));
         string pad = bytes.Length < 8 ? bytes + new string(' ', 8 - bytes.Length) : bytes;
         string mnemonic = instruction.Mnemonic.ToString();

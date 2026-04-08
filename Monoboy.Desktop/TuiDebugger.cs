@@ -14,8 +14,8 @@ using Monoboy.Disassembler;
 using Spectre.Console;
 
 /// <summary>
-/// Debugger TUI: left column = PPU block + disassembly; right top = register grid (4 columns);
-/// bottom right = memory dump (left disassembly continues beside it). Resize uses Console size each frame.
+/// Debugger TUI: left = PPU + disassembly (full height); center = register grid; right = memory dump
+/// (full height, flush right). Resize uses Console size each frame.
 /// </summary>
 public static class TuiDebugger
 {
@@ -120,42 +120,48 @@ public static class TuiDebugger
         // Last row is pinned footer; everything else is main content (no top header).
         int maxContentLines = Math.Max(8, termH - 1);
 
-        // Register grid gets ~3/4 of rows so Ch/Wave/Sound panels fit; rest = memory.
-        int registerRows = Math.Clamp((maxContentLines * 3) / 4, 10, Math.Max(10, maxContentLines - 4));
-        int memRows = maxContentLines - registerRows;
-        if (memRows < 4)
-        {
-            memRows = 4;
-            registerRows = Math.Max(8, maxContentLines - memRows);
-        }
-        memRows = maxContentLines - registerRows;
+        // Keep register rows close to real content depth to avoid huge empty area.
+        const int registerContentRows = 19;
+        int registerRows = Math.Min(maxContentLines, registerContentRows + 2);
 
         int gap = 1;
         int leftPct = 26;
         int leftInner = termW * leftPct / 100;
-        leftInner = Math.Clamp(leftInner, 18, termW - 25);
-        int rightInner = termW - leftInner - gap - 2;
-        if (rightInner < 20)
+        leftInner = Math.Clamp(leftInner, 16, Math.Max(16, termW - 20));
+        int rowBudget = Math.Max(12, termW - leftInner - 2 * gap - 2);
+        // Center = register grid; right = memory (far-right column, full height).
+        int memoryWidth = Math.Clamp(rowBudget * 42 / 100, 28, 72);
+        int midInner = rowBudget - memoryWidth;
+        if (midInner < 12)
         {
-            leftInner = Math.Max(16, termW - 22);
-            rightInner = termW - leftInner - gap - 2;
+            midInner = 12;
+            memoryWidth = Math.Max(16, rowBudget - midInner);
         }
 
         int[] subWeights = [19, 19, 19, 19];
-        int[] colW = DistributeWidths(rightInner, gap, subWeights);
+        int[] colW = DistributeWidths(midInner, gap, subWeights);
 
-        var disasmLines = BuildDisassemblyLines(emulator, s.PC, disasmSkip, registerRows + memRows + 4);
+        var disasmLines = BuildDisassemblyLines(emulator, s.PC, disasmSkip, maxContentLines + 4);
 
-        int ppuRows = Math.Clamp(registerRows * 9 / 16, 6, Math.Max(6, registerRows - 4));
+        int ppuInnerWidth = Math.Max(8, leftInner - 2);
+        // Terminal cells are taller than they are wide, so use ~2.22 cols per row for GB aspect.
+        int ppuPreviewRows = Math.Clamp((int)Math.Round(ppuInnerWidth / 2.22), 6, Math.Max(6, maxContentLines - 6));
+        int ppuRows = Math.Min(maxContentLines - 2, ppuPreviewRows + 1);
 
-        for (int r = 0; r < registerRows; r++)
+        for (int r = 0; r < maxContentLines; r++)
         {
             string left;
             if (r < ppuRows)
             {
-                left = r == 0
-                    ? PadMarkup("[green]████ PPU ████[/]", leftInner)
-                    : PadMarkup("[green]" + new string('█', Math.Max(1, Math.Min(leftInner - 2, 38))) + "[/]", leftInner);
+                if (r == 0)
+                {
+                    left = PadMarkup("[green]PPU[/]", leftInner);
+                }
+                else
+                {
+                    string bar = new string('█', ppuInnerWidth);
+                    left = PadMarkup("[green]" + bar + "[/]", leftInner);
+                }
             }
             else if (r == ppuRows)
             {
@@ -169,22 +175,14 @@ public static class TuiDebugger
                     : new string(' ', leftInner);
             }
 
-            string right = BuildRegisterGridRow(emulator, s, r, colW, gap);
-            WriteMarkupLine(left + new string(' ', gap) + ClipMarkup(right, rightInner));
-        }
+            string mid = r < registerRows
+                ? PadMarkup(ClipMarkup(BuildRegisterGridRow(emulator, s, r, colW, gap), midInner), midInner)
+                : new string(' ', midInner);
 
-        int disasmInTop = Math.Max(0, registerRows - ppuRows - 1);
-        int disasmBottomStart = disasmInTop;
+            string memLine = BuildMemoryLine(emulator, MemoryBase, memRowSkip + r, memoryWidth);
+            string mem = PadMarkupLeft(ClipMarkup(memLine, memoryWidth), memoryWidth);
 
-        for (int m = 0; m < memRows; m++)
-        {
-            int idx = disasmBottomStart + m;
-            string left = idx >= 0 && idx < disasmLines.Count
-                ? PadMarkup(ClipMarkup(disasmLines[idx], leftInner), leftInner)
-                : new string(' ', leftInner);
-
-            string mem = BuildMemoryLine(emulator, MemoryBase, memRowSkip + m, rightInner);
-            WriteMarkupLine(left + new string(' ', gap) + ClipMarkup(mem, rightInner));
+            WriteMarkupLine(left + new string(' ', gap) + mid + new string(' ', gap) + mem);
         }
 
         DrawPinnedFooter(rom, termW, termH);
@@ -429,6 +427,16 @@ public static class TuiDebugger
             return ClipMarkup(markup, width);
         }
         return markup + new string(' ', width - v);
+    }
+
+    static string PadMarkupLeft(string markup, int width)
+    {
+        int v = VisibleLen(markup);
+        if (v >= width)
+        {
+            return ClipMarkup(markup, width);
+        }
+        return new string(' ', width - v) + markup;
     }
 
     static string DecodeLinePretty(Emulator emulator, ushort pc, out ushort size)

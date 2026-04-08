@@ -226,8 +226,8 @@ public static class TuiDebugger
             if (r == 0)
             {
                 string disTitle = paneFocus == DebuggerPaneFocus.Disassembly
-                    ? "[bold yellow]── Disassembly ──[/]"
-                    : "[dim]── Disassembly ──[/]";
+                    ? "[bold yellow]Disassembly[/]"
+                    : "[dim]Disassembly[/]";
                 left = PadMarkup(disTitle, leftInner);
             }
             else

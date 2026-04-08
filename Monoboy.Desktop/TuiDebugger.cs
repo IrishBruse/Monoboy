@@ -422,8 +422,8 @@ public static class TuiDebugger
 
     static string BuildRegisterGridRow(Emulator emulator, DebugState s, int row, int[] colW, int gap)
     {
-        string c1 = PadMarkup(ClipMarkup(LcdLine(emulator, s, row), colW[0]), colW[0]);
-        string c2 = PadMarkup(ClipMarkup(CpuIrqSerialTimerLine(emulator, s, row), colW[1]), colW[1]);
+        string c1 = PadMarkup(ClipMarkup(CpuIrqSerialTimerLine(emulator, s, row), colW[0]), colW[0]);
+        string c2 = PadMarkup(ClipMarkup(LcdLine(emulator, s, row), colW[1]), colW[1]);
         string c3 = PadMarkup(ClipMarkup(Ch12WaveLine(emulator, row), colW[2]), colW[2]);
         string c4 = PadMarkup(ClipMarkup(Ch34SoundLine(emulator, row), colW[3]), colW[3]);
         return c1 + new string(' ', gap) + c2 + new string(' ', gap) + c3 + new string(' ', gap) + c4;
@@ -463,6 +463,9 @@ public static class TuiDebugger
         };
     }
 
+    static string CpuReg16Markup(ushort v) =>
+        $"[cyan]{v >> 8:X2} {v & 0xFF:X2}[/]";
+
     static string CpuIrqSerialTimerLine(Emulator emulator, DebugState s, int r)
     {
         string y = "[yellow]";
@@ -470,12 +473,12 @@ public static class TuiDebugger
         return r switch
         {
             0 => $"{y}CPU{x}",
-            1 => $"AF: [cyan]{s.AF:X4}[/]",
-            2 => $"BC: [cyan]{s.BC:X4}[/]",
-            3 => $"DE: [cyan]{s.DE:X4}[/]",
-            4 => $"HL: [cyan]{s.HL:X4}[/]",
-            5 => $"PC: [cyan]{s.PC:X4}[/]",
-            6 => $"SP: [cyan]{s.SP:X4}[/]",
+            1 => $"AF: {CpuReg16Markup(s.AF)}",
+            2 => $"BC: {CpuReg16Markup(s.BC)}",
+            3 => $"DE: {CpuReg16Markup(s.DE)}",
+            4 => $"HL: {CpuReg16Markup(s.HL)}",
+            5 => $"PC: {CpuReg16Markup(s.PC)}",
+            6 => $"SP: {CpuReg16Markup(s.SP)}",
             7 => "",
             8 => $"{y}Interrupts{x}",
             9 => $"FF0F IF: [cyan]{s.IF:X2}[/]",

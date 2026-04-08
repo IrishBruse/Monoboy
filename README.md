@@ -56,13 +56,3 @@ Fix is to make a sym link
 ```
 sudo ln -s /usr/lib/libdl.so.2 /usr/lib/libdl.so
 ```
-
-
-- [x] asdad
-- [x] asdad
-- [ ] asdad
-- [x] asdad
-- [ ] asdad
-
----
-

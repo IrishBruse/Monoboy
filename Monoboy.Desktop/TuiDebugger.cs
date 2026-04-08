@@ -217,7 +217,7 @@ public static class TuiDebugger
 
         var disasmLines = BuildDisassemblyLines(emulator, s.PC, disasmSkip, maxContentLines + 4);
 
-        string gapStr = new string(' ', gap);
+        string gapStr = new(' ', gap);
         int estChars = maxContentLines * (leftInner + midInner + memoryWidth + 64);
         var frame = new StringBuilder(estChars);
         for (int r = 0; r < maxContentLines; r++)
@@ -276,7 +276,7 @@ public static class TuiDebugger
             ? "[bold cyan]Disasm[/] [dim grey]│ Mem[/]"
             : "[dim grey]Disasm │[/] [bold cyan]Mem[/]";
         string keysMarkup =
-            "  [red]S[/]tep  [red]F[/] frame  [red]R[/] run  [red]Q[/] quit  [red]V[/] preview  [red]Tab[/] focus  [grey]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  "
+            "  [red]S[/]tep  [red]F[/]rame  [red]R[/]un  [red]Q[/]uit  [red]P[/]review  [grey]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  [red]Tab[/] "
             + focusStr;
 
         string plain = Markup.Remove(keysMarkup);
@@ -286,7 +286,7 @@ public static class TuiDebugger
             return;
         }
 
-        string pad = new string(' ', width - plain.Length);
+        string pad = new(' ', width - plain.Length);
         try
         {
             AnsiConsole.Markup(keysMarkup + pad);
@@ -573,7 +573,7 @@ public static class TuiDebugger
     {
         ushort rowAddr = (ushort)(baseAddr + rowIndex * 16);
         var line = new StringBuilder();
-        line.Append("[bold yellow]");
+        line.Append("[grey]");
         line.Append($"{rowAddr:X4}");
         line.Append("[/]  ");
 
@@ -584,7 +584,7 @@ public static class TuiDebugger
             byte val = emulator.Read(absAddr);
             if (col == 8)
             {
-                line.Append("[grey]|[/] ");
+                line.Append("[grey]│[/] ");
             }
 
             if (val == 0)
@@ -602,20 +602,24 @@ public static class TuiDebugger
 
             if (val >= 32 && val < 127)
             {
-                ascii.Append("[green]");
+                ascii.Append("[cyan]");
                 ascii.Append(Markup.Escape(((char)val).ToString()));
                 ascii.Append("[/]");
             }
             else
             {
-                ascii.Append("[grey].[/]");
+                ascii.Append(MemoryAsciiDotMarkup(val == 0));
             }
         }
 
-        line.Append("[grey]|[/] ");
+        line.Append("[grey]│[/] ");
         line.Append(ascii);
         return ClipMarkup(line.ToString(), maxWidth);
     }
+
+    /// <summary>NUL uses a dim grey placeholder; other non-printables use cyan in the text column.</summary>
+    static string MemoryAsciiDotMarkup(bool isZero) =>
+        isZero ? "[dim grey].[/]" : "[cyan].[/]";
 
     /// <summary>GB-ish map: ROM / VRAM / cart RAM / WRAM+echo / OAM / dead zone / I/O / HRAM.</summary>
     static string NonZeroByteStyle(ushort absoluteAddr) => absoluteAddr switch
@@ -681,8 +685,70 @@ public static class TuiDebugger
         {
             return markup;
         }
-        var plain = SpectreTag.Replace(markup, "");
-        return plain.Length <= maxVisible ? markup : plain[..maxVisible];
+
+        return ClipMarkupPreserveTags(markup, maxVisible);
+    }
+
+    /// <summary>
+    /// Truncate to a visible character budget without stripping Spectre markup (plain slicing made clipped regions render as unstyled white).
+    /// Emits <paramref name="maxVisible"/> visible characters from literal segments, copies tags verbatim, and appends <c>[/]</c> to balance any open styles.
+    /// </summary>
+    static string ClipMarkupPreserveTags(string markup, int maxVisible)
+    {
+        if (maxVisible <= 0)
+        {
+            return "";
+        }
+
+        // Split into `[tag]` tokens and literal runs (same shape as SpectreTag, require at least one char inside brackets).
+        var segments = Regex.Split(markup, @"(\[[^\]]+\])");
+        var sb = new StringBuilder();
+        int visible = 0;
+        int styleDepth = 0;
+
+        foreach (string part in segments)
+        {
+            if (part.Length == 0)
+            {
+                continue;
+            }
+
+            if (part[0] == '[' && part[^1] == ']')
+            {
+                sb.Append(part);
+                if (part == "[/]")
+                {
+                    styleDepth = Math.Max(0, styleDepth - 1);
+                }
+                else
+                {
+                    styleDepth++;
+                }
+
+                continue;
+            }
+
+            int remaining = maxVisible - visible;
+            if (remaining <= 0)
+            {
+                break;
+            }
+
+            int take = Math.Min(part.Length, remaining);
+            sb.Append(part.AsSpan(0, take));
+            visible += take;
+            if (visible >= maxVisible)
+            {
+                break;
+            }
+        }
+
+        for (int i = 0; i < styleDepth; i++)
+        {
+            sb.Append("[/]");
+        }
+
+        return sb.ToString();
     }
 
     static string PadMarkup(string markup, int width)

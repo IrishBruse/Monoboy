@@ -44,72 +44,106 @@ public static class TuiDebugger
         int disasmSkip = 0;
         int memRowSkip = 0;
         bool quit = false;
+        bool needsRedraw = true;
+        int lastTermW = -1;
+        int lastTermH = -1;
 
-        while (!quit)
+        try
         {
-            int w = Math.Max(Console.WindowWidth, 40);
-            int h = Math.Max(Console.WindowHeight, 12);
-
-            Console.Clear();
-            DrawFrame(emulator, romPath, w, h, disasmSkip, memRowSkip);
-
-            if (Console.KeyAvailable)
+            Console.CursorVisible = false;
+            while (!quit)
             {
-                var key = Console.ReadKey(intercept: true);
-                switch (key.Key)
+                int w = Math.Max(Console.WindowWidth, 40);
+                int h = Math.Max(Console.WindowHeight, 12);
+                bool resized = w != lastTermW || h != lastTermH;
+                if (resized)
                 {
-                    case ConsoleKey.S:
-                    emulator.Step();
-                    disasmSkip = 0;
-                    break;
-                    case ConsoleKey.F:
-                    emulator.StepFrame();
-                    disasmSkip = 0;
-                    break;
-                    case ConsoleKey.R:
-                    for (int i = 0; i < 500; i++)
+                    lastTermW = w;
+                    lastTermH = h;
+                    needsRedraw = true;
+                }
+
+                if (Console.KeyAvailable)
+                {
+                    needsRedraw = true;
+                    var key = Console.ReadKey(intercept: true);
+                    switch (key.Key)
                     {
+                        case ConsoleKey.S:
                         emulator.Step();
+                        disasmSkip = 0;
+                        break;
+                        case ConsoleKey.F:
+                        emulator.StepFrame();
+                        disasmSkip = 0;
+                        break;
+                        case ConsoleKey.R:
+                        for (int i = 0; i < 500; i++)
+                        {
+                            emulator.Step();
+                        }
+                        disasmSkip = 0;
+                        break;
+                        case ConsoleKey.Q:
+                        case ConsoleKey.Escape:
+                        quit = true;
+                        break;
+                        case ConsoleKey.PageDown:
+                        disasmSkip += 3;
+                        break;
+                        case ConsoleKey.PageUp:
+                        disasmSkip = Math.Max(0, disasmSkip - 3);
+                        break;
+                        case ConsoleKey.Oem4:
+                        memRowSkip = Math.Max(0, memRowSkip - 4);
+                        break;
+                        case ConsoleKey.Oem6:
+                        memRowSkip += 4;
+                        break;
+                        case ConsoleKey.OemComma:
+                        memRowSkip = Math.Max(0, memRowSkip - 4);
+                        break;
+                        case ConsoleKey.OemPeriod:
+                        memRowSkip += 4;
+                        break;
+                        case ConsoleKey.Home:
+                        disasmSkip = 0;
+                        memRowSkip = 0;
+                        break;
+                        case ConsoleKey.V:
+                        FramebufferPreviewWindow.Show(emulator);
+                        break;
+                        default:
+                        break;
                     }
-                    disasmSkip = 0;
-                    break;
-                    case ConsoleKey.Q:
-                    case ConsoleKey.Escape:
-                    quit = true;
-                    break;
-                    case ConsoleKey.PageDown:
-                    disasmSkip += 3;
-                    break;
-                    case ConsoleKey.PageUp:
-                    disasmSkip = Math.Max(0, disasmSkip - 3);
-                    break;
-                    case ConsoleKey.Oem4:
-                    memRowSkip = Math.Max(0, memRowSkip - 4);
-                    break;
-                    case ConsoleKey.Oem6:
-                    memRowSkip += 4;
-                    break;
-                    case ConsoleKey.OemComma:
-                    memRowSkip = Math.Max(0, memRowSkip - 4);
-                    break;
-                    case ConsoleKey.OemPeriod:
-                    memRowSkip += 4;
-                    break;
-                    case ConsoleKey.Home:
-                    disasmSkip = 0;
-                    memRowSkip = 0;
-                    break;
-                    case ConsoleKey.V:
-                    FramebufferPreviewWindow.Show(emulator);
-                    break;
-                    default:
+                }
+                else if (!needsRedraw)
+                {
+                    Thread.Sleep(50);
+                    continue;
+                }
+
+                if (quit)
+                {
                     break;
                 }
+
+                if (resized)
+                {
+                    Console.Clear();
+                }
+                else
+                {
+                    Console.SetCursorPosition(0, 0);
+                }
+
+                DrawFrame(emulator, romPath, w, h, disasmSkip, memRowSkip);
+                needsRedraw = false;
             }
-            else
-            {
-                Thread.Sleep(40);
-            }
+        }
+        finally
+        {
+            Console.CursorVisible = true;
         }
 
         Console.Clear();
@@ -146,6 +180,9 @@ public static class TuiDebugger
 
         var disasmLines = BuildDisassemblyLines(emulator, s.PC, disasmSkip, maxContentLines + 4);
 
+        string gapStr = new string(' ', gap);
+        int estChars = maxContentLines * (leftInner + midInner + memoryWidth + 64);
+        var frame = new StringBuilder(estChars);
         for (int r = 0; r < maxContentLines; r++)
         {
             string left;
@@ -168,7 +205,22 @@ public static class TuiDebugger
             string memLine = BuildMemoryLine(emulator, MemoryBase, memRowSkip + r, memoryWidth);
             string mem = PadMarkupLeft(ClipMarkup(memLine, memoryWidth), memoryWidth);
 
-            WriteMarkupLine(left + new string(' ', gap) + mid + new string(' ', gap) + mem);
+            frame.Append(left);
+            frame.Append(gapStr);
+            frame.Append(mid);
+            frame.Append(gapStr);
+            frame.Append(mem);
+            frame.Append('\n');
+        }
+
+        string frameText = frame.ToString();
+        try
+        {
+            AnsiConsole.Markup(frameText);
+        }
+        catch (Exception)
+        {
+            AnsiConsole.Write(SpectreTag.Replace(frameText, ""));
         }
 
         DrawPinnedFooter(rom, termW, termH);
@@ -192,18 +244,6 @@ public static class TuiDebugger
         }
 
         Console.Write(line.PadRight(width));
-    }
-
-    static void WriteMarkupLine(string line)
-    {
-        try
-        {
-            AnsiConsole.MarkupLine(line);
-        }
-        catch (Exception)
-        {
-            AnsiConsole.WriteLine(SpectreTag.Replace(line, ""));
-        }
     }
 
     /// <summary>Build disassembly strings with syntax highlighting; current PC gets a bold marker.</summary>

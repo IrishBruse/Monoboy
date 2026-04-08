@@ -23,6 +23,8 @@ public class Application
     {
         string[] args = Environment.GetCommandLineArgs();
 
+        Console.WriteLine(args[0]);
+
         if (args.Contains("--custom-boot"))
         {
             emulator = new(GetEmbeddedFile("Monoboy.Desktop/Data/bootix_dmg.bin"))
@@ -33,7 +35,16 @@ public class Application
         else
         {
             emulator = new();
-            emulator.Open(args[1]);
+
+            if (args.Length > 1 && !string.IsNullOrEmpty(args[1]))
+            {
+                emulator.Open(args[1]);
+            }
+            else
+            {
+                var data = new byte[0xffff];
+                emulator.Open(data);
+            }
         }
     }
 

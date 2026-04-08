@@ -1,5 +1,7 @@
 ﻿namespace Monoboy;
 
+using System;
+
 using Monoboy.Constants;
 using Monoboy.Utility;
 
@@ -14,6 +16,8 @@ public class Cpu(Register register, Emulator emulator)
     public int Execute(byte op)
     {
         byte additionalCycles = 0;
+
+        Console.WriteLine("test");
 
         switch (op)
         {

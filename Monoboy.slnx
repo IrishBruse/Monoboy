@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Monoboy.Desktop/Monoboy.Desktop.csproj" />
+  <Project Path="Monoboy.Disassembler/Monoboy.Disassembler.csproj" />
+  <Project Path="Monoboy.Wasm/Monoboy.Wasm.csproj" />
+</Solution>

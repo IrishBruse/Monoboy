@@ -5,6 +5,8 @@
 
 Reference: https://gbdev.io/pandocs/
 
+# test
+
 ## Gameboy Controls
 
 | Gameboy | Keyboard  | Gamepad | Alternative       |
@@ -43,8 +45,8 @@ A0A840
 ## Screenshots
 
 
-| ![blargg's cpu_instrs passing](Images/cpu_instrs.png) |                              | 
-| ----------------------------------------------------  | ---------------------------- |
+| ![blargg's cpu_instrs passing](Images/cpu_instrs.png) |                              |
+| ----------------------------------------------------- | ---------------------------- |
 | ![Super Marioland](Images/Super%20Marioland.png)      | ![Tetris](Images/Tetris.png) |
 
 
@@ -54,3 +56,13 @@ Fix is to make a sym link
 ```
 sudo ln -s /usr/lib/libdl.so.2 /usr/lib/libdl.so
 ```
+
+
+- [x] asdad
+- [x] asdad
+- [ ] asdad
+- [x] asdad
+- [ ] asdad
+
+---
+

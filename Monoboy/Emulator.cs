@@ -185,6 +185,8 @@ public class Emulator
         cartridge.OldLicenseeCode = data[0x14B];
         cartridge.Version = data[0x14C];
 
+        Console.WriteLine(cartridge.ToString());
+
         // https://gbdev.io/pandocs/MBCs#mbcs
 
         // https://gbdev.io/pandocs/The_Cartridge_Header#0147--cartridge-type

@@ -1,4 +1,5 @@
 namespace Monoboy;
+
 public enum GameboyButton : byte
 {
     Right = 0b1,

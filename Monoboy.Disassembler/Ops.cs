@@ -1,8 +1,9 @@
 namespace Monoboy.Disassembler;
 
 using System.Collections.Generic;
-using static Operand;
+
 using static Mnemonic;
+using static Operand;
 
 #pragma warning disable CA2211
 

@@ -99,6 +99,9 @@ public static class TuiDebugger
                     disasmSkip = 0;
                     memRowSkip = 0;
                     break;
+                    case ConsoleKey.V:
+                    FramebufferPreviewWindow.Show(emulator);
+                    break;
                     default:
                     break;
                 }
@@ -178,7 +181,7 @@ public static class TuiDebugger
         int width = Math.Max(1, Math.Min(termW, Console.WindowWidth));
         Console.SetCursorPosition(0, row);
 
-        const string keys = "  S step  F frame  R run  Q quit  PgUp/PgDn  , . mem  Home";
+        const string keys = "  S step  F frame  R run  Q quit  V preview  PgUp/PgDn  , . mem  Home";
         string romEsc = Markup.Escape(rom);
         int prefixLen = 5;
         int romMax = Math.Max(8, width - prefixLen - keys.Length);
@@ -203,7 +206,7 @@ public static class TuiDebugger
         }
     }
 
-    /// <summary>Build disassembly strings; line containing current PC gets leading > and markup highlight.</summary>
+    /// <summary>Build disassembly strings with syntax highlighting; current PC gets a bold marker.</summary>
     static List<string> BuildDisassemblyLines(Emulator emulator, ushort pc, int skip, int needLines)
     {
         var lines = new List<string>();
@@ -219,17 +222,58 @@ public static class TuiDebugger
         int count = Math.Max(needLines + 4, 40);
         for (int i = 0; i < count; i++)
         {
-            string raw = DecodeLinePretty(emulator, cursor, out ushort size);
             bool atPc = cursor == pc;
-            string prefix = atPc ? "> " : "  ";
-            string safe = Markup.Escape(raw);
-            string line = atPc
-                ? prefix + "[cyan]" + safe + "[/]"
-                : prefix + safe;
-            lines.Add(line);
+            string body = FormatDisassemblyLineMarkup(emulator, cursor, pc, out ushort size);
+            string prefix = atPc ? "[bold yellow]>[/] " : "  ";
+            lines.Add(prefix + body);
             cursor += size;
         }
         return lines;
+    }
+
+    static string FormatDisassemblyLineMarkup(Emulator emulator, ushort lineAddr, ushort focusPc, out ushort size)
+    {
+        byte op = emulator.Read(lineAddr);
+        string addrMk = $"[grey]{lineAddr:X4}[/]";
+
+        if (!Ops.Unprefixed.TryGetValue(op, out var instruction))
+        {
+            size = 1;
+            string byteMk = $"[cyan]{op:X2}[/]";
+            return $"{addrMk}: {byteMk}{new string(' ', 8)} [bold red]DB[/] [yellow]${op:X2}[/]";
+        }
+
+        size = instruction.Bytes;
+        string bytesPlain = string.Join(' ', Enumerable.Range(0, size).Select(i =>
+            emulator.Read((ushort)(lineAddr + i)).ToString("X2")));
+        string padBytes = bytesPlain.Length < 8 ? bytesPlain + new string(' ', 8 - bytesPlain.Length) : bytesPlain;
+        string bytesMk = $"[cyan]{padBytes}[/]";
+
+        bool focus = lineAddr == focusPc;
+        string mnStyle = focus ? "[bold chartreuse1]" : "[bold green]";
+        string mnMk = $"{mnStyle}{Markup.Escape(instruction.Mnemonic.ToString())}[/]";
+
+        var ops = instruction.Operands.Select(o => OperandToMarkup(o, emulator, lineAddr));
+        string opsStr = string.Join(' ', ops);
+        string tail = opsStr.Length > 0 ? $" {opsStr}" : "";
+
+        return $"{addrMk}: {bytesMk} {mnMk}{tail}";
+    }
+
+    static string OperandToMarkup(Operand operand, Emulator emulator, ushort atPc)
+    {
+        string s = FormatOperandPretty(operand, emulator, atPc);
+        string esc = Markup.Escape(s);
+        return operand switch
+        {
+            Operand.n8 or Operand.n16 or Operand.a16 or Operand.a8 or Operand.e8 => $"[yellow]{esc}[/]",
+            Operand.NZ or Operand.NC or Operand.Z => $"[darkorange]{esc}[/]",
+            Operand.RST00 or Operand.RST08 or Operand.RST10 or Operand.RST18
+                or Operand.RST20 or Operand.RST28 or Operand.RST30 or Operand.RST38 => $"[magenta]{esc}[/]",
+            Operand.Bit0 or Operand.Bit1 or Operand.Bit2 or Operand.Bit3
+                or Operand.Bit4 or Operand.Bit5 or Operand.Bit6 or Operand.Bit7 => $"[orchid]{esc}[/]",
+            _ => $"[silver]{esc}[/]",
+        };
     }
 
     static string BuildRegisterGridRow(Emulator emulator, DebugState s, int row, int[] colW, int gap)

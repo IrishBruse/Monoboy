@@ -93,7 +93,6 @@ public static class TuiDebugger
                         disasmSkip = 0;
                         break;
                         case ConsoleKey.Q:
-                        case ConsoleKey.Escape:
                         quit = true;
                         break;
                         case ConsoleKey.Tab:
@@ -242,8 +241,19 @@ public static class TuiDebugger
                 ? PadMarkup(ClipMarkup(BuildRegisterGridRow(emulator, s, r, colW, gap), midInner), midInner)
                 : new string(' ', midInner);
 
-            string memLine = BuildMemoryLine(emulator, MemoryBase, memRowSkip + r, memoryWidth);
-            string mem = PadMarkupLeft(ClipMarkup(memLine, memoryWidth), memoryWidth);
+            string mem;
+            if (r == 0)
+            {
+                string memTitle = paneFocus == DebuggerPaneFocus.Memory
+                    ? "[bold yellow]Memory[/]"
+                    : "[dim]Memory[/]";
+                mem = PadMarkup(ClipMarkup(memTitle, memoryWidth), memoryWidth);
+            }
+            else
+            {
+                string memLine = BuildMemoryLine(emulator, MemoryBase, memRowSkip + r - 1, memoryWidth);
+                mem = PadMarkupLeft(ClipMarkup(memLine, memoryWidth), memoryWidth);
+            }
 
             string row = left + gapStr + mid + gapStr + mem;
             row = ClipMarkupToVisibleWidth(row, termW);
@@ -589,26 +599,30 @@ public static class TuiDebugger
 
             if (val == 0)
             {
-                line.Append("[dim grey]");
-                line.Append($"{val:X2}");
-                line.Append("[/] ");
+                line.Append($"{val:X2} ");
             }
             else
             {
-                line.Append(NonZeroByteStyle(absAddr));
-                line.Append($"{val:X2}");
-                line.Append("[/] ");
+                string style = NonZeroByteStyle(absAddr);
+                if (style.Length > 0)
+                {
+                    line.Append(style);
+                    line.Append($"{val:X2}");
+                    line.Append("[/] ");
+                }
+                else
+                {
+                    line.Append($"{val:X2} ");
+                }
             }
 
             if (val >= 32 && val < 127)
             {
-                ascii.Append("[cyan]");
                 ascii.Append(Markup.Escape(((char)val).ToString()));
-                ascii.Append("[/]");
             }
             else
             {
-                ascii.Append(MemoryAsciiDotMarkup(val == 0));
+                ascii.Append('.');
             }
         }
 
@@ -617,14 +631,10 @@ public static class TuiDebugger
         return ClipMarkup(line.ToString(), maxWidth);
     }
 
-    /// <summary>NUL uses a dim grey placeholder; other non-printables use cyan in the text column.</summary>
-    static string MemoryAsciiDotMarkup(bool isZero) =>
-        isZero ? "[dim grey].[/]" : "[cyan].[/]";
-
-    /// <summary>GB-ish map: ROM / VRAM / cart RAM / WRAM+echo / OAM / dead zone / I/O / HRAM.</summary>
+    /// <summary>GB-ish map: ROM / VRAM / cart RAM / WRAM+echo / OAM / dead zone / I/O / HRAM. Empty string = default foreground (ROM / plain hex).</summary>
     static string NonZeroByteStyle(ushort absoluteAddr) => absoluteAddr switch
     {
-        < 0x8000 => "[cyan]",
+        < 0x8000 => "",
         < 0xA000 => "[magenta]",
         < 0xC000 => "[yellow]",
         < 0xFE00 => "[blue]",

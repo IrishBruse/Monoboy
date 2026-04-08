@@ -137,7 +137,7 @@ public static class TuiDebugger
                     Console.SetCursorPosition(0, 0);
                 }
 
-                DrawFrame(emulator, romPath, w, h, disasmSkip, memRowSkip);
+                DrawFrame(emulator, w, h, disasmSkip, memRowSkip);
                 needsRedraw = false;
             }
         }
@@ -149,10 +149,9 @@ public static class TuiDebugger
         Console.Clear();
     }
 
-    static void DrawFrame(Emulator emulator, string romPath, int termW, int termH, int disasmSkip, int memRowSkip)
+    static void DrawFrame(Emulator emulator, int termW, int termH, int disasmSkip, int memRowSkip)
     {
         var s = emulator.GetDebugState();
-        string rom = string.IsNullOrWhiteSpace(romPath) ? "<empty>" : romPath;
 
         // Last row is pinned footer; everything else is main content (no top header).
         int maxContentLines = Math.Max(8, termH - 1);
@@ -164,16 +163,13 @@ public static class TuiDebugger
         int gap = 1;
         int leftPct = 26;
         int leftInner = termW * leftPct / 100;
-        leftInner = Math.Clamp(leftInner, 16, Math.Max(16, termW - 20));
-        int rowBudget = Math.Max(12, termW - leftInner - 2 * gap - 2);
-        // Center = register grid; right = memory (far-right column, full height).
-        int memoryWidth = Math.Clamp(rowBudget * 42 / 100, 28, 72);
+        // Leave enough columns for register grid + memory; shrink disassembly column on narrow terminals.
+        leftInner = Math.Clamp(leftInner, 8, Math.Max(8, termW - 28));
+        // Middle + memory must sum to rowBudget exactly so each row is ≤ termW (no wrap → no broken markup).
+        int rowBudget = Math.Max(1, termW - leftInner - 2 * gap);
+        int memoryWidth = (rowBudget * 42 + 50) / 100;
+        memoryWidth = Math.Clamp(memoryWidth, 1, Math.Max(1, rowBudget - 1));
         int midInner = rowBudget - memoryWidth;
-        if (midInner < 12)
-        {
-            midInner = 12;
-            memoryWidth = Math.Max(16, rowBudget - midInner);
-        }
 
         int[] subWeights = [19, 19, 19, 19];
         int[] colW = DistributeWidths(midInner, gap, subWeights);
@@ -205,11 +201,9 @@ public static class TuiDebugger
             string memLine = BuildMemoryLine(emulator, MemoryBase, memRowSkip + r, memoryWidth);
             string mem = PadMarkupLeft(ClipMarkup(memLine, memoryWidth), memoryWidth);
 
-            frame.Append(left);
-            frame.Append(gapStr);
-            frame.Append(mid);
-            frame.Append(gapStr);
-            frame.Append(mem);
+            string row = left + gapStr + mid + gapStr + mem;
+            row = ClipMarkupToVisibleWidth(row, termW);
+            frame.Append(row);
             frame.Append('\n');
         }
 
@@ -220,30 +214,39 @@ public static class TuiDebugger
         }
         catch (Exception)
         {
-            AnsiConsole.Write(SpectreTag.Replace(frameText, ""));
+            // Never AnsiConsole.Write(string): it binds to the composite-format overload and throws on "{".
+            Console.Write(SpectreTag.Replace(frameText, ""));
         }
 
-        DrawPinnedFooter(rom, termW, termH);
+        DrawPinnedFooter(termW, termH);
     }
 
-    /// <summary>Last screen row: ROM + keys (plain); no trailing newline so it stays pinned.</summary>
-    static void DrawPinnedFooter(string rom, int termW, int termH)
+    /// <summary>Last screen row: key hints (first letter of each action in red); no trailing newline so it stays pinned.</summary>
+    static void DrawPinnedFooter(int termW, int termH)
     {
         int row = Math.Min(termH - 1, Math.Max(0, Console.WindowHeight - 1));
         int width = Math.Max(1, Math.Min(termW, Console.WindowWidth));
         Console.SetCursorPosition(0, row);
 
-        const string keys = "  S step  F frame  R run  Q quit  V preview  PgUp/PgDn  , . mem  Home";
-        string romEsc = Markup.Escape(rom);
-        int prefixLen = 5;
-        int romMax = Math.Max(8, width - prefixLen - keys.Length);
-        string line = "ROM: " + ClipPlain(romEsc, romMax) + keys;
-        if (line.Length > width)
+        const string keysMarkup =
+            "  [red]S[/]tep  [red]F[/]rame  [red]R[/]un  [red]Q[/]uit  [red]P[/]review [red]Tab[/] Cycle focus";
+
+        string plain = Markup.Remove(keysMarkup);
+        if (plain.Length >= width)
         {
-            line = line[..width];
+            Console.Write(plain[..width]);
+            return;
         }
 
-        Console.Write(line.PadRight(width));
+        string pad = new string(' ', width - plain.Length);
+        try
+        {
+            AnsiConsole.Markup(keysMarkup + pad);
+        }
+        catch (Exception)
+        {
+            Console.Write(plain.PadRight(width));
+        }
     }
 
     /// <summary>Build disassembly strings with syntax highlighting; current PC gets a bold marker.</summary>
@@ -290,7 +293,7 @@ public static class TuiDebugger
         string bytesMk = $"[cyan]{padBytes}[/]";
 
         bool focus = lineAddr == focusPc;
-        string mnStyle = focus ? "[bold chartreuse1]" : "[bold green]";
+        string mnStyle = focus ? "[bold green]" : "[green]";
         string mnMk = $"{mnStyle}{Markup.Escape(instruction.Mnemonic.ToString())}[/]";
 
         var ops = instruction.Operands.Select(o => OperandToMarkup(o, emulator, lineAddr));
@@ -482,23 +485,49 @@ public static class TuiDebugger
         return ClipMarkup(line, maxWidth);
     }
 
+    /// <summary>Split <paramref name="total"/> (full width incl. gaps between cols) across weighted columns. Never inflates past <paramref name="total"/> — the old Math.Max(n*5, inner) caused overflow on narrow terminals and line wrap.</summary>
     static int[] DistributeWidths(int total, int gap, int[] weights)
     {
         int n = weights.Length;
         int inner = total - (gap * (n - 1));
-        inner = Math.Max(n * 5, inner);
+        inner = Math.Max(0, inner);
+        if (inner == 0)
+        {
+            return new int[n];
+        }
+
         int sum = weights.Sum();
         int[] w = new int[n];
+        int assigned = 0;
         for (int i = 0; i < n; i++)
         {
-            w[i] = Math.Max(5, inner * weights[i] / sum);
+            w[i] = inner * weights[i] / sum;
+            assigned += w[i];
         }
+
+        int rem = inner - assigned;
+        for (int i = 0; rem > 0; i++)
+        {
+            w[i % n]++;
+            rem--;
+        }
+
         return w;
     }
 
-    static int VisibleLen(string markup) => SpectreTag.Replace(markup, "").Length;
+    /// <summary>Guarantee visible width ≤ <paramref name="maxVisible"/> so the terminal never wraps mid-line (which splits markup and breaks colors).</summary>
+    static string ClipMarkupToVisibleWidth(string markup, int maxVisible)
+    {
+        int v = VisibleLen(markup);
+        if (v <= maxVisible)
+        {
+            return markup;
+        }
 
-    static string ClipPlain(string s, int maxLen) => s.Length <= maxLen ? s : s[..maxLen];
+        return ClipMarkup(markup, maxVisible);
+    }
+
+    static int VisibleLen(string markup) => SpectreTag.Replace(markup, "").Length;
 
     static string ClipMarkup(string markup, int maxVisible)
     {

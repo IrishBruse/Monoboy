@@ -185,7 +185,10 @@ public class Emulator
         cartridge.OldLicenseeCode = data[0x14B];
         cartridge.Version = data[0x14C];
 
-        Console.WriteLine(cartridge.ToString());
+        if (LogCartridgeHeader)
+        {
+            Console.WriteLine(cartridge.ToString());
+        }
 
         // https://gbdev.io/pandocs/MBCs#mbcs
 
@@ -462,6 +465,7 @@ public class Emulator
 
     public bool BreakPointsEnabled { get; set; }
     public bool CustomCartridgeLogo { get; set; }
+    public bool LogCartridgeHeader { get; set; }
 
     internal bool EnteredVSync { get; set; }
 
@@ -498,5 +502,31 @@ public class Emulator
         """;
 
         File.WriteAllText("dumps/" + dumpName + "/register.txt", regs);
+    }
+
+    public DebugState GetDebugState()
+    {
+        return new DebugState
+        {
+            A = Registers.A,
+            F = Registers.F,
+            B = Registers.B,
+            C = Registers.C,
+            D = Registers.D,
+            E = Registers.E,
+            H = Registers.H,
+            L = Registers.L,
+            AF = Registers.AF,
+            BC = Registers.BC,
+            DE = Registers.DE,
+            HL = Registers.HL,
+            PC = Registers.PC,
+            SP = Registers.SP,
+            IE = IE,
+            IF = IF,
+            Ime = cpu.Ime,
+            Halted = cpu.Halted,
+            TotalCycles = TotalCycles
+        };
     }
 }

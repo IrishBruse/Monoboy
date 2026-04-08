@@ -22,6 +22,8 @@ public class Application
     public Application()
     {
         string[] args = Environment.GetCommandLineArgs();
+        bool logHeader = args.Contains("--log-header");
+        string romPath = args.Skip(1).FirstOrDefault(x => !x.StartsWith("--", StringComparison.Ordinal));
 
         Console.WriteLine(args[0]);
 
@@ -29,16 +31,20 @@ public class Application
         {
             emulator = new(GetEmbeddedFile("Monoboy.Desktop/Data/bootix_dmg.bin"))
             {
-                CustomCartridgeLogo = true
+                CustomCartridgeLogo = true,
+                LogCartridgeHeader = logHeader
             };
         }
         else
         {
-            emulator = new();
-
-            if (args.Length > 1 && !string.IsNullOrEmpty(args[1]))
+            emulator = new()
             {
-                emulator.Open(args[1]);
+                LogCartridgeHeader = logHeader
+            };
+
+            if (!string.IsNullOrEmpty(romPath))
+            {
+                emulator.Open(romPath);
             }
             else
             {

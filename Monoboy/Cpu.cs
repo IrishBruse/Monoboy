@@ -17,8 +17,6 @@ public class Cpu(Register register, Emulator emulator)
     {
         byte additionalCycles = 0;
 
-        Console.WriteLine("test");
-
         switch (op)
         {
             case 0x06: register.B = NextByte(); break;// LD B,n

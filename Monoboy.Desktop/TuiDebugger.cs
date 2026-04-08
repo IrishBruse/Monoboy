@@ -14,8 +14,8 @@ using Monoboy.Disassembler;
 using Spectre.Console;
 
 /// <summary>
-/// Debugger TUI: left = PPU + disassembly (full height); center = register grid; right = memory dump
-/// (full height, flush right). Resize uses Console size each frame.
+/// Debugger TUI: left = disassembly; center = register grid; right = memory dump (full height, flush right).
+/// Resize uses Console size each frame.
 /// </summary>
 public static class TuiDebugger
 {
@@ -121,8 +121,8 @@ public static class TuiDebugger
         int maxContentLines = Math.Max(8, termH - 1);
 
         // Keep register rows close to real content depth to avoid huge empty area.
-        const int registerContentRows = 19;
-        int registerRows = Math.Min(maxContentLines, registerContentRows + 2);
+        const int registerContentRows = 24;
+        int registerRows = Math.Min(maxContentLines, registerContentRows);
 
         int gap = 1;
         int leftPct = 26;
@@ -143,33 +143,16 @@ public static class TuiDebugger
 
         var disasmLines = BuildDisassemblyLines(emulator, s.PC, disasmSkip, maxContentLines + 4);
 
-        int ppuInnerWidth = Math.Max(8, leftInner - 2);
-        // Terminal cells are taller than they are wide, so use ~2.22 cols per row for GB aspect.
-        int ppuPreviewRows = Math.Clamp((int)Math.Round(ppuInnerWidth / 2.22), 6, Math.Max(6, maxContentLines - 6));
-        int ppuRows = Math.Min(maxContentLines - 2, ppuPreviewRows + 1);
-
         for (int r = 0; r < maxContentLines; r++)
         {
             string left;
-            if (r < ppuRows)
-            {
-                if (r == 0)
-                {
-                    left = PadMarkup("[green]PPU[/]", leftInner);
-                }
-                else
-                {
-                    string bar = new string('█', ppuInnerWidth);
-                    left = PadMarkup("[green]" + bar + "[/]", leftInner);
-                }
-            }
-            else if (r == ppuRows)
+            if (r == 0)
             {
                 left = PadMarkup("[yellow]── Disassembly ──[/]", leftInner);
             }
             else
             {
-                int idx = r - ppuRows - 1;
+                int idx = r - 1;
                 left = idx >= 0 && idx < disasmLines.Count
                     ? PadMarkup(ClipMarkup(disasmLines[idx], leftInner), leftInner)
                     : new string(' ', leftInner);
@@ -265,19 +248,29 @@ public static class TuiDebugger
         return r switch
         {
             0 => $"{y}LCD{x}",
-            1 => $"[bold]FF40[/] LCDC [cyan]{emulator.Read(0xFF40):X2}[/]",
-            2 => $"[bold]FF41[/] STAT [cyan]{emulator.Read(0xFF41):X2}[/]  [bold]FF42[/] SCY [cyan]{emulator.Read(0xFF42):X2}[/]",
-            3 => $"[bold]FF43[/] SCX [cyan]{emulator.Read(0xFF43):X2}[/]  [bold]FF44[/] LY [cyan]{emulator.Read(0xFF44):X2}[/]",
-            4 => $"[bold]FF45[/] LYC [cyan]{emulator.Read(0xFF45):X2}[/]  DMA [cyan]{emulator.Read(0xFF46):X2}[/]",
-            5 => $"BGP [cyan]{emulator.Read(0xFF47):X2}[/] OBP0 [cyan]{emulator.Read(0xFF48):X2}[/]",
-            6 => $"OBP1 [cyan]{emulator.Read(0xFF49):X2}[/] WY [cyan]{emulator.Read(0xFF4A):X2}[/]",
-            7 => $"WX [cyan]{emulator.Read(0xFF4B):X2}[/]",
-            8 => $"{y}LCD (internal){x}",
-            9 => $"VBlank {(emulator.Read(0xFF44) >= 0x90 ? "yes" : "no")}  Dots {s.TotalCycles % 456}",
-            10 => $"Mode {emulator.Read(0xFF41) & 0x3}  Next {(456 - (s.TotalCycles % 456))}",
-            11 => $"{y}vRAM DMA{x}",
-            12 => $"Src [cyan]{emulator.Read(0xFF51):X2}{emulator.Read(0xFF52):X2}[/]",
-            13 => $"Dest [cyan]{emulator.Read(0xFF53):X2}{emulator.Read(0xFF54):X2}[/]  Len [cyan]{emulator.Read(0xFF55):X2}[/]",
+            1 => $"[bold]FF40[/] LCDC: [cyan]{emulator.Read(0xFF40):X2}[/]",
+            2 => $"[bold]FF41[/] STAT: [cyan]{emulator.Read(0xFF41):X2}[/]",
+            3 => $"[bold]FF42[/] SCY: [cyan]{emulator.Read(0xFF42):X2}[/]",
+            4 => $"[bold]FF43[/] SCX: [cyan]{emulator.Read(0xFF43):X2}[/]",
+            5 => $"[bold]FF44[/] LY: [cyan]{emulator.Read(0xFF44):X2}[/]",
+            6 => $"[bold]FF45[/] LYC: [cyan]{emulator.Read(0xFF45):X2}[/]",
+            7 => $"[bold]FF46[/] DMA: [cyan]{emulator.Read(0xFF46):X2}[/]",
+            8 => $"[bold]FF47[/] BGP: [cyan]{emulator.Read(0xFF47):X2}[/]",
+            9 => $"[bold]FF48[/] OBP0: [cyan]{emulator.Read(0xFF48):X2}[/]",
+            10 => $"[bold]FF49[/] OBP1: [cyan]{emulator.Read(0xFF49):X2}[/]",
+            11 => $"[bold]FF4A[/] WY: [cyan]{emulator.Read(0xFF4A):X2}[/]",
+            12 => $"[bold]FF4B[/] WX: [cyan]{emulator.Read(0xFF4B):X2}[/]",
+            13 => "",
+            14 => $"{y}LCD (internal){x}",
+            15 => $"VBlank: {(emulator.Read(0xFF44) >= 0x90 ? "yes" : "no")}",
+            16 => $"Dots: {s.TotalCycles % 456}",
+            17 => $"Mode: {emulator.Read(0xFF41) & 0x3}",
+            18 => $"Next State: {(456 - (s.TotalCycles % 456))}",
+            19 => "",
+            20 => $"{y}vRAM DMA{x}",
+            21 => $"FF51-52 Src: [cyan]{emulator.Read(0xFF51):X2}{emulator.Read(0xFF52):X2}[/]",
+            22 => $"FF53-54 Dest: [cyan]{emulator.Read(0xFF53):X2}{emulator.Read(0xFF54):X2}[/]",
+            23 => $"FF55 Length: [cyan]{emulator.Read(0xFF55):X2}[/]",
             _ => "",
         };
     }
@@ -289,17 +282,28 @@ public static class TuiDebugger
         return r switch
         {
             0 => $"{y}CPU{x}",
-            1 => $"AF [cyan]{s.AF:X4}[/]  BC [cyan]{s.BC:X4}[/]",
-            2 => $"DE [cyan]{s.DE:X4}[/]  HL [cyan]{s.HL:X4}[/]",
-            3 => $"PC [cyan]{s.PC:X4}[/]  SP [cyan]{s.SP:X4}[/]",
-            4 => $"{y}Interrupts{x}",
-            5 => $"IF [cyan]{s.IF:X2}[/] KEY1 [cyan]{emulator.Read(0xFF4D):X2}[/]",
-            6 => $"IE [cyan]{s.IE:X2}[/]  IME [cyan]{(s.Ime ? "on" : "off")}[/]",
-            7 => $"{y}Serial{x}",
-            8 => $"SB [cyan]{emulator.Read(0xFF01):X2}[/]  SC [cyan]{emulator.Read(0xFF02):X2}[/]",
-            9 => $"{y}Timer{x}",
-            10 => $"DIV [cyan]{emulator.Read(0xFF04):X2}[/] TIMA [cyan]{emulator.Read(0xFF05):X2}[/]",
-            11 => $"TMA [cyan]{emulator.Read(0xFF06):X2}[/] TAC [cyan]{emulator.Read(0xFF07):X2}[/]",
+            1 => $"AF: [cyan]{s.AF:X4}[/]",
+            2 => $"BC: [cyan]{s.BC:X4}[/]",
+            3 => $"DE: [cyan]{s.DE:X4}[/]",
+            4 => $"HL: [cyan]{s.HL:X4}[/]",
+            5 => $"PC: [cyan]{s.PC:X4}[/]",
+            6 => $"SP: [cyan]{s.SP:X4}[/]",
+            7 => "",
+            8 => $"{y}Interrupts{x}",
+            9 => $"FF0F IF: [cyan]{s.IF:X2}[/]",
+            10 => $"FF4D KEY1: [cyan]{emulator.Read(0xFF4D):X2}[/]",
+            11 => $"FFFF IE: [cyan]{s.IE:X2}[/]",
+            12 => $"IME: [cyan]{(s.Ime ? "on" : "off")}[/]",
+            13 => "",
+            14 => $"{y}Serial Port{x}",
+            15 => $"FF01 SB: [cyan]{emulator.Read(0xFF01):X2}[/]",
+            16 => $"FF02 SC: [cyan]{emulator.Read(0xFF02):X2}[/]",
+            17 => "",
+            18 => $"{y}Timer{x}",
+            19 => $"FF04 DIV: [cyan]{emulator.Read(0xFF04):X2}[/]",
+            20 => $"FF05 TIMA: [cyan]{emulator.Read(0xFF05):X2}[/]",
+            21 => $"FF06 TMA: [cyan]{emulator.Read(0xFF06):X2}[/]",
+            22 => $"FF07 TAC: [cyan]{emulator.Read(0xFF07):X2}[/]",
             _ => "",
         };
     }
@@ -316,22 +320,24 @@ public static class TuiDebugger
             3 => LineReg(emulator, 0xFF12, "NR12"),
             4 => LineReg(emulator, 0xFF13, "NR13"),
             5 => LineReg(emulator, 0xFF14, "NR14"),
-            6 => $"{y}Ch2 (Square){x}",
-            7 => LineReg(emulator, 0xFF16, "NR21"),
-            8 => LineReg(emulator, 0xFF17, "NR22"),
-            9 => LineReg(emulator, 0xFF18, "NR23"),
-            10 => LineReg(emulator, 0xFF19, "NR24"),
-            11 => $"{y}Wave RAM (FF30-F){x}",
-            12 => WaveRow(emulator, 0),
-            13 => WaveRow(emulator, 4),
-            14 => WaveRow(emulator, 8),
-            15 => WaveRow(emulator, 12),
+            6 => "",
+            7 => $"{y}Ch2 (Square){x}",
+            8 => LineReg(emulator, 0xFF16, "NR21"),
+            9 => LineReg(emulator, 0xFF17, "NR22"),
+            10 => LineReg(emulator, 0xFF18, "NR23"),
+            11 => LineReg(emulator, 0xFF19, "NR24"),
+            12 => "",
+            13 => $"{y}Wave RAM (FF30-F){x}",
+            14 => WaveRow(emulator, 0),
+            15 => WaveRow(emulator, 4),
+            16 => WaveRow(emulator, 8),
+            17 => WaveRow(emulator, 12),
             _ => "",
         };
     }
 
     static string LineReg(Emulator emulator, ushort a, string name) =>
-        $"[bold]{a:X4}[/] {name} [cyan]{emulator.Read(a):X2}[/]";
+        $"[bold]{a:X4}[/] {name}: [cyan]{emulator.Read(a):X2}[/]";
 
     static string WaveRow(Emulator emulator, int i)
     {
@@ -357,15 +363,17 @@ public static class TuiDebugger
             3 => LineReg(emulator, 0xFF1C, "NR32"),
             4 => LineReg(emulator, 0xFF1D, "NR33"),
             5 => LineReg(emulator, 0xFF1E, "NR34"),
-            6 => $"{y}Ch4 (Noise){x}",
-            7 => LineReg(emulator, 0xFF20, "NR41"),
-            8 => LineReg(emulator, 0xFF21, "NR42"),
-            9 => LineReg(emulator, 0xFF22, "NR43"),
-            10 => LineReg(emulator, 0xFF23, "NR44"),
-            11 => $"{y}Sound Ctrl{x}",
-            12 => LineReg(emulator, 0xFF24, "NR50"),
-            13 => LineReg(emulator, 0xFF25, "NR51"),
-            14 => LineReg(emulator, 0xFF26, "NR52"),
+            6 => "",
+            7 => $"{y}Ch4 (Noise){x}",
+            8 => LineReg(emulator, 0xFF20, "NR41"),
+            9 => LineReg(emulator, 0xFF21, "NR42"),
+            10 => LineReg(emulator, 0xFF22, "NR43"),
+            11 => LineReg(emulator, 0xFF23, "NR44"),
+            12 => "",
+            13 => $"{y}Sound Ctrl{x}",
+            14 => LineReg(emulator, 0xFF24, "NR50"),
+            15 => LineReg(emulator, 0xFF25, "NR51"),
+            16 => LineReg(emulator, 0xFF26, "NR52"),
             _ => "",
         };
     }

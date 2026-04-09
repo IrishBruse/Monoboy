@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 /// <summary>Spectre.Console markup width, clipping, and padding so lines never wrap mid-tag.</summary>
-internal static class TuiMarkup
+static class TuiMarkup
 {
     static readonly Regex SpectreTag = new(@"\[[^\]]*\]", RegexOptions.Compiled);
 

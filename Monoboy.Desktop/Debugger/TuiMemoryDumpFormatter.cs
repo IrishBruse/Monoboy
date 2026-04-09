@@ -7,7 +7,7 @@ using Monoboy;
 using Spectre.Console;
 
 /// <summary>Memory column: hex dump with GB memory-map coloring.</summary>
-internal static class TuiMemoryDumpFormatter
+static class TuiMemoryDumpFormatter
 {
     internal const ushort DefaultBaseAddress = 0x0000;
 

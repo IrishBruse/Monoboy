@@ -5,7 +5,7 @@ using System.Text;
 using Monoboy;
 
 /// <summary>Center column: CPU, LCD, IRQ/serial/timer, and APU register grids.</summary>
-internal static class TuiRegisterGridFormatter
+static class TuiRegisterGridFormatter
 {
     internal static string BuildRow(Emulator emulator, DebugState s, int row, int[] colW, int gap)
     {

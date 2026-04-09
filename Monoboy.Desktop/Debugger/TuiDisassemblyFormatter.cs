@@ -10,7 +10,7 @@ using Monoboy.Disassembler;
 using Spectre.Console;
 
 /// <summary>Disassembly column: instruction-sized scrolling and syntax-highlighted lines.</summary>
-internal static class TuiDisassemblyFormatter
+static class TuiDisassemblyFormatter
 {
     /// <summary>Build lines with syntax highlighting; <paramref name="skip"/> moves the window in instruction steps from PC.</summary>
     internal static List<string> BuildLines(Emulator emulator, ushort pc, int skip, int needLines)

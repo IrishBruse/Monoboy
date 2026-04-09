@@ -8,7 +8,7 @@ using Monoboy;
 using Spectre.Console;
 
 /// <summary>Three-column layout: disassembly, register grid, memory; plus pinned footer.</summary>
-internal static class TuiDebuggerView
+static class TuiDebuggerView
 {
     internal static void DrawFrame(
         Emulator emulator,

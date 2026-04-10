@@ -5,6 +5,15 @@
 
 Monoboy is a Game Boy emulator. Hardware behavior is informed by [Pan Docs](https://gbdev.io/pandocs/).
 
+
+## Screenshots
+
+|                                                       |                              |
+| ----------------------------------------------------- | ---------------------------- |
+| ![blargg's cpu_instrs passing](Images/cpu_instrs.png) |                              |
+| ![Super Marioland](Images/Super%20Marioland.png)      | ![Tetris](Images/Tetris.png) |
+
+
 ## Desktop application
 
 The **Monoboy.Desktop** project is the main executable. With no extra arguments it opens the Raylib window (see controls below). It also supports two console modes:
@@ -23,9 +32,9 @@ The **Monoboy.Desktop** project is the main executable. With no extra arguments 
 Examples:
 
 ```bash
-dotnet run --project Monoboy.Desktop -- path/to/game.gb
-dotnet run --project Monoboy.Desktop -- --debug path/to/game.gb
-dotnet run --project Monoboy.Desktop -- --test path/to/test.gb --steps 5000
+monoboy path/to/game.gb
+monoboy --debug path/to/game.gb
+monoboy --test path/to/test.gb --steps 5000
 ```
 
 ### `--debug` (TUI debugger)
@@ -59,8 +68,8 @@ The **`cpu`** object includes 8-bit registers, 16-bit pairs (`af`, `bc`, `de`, `
 Example:
 
 ```bash
-dotnet run --project Monoboy.Desktop -- --test rom.gb --frames 10 | jq '.cpu.pc'
-dotnet run --project Monoboy.Desktop -- --test rom.gb --memory 0xC000:256
+monoboy --test rom.gb --frames 10 | jq '.cpu.pc'
+monoboy --test rom.gb --memory 0xC000:256
 ```
 
 ## Gameboy Controls
@@ -97,19 +106,4 @@ D0D058
 A0A840
 708028
 405010
-```
-
-## Screenshots
-
-|                                                       |                              |
-| ----------------------------------------------------- | ---------------------------- |
-| ![blargg's cpu_instrs passing](Images/cpu_instrs.png) |                              |
-| ![Super Marioland](Images/Super%20Marioland.png)      | ![Tetris](Images/Tetris.png) |
-
-### Linux notes
-
-Veldrid may fail to load `libdl.so`. One workaround is a symlink:
-
-```bash
-sudo ln -s /usr/lib/libdl.so.2 /usr/lib/libdl.so
 ```

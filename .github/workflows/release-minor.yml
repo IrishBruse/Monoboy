@@ -1,0 +1,114 @@
+name: Release (minor bump)
+
+# Manually bump the minor version from the latest vX.Y.Z tag and publish a GitHub release
+# with Linux and Windows self-contained desktop builds. If no matching tags exist yet,
+# starts from v0.0.0 → v0.1.0.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next minor version
+        id: version
+        run: |
+          set -euo pipefail
+          git fetch --tags --force 2>/dev/null || true
+          latest=$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1 || true)
+          if [[ -z "${latest}" ]]; then
+            latest="v0.0.0"
+          fi
+          ver="${latest#v}"
+          IFS='.' read -r major minor _patch <<< "${ver}"
+          major=${major:-0}
+          minor=${minor:-0}
+          new_minor=$((10#${minor} + 1))
+          new_ver="${major}.${new_minor}.0"
+          new_tag="v${new_ver}"
+          echo "Previous: ${latest} → Next: ${new_tag}"
+          echo "tag=${new_tag}" >> "${GITHUB_OUTPUT}"
+          echo "version=${new_ver}" >> "${GITHUB_OUTPUT}"
+
+  build:
+    needs: version
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+            slug: linux-x64
+          - rid: win-x64
+            slug: win-x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish Monoboy.Desktop
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          RID: ${{ matrix.rid }}
+          SLUG: ${{ matrix.slug }}
+        run: |
+          set -euo pipefail
+          dotnet publish Monoboy.Desktop/Monoboy.Desktop.csproj \
+            -c Release \
+            -r "${RID}" \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -o "./artifacts"
+          (cd artifacts && zip -r "../Monoboy-${VERSION}-${SLUG}.zip" .)
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: monoboy-${{ matrix.slug }}
+          path: Monoboy-${{ needs.version.outputs.version }}-${{ matrix.slug }}.zip
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: monoboy-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          assets=(release-assets/*.zip)
+          if [[ ${#assets[@]} -eq 0 ]]; then
+            echo "No zip assets to upload" >&2
+            exit 1
+          fi
+          gh release create "${{ needs.version.outputs.tag }}" \
+            "${assets[@]}" \
+            --title "Monoboy ${{ needs.version.outputs.tag }}" \
+            --generate-notes

@@ -8,10 +8,11 @@ Monoboy is a Game Boy emulator. Hardware behavior is informed by [Pan Docs](http
 
 ## Screenshots
 
-|                                                       |                              |
-| ----------------------------------------------------- | ---------------------------- |
-| ![blargg's cpu_instrs passing](Images/cpu_instrs.png) |                              |
-| ![Super Marioland](Images/Super%20Marioland.png)      | ![Tetris](Images/Tetris.png) |
+| Name                        | Screenshot                                            |
+| --------------------------- | ----------------------------------------------------- |
+| blargg's cpu_instrs passing | ![blargg's cpu_instrs passing](Images/cpu_instrs.png) |
+| Super Marioland             | ![Super Marioland](Images/Super%20Marioland.png)      |
+| Tetris                      | ![Tetris](Images/Tetris.png)                          |
 
 
 ## Desktop application

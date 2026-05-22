@@ -10,7 +10,7 @@ using Monoboy.Desktop.Debugger;
 
 /// <summary>
 /// Debugger TUI: left = disassembly; center = register grid; right = memory dump (full height, flush right).
-/// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane (disassembly can scroll before the current PC); Page Up/Down jump by ~one screen.
+/// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane (disassembly can scroll before the current PC); Page Up/Down jump by ~one screen. Ctrl+R reloads the ROM and resets scroll.
 /// </summary>
 public static class TuiDebugger
 {
@@ -23,14 +23,19 @@ public static class TuiDebugger
         };
 
         string romPath = args.FirstOrDefault(x => !x.StartsWith("--", StringComparison.Ordinal)) ?? string.Empty;
-        if (!string.IsNullOrWhiteSpace(romPath) && File.Exists(romPath))
+        void ReloadRom()
         {
-            emulator.Open(romPath);
+            if (!string.IsNullOrWhiteSpace(romPath) && File.Exists(romPath))
+            {
+                emulator.Open(romPath);
+            }
+            else
+            {
+                emulator.Open(new byte[0x10000]);
+            }
         }
-        else
-        {
-            emulator.Open(new byte[0x10000]);
-        }
+
+        ReloadRom();
 
         int disasmSkip = 0;
         int memRowSkip = 0;
@@ -69,6 +74,11 @@ public static class TuiDebugger
                         case ConsoleKey.F:
                         emulator.StepFrame();
                         disasmSkip = 0;
+                        break;
+                        case ConsoleKey.R when (key.Modifiers & ConsoleModifiers.Control) != 0:
+                        ReloadRom();
+                        disasmSkip = 0;
+                        memRowSkip = 0;
                         break;
                         case ConsoleKey.R:
                         for (int i = 0; i < 500; i++)

@@ -30,8 +30,10 @@ The **Monoboy.Desktop** project is the main executable. With no extra arguments 
 
 ### Common arguments
 
+- **`-h` / `--help`** — Print usage and exit.
 - **ROM path** — Optional. Give the path to a `.gb` / `.gbc` file as the first argument that does **not** start with `--`. If it is missing or the file does not exist, the core boots with an empty 64 KiB buffer (same idea as the debugger when no ROM is loaded).
-- **`--log-header`** — *(TUI only.)* Print cartridge header information when opening a ROM.
+- **`--log-header`** — Print cartridge header information when opening a ROM (TUI and graphical modes).
+- **`--custom-boot`** — Use the embedded bootix boot ROM instead of the built-in boot (graphical mode only).
 
 Examples:
 
@@ -50,6 +52,7 @@ Spectre.Console-based layout: disassembly on the left, register / I/O panels in 
 | **S**                   | Step one CPU instruction.                                     |
 | **F**                   | Step one frame (until the next VBlank boundary).              |
 | **R**                   | Run 500 instructions.                                         |
+| **Ctrl+R**              | Reset emulator (reload ROM from disk).                      |
 | **Q**                   | Quit.                                                         |
 | **Tab**                 | Switch focus between disassembly and memory panes.            |
 | **Arrow keys**          | Scroll the focused pane (disassembly or memory).              |
@@ -103,7 +106,7 @@ monoboy --test rom.gb --memory 0xC000:256
 
 ## Palette
 
-`Pallet.txt` contains the four RGB hex colors used for rendering and defaults to:
+Optional `Pallet.txt` in the working directory overrides the four RGB hex colors used for rendering. Default palette:
 
 ```
 D0D058

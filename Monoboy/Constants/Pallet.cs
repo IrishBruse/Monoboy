@@ -24,10 +24,6 @@ public static class Pallet
                 pallet[i] = Convert.ToUInt32(lines[i], 16);
             }
         }
-        else
-        {
-            File.WriteAllLines("Pallet.txt", new[] { "D0D058", "A0A840", "708028", "405010" });
-        }
 
         Colors = new uint[4];
         for (int i = 0; i < 4; i++)

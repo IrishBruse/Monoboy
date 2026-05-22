@@ -8,6 +8,12 @@ public class Program
     public static void Main()
     {
         string[] args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        if (CliHelp.WantsHelp(args))
+        {
+            CliHelp.Print();
+            return;
+        }
+
         if (args.Contains("--test"))
         {
             TestDebugger.Run(args);

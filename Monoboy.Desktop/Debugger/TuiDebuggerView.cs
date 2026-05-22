@@ -108,7 +108,7 @@ static class TuiDebuggerView
             ? "[bold cyan]Disasm[/] [dim grey]│ Mem[/]"
             : "[dim grey]Disasm │[/] [bold cyan]Mem[/]";
         string keysMarkup =
-            "  [red]S[/]tep  [red]F[/]rame  [red]R[/]un  [red]Q[/]uit  [red]P[/]review  [grey]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  [red]Tab[/] "
+            "  [red]S[/]tep  [red]F[/]rame  [red]R[/]un  [grey]^R[/]reset  [red]Q[/]uit  [red]P[/]review  [grey]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  [red]Tab[/] "
             + focusStr;
 
         string plain = Markup.Remove(keysMarkup);

@@ -13,7 +13,7 @@ using Spectre.Console;
 static class TuiDisassemblyFormatter
 {
     /// <summary>Build lines with syntax highlighting; <paramref name="skip"/> moves the window in instruction steps from PC.</summary>
-    internal static List<string> BuildLines(Emulator emulator, ushort pc, int skip, int needLines)
+    internal static List<string> BuildLines(Emulator emulator, ushort pc, int skip, int needLines, SymSymbolMap? symbols = null)
     {
         var lines = new List<string>();
         ushort cursor = pc;
@@ -40,15 +40,21 @@ static class TuiDisassemblyFormatter
             }
         }
 
-        int count = Math.Max(needLines + 4, 40);
-        for (int i = 0; i < count; i++)
+        int targetLines = Math.Max(needLines + 4, 40);
+        while (lines.Count < targetLines)
         {
+            if (symbols != null && symbols.TryGetLabel(cursor, emulator.RomBank, out string label))
+            {
+                lines.Add(FormatLabelLine(label));
+            }
+
             bool atPc = cursor == pc;
             string body = FormatLineMarkup(emulator, cursor, pc, out ushort size);
             string prefix = atPc ? "[bold yellow]>[/] " : "  ";
             lines.Add(prefix + body);
             cursor += size;
         }
+
         return lines;
     }
 
@@ -88,6 +94,9 @@ static class TuiDisassemblyFormatter
         prevStart = 0;
         return false;
     }
+
+    static string FormatLabelLine(string label) =>
+        $"  [bold dodgerblue1]{Markup.Escape(label)}[/]";
 
     static string FormatLineMarkup(Emulator emulator, ushort lineAddr, ushort focusPc, out ushort size)
     {

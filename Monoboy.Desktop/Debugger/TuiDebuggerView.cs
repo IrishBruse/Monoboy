@@ -16,7 +16,8 @@ static class TuiDebuggerView
         int termH,
         int disasmSkip,
         int memRowSkip,
-        DebuggerPaneFocus paneFocus)
+        DebuggerPaneFocus paneFocus,
+        SymSymbolMap? symbols = null)
     {
         var s = emulator.GetDebugState();
 
@@ -37,7 +38,7 @@ static class TuiDebuggerView
         int[] subWeights = [19, 19, 19, 19];
         int[] colW = TuiMarkup.DistributeWidths(midInner, gap, subWeights);
 
-        var disasmLines = TuiDisassemblyFormatter.BuildLines(emulator, s.PC, disasmSkip, maxContentLines + 4);
+        var disasmLines = TuiDisassemblyFormatter.BuildLines(emulator, s.PC, disasmSkip, maxContentLines + 4, symbols);
 
         string gapStr = new(' ', gap);
         int estChars = maxContentLines * (leftInner + midInner + memoryWidth + 64);

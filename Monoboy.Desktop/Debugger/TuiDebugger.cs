@@ -23,15 +23,18 @@ public static class TuiDebugger
         };
 
         string romPath = args.FirstOrDefault(x => !x.StartsWith("--", StringComparison.Ordinal)) ?? string.Empty;
+        SymSymbolMap? symbols = null;
         void ReloadRom()
         {
             if (!string.IsNullOrWhiteSpace(romPath) && File.Exists(romPath))
             {
                 emulator.Open(romPath);
+                symbols = SymSymbolMap.TryLoadForRom(romPath);
             }
             else
             {
                 emulator.Open(new byte[0x10000]);
+                symbols = null;
             }
         }
 
@@ -172,7 +175,7 @@ public static class TuiDebugger
                     Console.SetCursorPosition(0, 0);
                 }
 
-                TuiDebuggerView.DrawFrame(emulator, w, h, disasmSkip, memRowSkip, paneFocus);
+                TuiDebuggerView.DrawFrame(emulator, w, h, disasmSkip, memRowSkip, paneFocus, symbols);
                 needsRedraw = false;
             }
         }

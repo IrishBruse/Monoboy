@@ -10,6 +10,8 @@ public class MemoryBankController5 : IMemoryBankController
     bool ramEnabled;
     BankingMode bankingMode = BankingMode.Rom;
 
+    public byte RomBank => romBank;
+
     public byte ReadBank00(ushort address)
     {
         return Rom[address];

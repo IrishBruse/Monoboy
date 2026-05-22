@@ -7,6 +7,8 @@ public class NoMemoryBankController : IMemoryBankController
 {
     byte[] rom;
 
+    public byte RomBank => 0;
+
     public byte ReadBank00(ushort address)
     {
         return rom[address];

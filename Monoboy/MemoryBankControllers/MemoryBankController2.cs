@@ -9,6 +9,8 @@ public class MemoryBankController2 : IMemoryBankController
     byte romBank = 1;
     bool ramEnabled;
 
+    public byte RomBank => romBank;
+
     public byte ReadBank00(ushort address)
     {
         return rom[address];

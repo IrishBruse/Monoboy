@@ -504,6 +504,9 @@ public class Emulator
         File.WriteAllText("dumps/" + dumpName + "/register.txt", regs);
     }
 
+    /// <summary>ROM bank mapped at $4000-$7FFF (1 if no MBC).</summary>
+    public byte RomBank => mbc?.RomBank ?? 0;
+
     public DebugState GetDebugState()
     {
         return new DebugState

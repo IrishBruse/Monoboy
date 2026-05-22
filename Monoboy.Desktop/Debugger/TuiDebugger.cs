@@ -43,6 +43,8 @@ public static class TuiDebugger
         int disasmSkip = 0;
         int memRowSkip = 0;
         var paneFocus = DebuggerPaneFocus.Disassembly;
+        var registerLabelDisplay = RegisterLabelDisplay.Name;
+        bool showDisasmSymbols = true;
         bool quit = false;
         bool needsRedraw = true;
         int lastTermW = -1;
@@ -152,6 +154,12 @@ public static class TuiDebugger
                         disasmSkip = 0;
                         memRowSkip = 0;
                         break;
+                        case ConsoleKey.A:
+                        registerLabelDisplay = registerLabelDisplay == RegisterLabelDisplay.Address
+                            ? RegisterLabelDisplay.Name
+                            : RegisterLabelDisplay.Address;
+                        showDisasmSymbols = !showDisasmSymbols;
+                        break;
                         case ConsoleKey.P:
                         FramebufferPreviewWindow.Show(emulator);
                         break;
@@ -179,7 +187,8 @@ public static class TuiDebugger
                     Console.SetCursorPosition(0, 0);
                 }
 
-                TuiDebuggerView.DrawFrame(emulator, w, h, disasmSkip, memRowSkip, paneFocus, symbols);
+                TuiDebuggerView.DrawFrame(
+                    emulator, w, h, disasmSkip, memRowSkip, paneFocus, registerLabelDisplay, showDisasmSymbols, symbols);
                 needsRedraw = false;
             }
         }

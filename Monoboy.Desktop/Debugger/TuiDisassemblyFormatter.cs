@@ -25,6 +25,9 @@ static class TuiDisassemblyFormatter
     internal static int MnemonicColumn =>
         LinePrefix.Length + AddrFieldVisibleWidth + BytesFieldVisibleWidth + MnemonicGapVisibleWidth;
 
+    /// <summary>Visible column where standalone symbol labels start (aligned with addresses).</summary>
+    internal static int LabelColumn => LinePrefix.Length;
+
     /// <summary>Build lines with syntax highlighting; <paramref name="skip"/> moves the window in instruction steps from PC.</summary>
     /// <param name="instructionsAbovePc">How many prior instructions to include above PC.</param>
     internal static List<string> BuildLines(
@@ -33,6 +36,7 @@ static class TuiDisassemblyFormatter
         int skip,
         int needLines,
         int instructionsAbovePc = 0,
+        bool showSymbols = true,
         SymSymbolMap? symbols = null)
     {
         ushort anchor = pc;
@@ -65,7 +69,7 @@ static class TuiDisassemblyFormatter
         int historyTarget = instructionsAbovePc > 0 ? instructionsAbovePc + historyMargin : 0;
         if (historyTarget > 0)
         {
-            lines.AddRange(CollectLinesAboveMarker(emulator, anchor, pc, historyTarget, symbols, out historyHead));
+            lines.AddRange(CollectLinesAboveMarker(emulator, anchor, pc, historyTarget, showSymbols, symbols, out historyHead));
         }
 
         int targetLines = Math.Max(needLines + 4, 40);
@@ -73,11 +77,11 @@ static class TuiDisassemblyFormatter
         while (lines.Count < targetLines)
         {
             bool atPc = cursor == pc;
-            AppendInstructionBlock(lines, emulator, cursor, pc, symbols, atPc, out ushort size);
+            AppendInstructionBlock(lines, emulator, cursor, pc, showSymbols, symbols, atPc, out ushort size);
             cursor += size;
         }
 
-        EnsureInstructionsAbovePc(emulator, pc, lines, instructionsAbovePc, historyHead, symbols);
+        EnsureInstructionsAbovePc(emulator, pc, lines, instructionsAbovePc, historyHead, showSymbols, symbols);
 
         return lines;
     }
@@ -89,6 +93,7 @@ static class TuiDisassemblyFormatter
         List<string> lines,
         int needInstructions,
         ushort historyHead,
+        bool showSymbols,
         SymSymbolMap? symbols)
     {
         if (needInstructions <= 0)
@@ -110,7 +115,7 @@ static class TuiDisassemblyFormatter
                 return;
             }
 
-            PrependInstructionBlock(lines, emulator, prev, pc, symbols);
+            PrependInstructionBlock(lines, emulator, prev, pc, showSymbols, symbols);
             head = prev;
         }
     }
@@ -121,6 +126,7 @@ static class TuiDisassemblyFormatter
         ushort addr,
         ushort focusPc,
         int needInstructions,
+        bool showSymbols,
         SymSymbolMap? symbols,
         out ushort historyHead)
     {
@@ -137,27 +143,33 @@ static class TuiDisassemblyFormatter
 
             walk = prev;
             collected++;
-            PrependInstructionBlock(above, emulator, prev, focusPc, symbols);
+            PrependInstructionBlock(above, emulator, prev, focusPc, showSymbols, symbols);
         }
 
         historyHead = walk;
         return above;
     }
 
-    static string FormatInstructionLine(Emulator emulator, ushort lineAddr, ushort focusPc, SymSymbolMap? symbols) =>
-        LinePrefix + FormatLineMarkup(emulator, lineAddr, focusPc, symbols, out _);
+    static string FormatInstructionLine(
+        Emulator emulator,
+        ushort lineAddr,
+        ushort focusPc,
+        bool showSymbols,
+        SymSymbolMap? symbols) =>
+        LinePrefix + FormatLineMarkup(emulator, lineAddr, focusPc, showSymbols, symbols, out _);
 
     static void AppendInstructionBlock(
         List<string> lines,
         Emulator emulator,
         ushort lineAddr,
         ushort focusPc,
+        bool showSymbols,
         SymSymbolMap? symbols,
         bool markPc,
         out ushort size)
     {
-        AddLabelLines(lines, symbols, lineAddr, emulator.RomBank);
-        string body = FormatLineMarkup(emulator, lineAddr, focusPc, symbols, out size);
+        AddLabelLines(lines, showSymbols, symbols, lineAddr, emulator.RomBank);
+        string body = FormatLineMarkup(emulator, lineAddr, focusPc, showSymbols, symbols, out size);
         string prefix = markPc ? PcMarkerPrefix : LinePrefix;
         lines.Add(prefix + body);
     }
@@ -167,19 +179,25 @@ static class TuiDisassemblyFormatter
         Emulator emulator,
         ushort lineAddr,
         ushort focusPc,
+        bool showSymbols,
         SymSymbolMap? symbols)
     {
         var block = new List<string>();
-        AppendInstructionBlock(block, emulator, lineAddr, focusPc, symbols, markPc: false, out _);
+        AppendInstructionBlock(block, emulator, lineAddr, focusPc, showSymbols, symbols, markPc: false, out _);
         for (int i = block.Count - 1; i >= 0; i--)
         {
             lines.Insert(0, block[i]);
         }
     }
 
-    static void AddLabelLines(List<string> lines, SymSymbolMap? symbols, ushort addr, byte romBank)
+    static void AddLabelLines(
+        List<string> lines,
+        bool showSymbols,
+        SymSymbolMap? symbols,
+        ushort addr,
+        byte romBank)
     {
-        if (symbols == null || !symbols.TryGetLabels(addr, romBank, out IReadOnlyList<string> names))
+        if (!showSymbols || symbols == null || !symbols.TryGetLabels(addr, romBank, out IReadOnlyList<string> names))
         {
             return;
         }
@@ -273,6 +291,7 @@ static class TuiDisassemblyFormatter
         Emulator emulator,
         ushort lineAddr,
         ushort focusPc,
+        bool showSymbols,
         SymSymbolMap? symbols,
         out ushort size)
     {
@@ -299,7 +318,7 @@ static class TuiDisassemblyFormatter
         string mnStyle = focus ? "[bold green]" : "[green]";
         string mnMk = $"{mnStyle}{Markup.Escape(instruction.Mnemonic.ToString())}[/]";
 
-        var ops = instruction.Operands.Select(o => OperandToMarkup(o, emulator, lineAddr, symbols, romBank));
+        var ops = instruction.Operands.Select(o => OperandToMarkup(o, emulator, lineAddr, showSymbols, symbols, romBank));
         string opsStr = string.Join(' ', ops);
         string tail = opsStr.Length > 0 ? $" {opsStr}" : "";
 
@@ -311,12 +330,24 @@ static class TuiDisassemblyFormatter
         Operand operand,
         Emulator emulator,
         ushort atPc,
+        bool showSymbols,
         SymSymbolMap? symbols,
         byte romBank)
     {
-        if (TryFormatSymbolicOperand(operand, emulator, atPc, symbols, romBank, out string symbolic))
+        if (TryResolveTargetOperand(operand, emulator, atPc, out ushort target))
         {
-            return $"[bold white]{Markup.Escape(symbolic)}[/]";
+            string addrText = FormatTargetAddressText(operand, target);
+            string escAddr = Markup.Escape(addrText);
+            if (showSymbols)
+            {
+                string? label = FormatTargetName(symbols, target, romBank);
+                if (label != null)
+                {
+                    return $"[yellow]{escAddr}[/] [bold white]{Markup.Escape(label)}[/]";
+                }
+            }
+
+            return $"[yellow]{escAddr}[/]";
         }
 
         string s = FormatOperandPretty(operand, emulator, atPc);
@@ -333,42 +364,32 @@ static class TuiDisassemblyFormatter
         };
     }
 
-    static bool TryFormatSymbolicOperand(
-        Operand operand,
-        Emulator emulator,
-        ushort pc,
-        SymSymbolMap? symbols,
-        byte romBank,
-        out string name)
+    static bool TryResolveTargetOperand(Operand operand, Emulator emulator, ushort pc, out ushort target)
     {
-        name = string.Empty;
-        if (symbols == null)
+        switch (operand)
         {
+            case Operand.a16:
+            target = ReadU16(emulator, (ushort)(pc + 1));
+            return true;
+            case Operand.a8:
+            target = (ushort)(0xFF00 | emulator.Read((ushort)(pc + 1)));
+            return true;
+            case Operand.e8:
+            target = (ushort)(pc + 2 + (sbyte)emulator.Read((ushort)(pc + 1)));
+            return true;
+            default:
+            target = 0;
             return false;
         }
-
-        ushort? target = operand switch
-        {
-            Operand.a16 => ReadU16(emulator, (ushort)(pc + 1)),
-            Operand.a8 => (ushort)(0xFF00 | emulator.Read((ushort)(pc + 1))),
-            Operand.e8 => (ushort)(pc + 2 + (sbyte)emulator.Read((ushort)(pc + 1))),
-            _ => null
-        };
-
-        if (target is not ushort addr)
-        {
-            return false;
-        }
-
-        string? label = FormatTargetName(symbols, addr, romBank);
-        if (label == null)
-        {
-            return false;
-        }
-
-        name = label;
-        return true;
     }
+
+    static string FormatTargetAddressText(Operand operand, ushort target) =>
+        operand switch
+        {
+            Operand.a8 => $"FF{target & 0xFF:X2}",
+            Operand.e8 or Operand.a16 => $"{target:X4}",
+            _ => $"{target:X4}",
+        };
 
     static string FormatOperandPretty(Operand operand, Emulator emulator, ushort pc)
     {

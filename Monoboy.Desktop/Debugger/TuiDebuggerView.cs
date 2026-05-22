@@ -17,6 +17,8 @@ static class TuiDebuggerView
         int disasmSkip,
         int memRowSkip,
         DebuggerPaneFocus paneFocus,
+        RegisterLabelDisplay registerLabelDisplay,
+        bool showDisasmSymbols,
         SymSymbolMap? symbols = null)
     {
         var s = emulator.GetDebugState();
@@ -40,7 +42,7 @@ static class TuiDebuggerView
 
         const int pcLinesFromTop = 3;
         var disasmLines = TuiDisassemblyFormatter.BuildLines(
-            emulator, s.PC, disasmSkip, maxContentLines + 4, pcLinesFromTop, symbols);
+            emulator, s.PC, disasmSkip, maxContentLines + 4, pcLinesFromTop, showDisasmSymbols, symbols);
 
         int pcLineIdx = disasmSkip == 0
             ? TuiDisassemblyFormatter.FindPcLineIndex(disasmLines)
@@ -80,7 +82,11 @@ static class TuiDebuggerView
                     string line = TuiMarkup.ClipMarkup(disasmLines[idx], leftInner);
                     if (TuiDisassemblyFormatter.IsLabelMarkupLine(disasmLines[idx]))
                     {
-                        line = new string(' ', TuiDisassemblyFormatter.MnemonicColumn - 4) + line;
+                        int labelPad = TuiDisassemblyFormatter.LabelColumn - TuiDisassemblyFormatter.LinePrefix.Length;
+                        if (labelPad > 0)
+                        {
+                            line = new string(' ', labelPad) + line;
+                        }
                     }
 
                     left = TuiMarkup.PadMarkup(line, leftInner);
@@ -92,7 +98,7 @@ static class TuiDebuggerView
             }
 
             string mid = r < registerRows
-                ? TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(TuiRegisterGridFormatter.BuildRow(emulator, s, r, colW, gap), midInner), midInner)
+                ? TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(TuiRegisterGridFormatter.BuildRow(emulator, s, r, colW, gap, registerLabelDisplay), midInner), midInner)
                 : new string(' ', midInner);
 
             string mem;
@@ -125,11 +131,16 @@ static class TuiDebuggerView
             Console.Write(TuiMarkup.StripSpectreTags(frameText));
         }
 
-        DrawPinnedFooter(termW, termH, paneFocus);
+        DrawPinnedFooter(termW, termH, paneFocus, registerLabelDisplay, showDisasmSymbols);
     }
 
     /// <summary>Last screen row: key hints; no trailing newline so it stays pinned.</summary>
-    static void DrawPinnedFooter(int termW, int termH, DebuggerPaneFocus paneFocus)
+    static void DrawPinnedFooter(
+        int termW,
+        int termH,
+        DebuggerPaneFocus paneFocus,
+        RegisterLabelDisplay registerLabelDisplay,
+        bool showDisasmSymbols)
     {
         int row = Math.Min(termH - 1, Math.Max(0, Console.WindowHeight - 1));
         int width = Math.Max(1, Math.Min(termW, Console.WindowWidth));
@@ -138,8 +149,11 @@ static class TuiDebuggerView
         string focusStr = paneFocus == DebuggerPaneFocus.Disassembly
             ? "[bold cyan]Disasm[/] [dim grey]│ Mem[/]"
             : "[dim grey]Disasm │[/] [bold cyan]Mem[/]";
+        string regLabel = registerLabelDisplay == RegisterLabelDisplay.Address ? "addr" : "name";
+        string symLabel = showDisasmSymbols ? "sym" : "off";
         string keysMarkup =
             "  [red]S[/]tep  [red]F[/]rame  [red]V[/]blank  [red]R[/]un  [red]^R[/]reset  [red]Q[/]uit  [red]P[/]review  [red]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  [red]Tab[/] "
+            + $"[red]A[/]({regLabel}/{symLabel})  "
             + focusStr;
 
         string plain = Markup.Remove(keysMarkup);

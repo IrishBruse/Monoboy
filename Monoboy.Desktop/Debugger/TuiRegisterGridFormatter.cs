@@ -1,5 +1,6 @@
 namespace Monoboy.Desktop.Debugger;
 
+using System;
 using System.Text;
 
 using Monoboy;
@@ -7,34 +8,48 @@ using Monoboy;
 /// <summary>Center column: CPU, LCD, IRQ/serial/timer, and APU register grids.</summary>
 static class TuiRegisterGridFormatter
 {
-    internal static string BuildRow(Emulator emulator, DebugState s, int row, int[] colW, int gap)
+    internal static string BuildRow(
+        Emulator emulator,
+        DebugState s,
+        int row,
+        int[] colW,
+        int gap,
+        RegisterLabelDisplay labelDisplay)
     {
-        string c1 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(CpuIrqSerialTimerLine(emulator, s, row), colW[0]), colW[0]);
-        string c2 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(LcdLine(emulator, s, row), colW[1]), colW[1]);
-        string c3 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(Ch12WaveLine(emulator, row), colW[2]), colW[2]);
-        string c4 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(Ch34SoundLine(emulator, row), colW[3]), colW[3]);
+        string c1 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(CpuIrqSerialTimerLine(emulator, s, row, labelDisplay), colW[0]), colW[0]);
+        string c2 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(LcdLine(emulator, s, row, labelDisplay), colW[1]), colW[1]);
+        string c3 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(Ch12WaveLine(emulator, row, labelDisplay), colW[2]), colW[2]);
+        string c4 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(Ch34SoundLine(emulator, row, labelDisplay), colW[3]), colW[3]);
         return c1 + new string(' ', gap) + c2 + new string(' ', gap) + c3 + new string(' ', gap) + c4;
     }
 
-    static string LcdLine(Emulator emulator, DebugState s, int r)
+    static string RegLabel(ushort addr, string name, RegisterLabelDisplay display) =>
+        display == RegisterLabelDisplay.Address
+            ? $"[bold]{addr:X4}[/]: "
+            : $"[bold]{name}[/]: ";
+
+    static string LcdRegLine(ushort addr, string name, byte val, RegisterLabelDisplay display) =>
+        RegLabel(addr, name, display) + $"[cyan]{val:X2}[/]";
+
+    static string LcdLine(Emulator emulator, DebugState s, int r, RegisterLabelDisplay display)
     {
         string y = "[yellow]";
         string x = "[/]";
         return r switch
         {
             0 => $"{y}LCD{x}",
-            1 => $"[bold]FF40[/] LCDC: [cyan]{emulator.Read(0xFF40):X2}[/]",
-            2 => $"[bold]FF41[/] STAT: [cyan]{emulator.Read(0xFF41):X2}[/]",
-            3 => $"[bold]FF42[/] SCY: [cyan]{emulator.Read(0xFF42):X2}[/]",
-            4 => $"[bold]FF43[/] SCX: [cyan]{emulator.Read(0xFF43):X2}[/]",
-            5 => $"[bold]FF44[/] LY: [cyan]{emulator.Read(0xFF44):X2}[/]",
-            6 => $"[bold]FF45[/] LYC: [cyan]{emulator.Read(0xFF45):X2}[/]",
-            7 => $"[bold]FF46[/] DMA: [cyan]{emulator.Read(0xFF46):X2}[/]",
-            8 => $"[bold]FF47[/] BGP: [cyan]{emulator.Read(0xFF47):X2}[/]",
-            9 => $"[bold]FF48[/] OBP0: [cyan]{emulator.Read(0xFF48):X2}[/]",
-            10 => $"[bold]FF49[/] OBP1: [cyan]{emulator.Read(0xFF49):X2}[/]",
-            11 => $"[bold]FF4A[/] WY: [cyan]{emulator.Read(0xFF4A):X2}[/]",
-            12 => $"[bold]FF4B[/] WX: [cyan]{emulator.Read(0xFF4B):X2}[/]",
+            1 => LcdRegLine(0xFF40, "LCDC", emulator.Read(0xFF40), display),
+            2 => LcdRegLine(0xFF41, "STAT", emulator.Read(0xFF41), display),
+            3 => LcdRegLine(0xFF42, "SCY", emulator.Read(0xFF42), display),
+            4 => LcdRegLine(0xFF43, "SCX", emulator.Read(0xFF43), display),
+            5 => LcdRegLine(0xFF44, "LY", emulator.Read(0xFF44), display),
+            6 => LcdRegLine(0xFF45, "LYC", emulator.Read(0xFF45), display),
+            7 => LcdRegLine(0xFF46, "DMA", emulator.Read(0xFF46), display),
+            8 => LcdRegLine(0xFF47, "BGP", emulator.Read(0xFF47), display),
+            9 => LcdRegLine(0xFF48, "OBP0", emulator.Read(0xFF48), display),
+            10 => LcdRegLine(0xFF49, "OBP1", emulator.Read(0xFF49), display),
+            11 => LcdRegLine(0xFF4A, "WY", emulator.Read(0xFF4A), display),
+            12 => LcdRegLine(0xFF4B, "WX", emulator.Read(0xFF4B), display),
             13 => "",
             14 => $"{y}LCD (internal){x}",
             15 => $"VBlank: {(emulator.Read(0xFF44) >= 0x90 ? "yes" : "no")}",
@@ -53,7 +68,10 @@ static class TuiRegisterGridFormatter
     static string CpuReg16Markup(ushort v) =>
         $"[cyan]{v >> 8:X2} {v & 0xFF:X2}[/]";
 
-    static string CpuIrqSerialTimerLine(Emulator emulator, DebugState s, int r)
+    static string IoRegLine(Emulator emulator, ushort addr, string name, RegisterLabelDisplay display) =>
+        RegLabel(addr, name, display) + $"[cyan]{emulator.Read(addr):X2}[/]";
+
+    static string CpuIrqSerialTimerLine(Emulator emulator, DebugState s, int r, RegisterLabelDisplay display)
     {
         string y = "[yellow]";
         string x = "[/]";
@@ -68,42 +86,42 @@ static class TuiRegisterGridFormatter
             6 => $"SP: {CpuReg16Markup(s.SP)}",
             7 => "",
             8 => $"{y}Interrupts{x}",
-            9 => $"FF0F IF: [cyan]{s.IF:X2}[/]",
-            10 => $"FF4D KEY1: [cyan]{emulator.Read(0xFF4D):X2}[/]",
-            11 => $"FFFF IE: [cyan]{s.IE:X2}[/]",
+            9 => RegLabel(0xFF0F, "IF", display) + $"[cyan]{s.IF:X2}[/]",
+            10 => IoRegLine(emulator, 0xFF4D, "KEY1", display),
+            11 => RegLabel(0xFFFF, "IE", display) + $"[cyan]{s.IE:X2}[/]",
             12 => $"IME: [cyan]{(s.Ime ? "on" : "off")}[/]",
             13 => "",
             14 => $"{y}Serial Port{x}",
-            15 => $"FF01 SB: [cyan]{emulator.Read(0xFF01):X2}[/]",
-            16 => $"FF02 SC: [cyan]{emulator.Read(0xFF02):X2}[/]",
+            15 => IoRegLine(emulator, 0xFF01, "SB", display),
+            16 => IoRegLine(emulator, 0xFF02, "SC", display),
             17 => "",
             18 => $"{y}Timer{x}",
-            19 => $"FF04 DIV: [cyan]{emulator.Read(0xFF04):X2}[/]",
-            20 => $"FF05 TIMA: [cyan]{emulator.Read(0xFF05):X2}[/]",
-            21 => $"FF06 TMA: [cyan]{emulator.Read(0xFF06):X2}[/]",
-            22 => $"FF07 TAC: [cyan]{emulator.Read(0xFF07):X2}[/]",
+            19 => IoRegLine(emulator, 0xFF04, "DIV", display),
+            20 => IoRegLine(emulator, 0xFF05, "TIMA", display),
+            21 => IoRegLine(emulator, 0xFF06, "TMA", display),
+            22 => IoRegLine(emulator, 0xFF07, "TAC", display),
             _ => "",
         };
     }
 
-    static string Ch12WaveLine(Emulator emulator, int r)
+    static string Ch12WaveLine(Emulator emulator, int r, RegisterLabelDisplay display)
     {
         string y = "[yellow]";
         string x = "[/]";
         return r switch
         {
             0 => $"{y}Ch1 (Square){x}",
-            1 => LineReg(emulator, 0xFF10, "NR10"),
-            2 => LineReg(emulator, 0xFF11, "NR11"),
-            3 => LineReg(emulator, 0xFF12, "NR12"),
-            4 => LineReg(emulator, 0xFF13, "NR13"),
-            5 => LineReg(emulator, 0xFF14, "NR14"),
+            1 => LineReg(emulator, 0xFF10, "NR10", display),
+            2 => LineReg(emulator, 0xFF11, "NR11", display),
+            3 => LineReg(emulator, 0xFF12, "NR12", display),
+            4 => LineReg(emulator, 0xFF13, "NR13", display),
+            5 => LineReg(emulator, 0xFF14, "NR14", display),
             6 => "",
             7 => $"{y}Ch2 (Square){x}",
-            8 => LineReg(emulator, 0xFF16, "NR21"),
-            9 => LineReg(emulator, 0xFF17, "NR22"),
-            10 => LineReg(emulator, 0xFF18, "NR23"),
-            11 => LineReg(emulator, 0xFF19, "NR24"),
+            8 => LineReg(emulator, 0xFF16, "NR21", display),
+            9 => LineReg(emulator, 0xFF17, "NR22", display),
+            10 => LineReg(emulator, 0xFF18, "NR23", display),
+            11 => LineReg(emulator, 0xFF19, "NR24", display),
             12 => "",
             13 => $"{y}Wave RAM (FF30-F){x}",
             14 => WaveRow(emulator, 0),
@@ -114,8 +132,8 @@ static class TuiRegisterGridFormatter
         };
     }
 
-    static string LineReg(Emulator emulator, ushort a, string name) =>
-        $"[bold]{a:X4}[/] {name}: [cyan]{emulator.Read(a):X2}[/]";
+    static string LineReg(Emulator emulator, ushort a, string name, RegisterLabelDisplay display) =>
+        RegLabel(a, name, display) + $"[cyan]{emulator.Read(a):X2}[/]";
 
     static string WaveRow(Emulator emulator, int i)
     {
@@ -129,29 +147,29 @@ static class TuiRegisterGridFormatter
 
     }
 
-    static string Ch34SoundLine(Emulator emulator, int r)
+    static string Ch34SoundLine(Emulator emulator, int r, RegisterLabelDisplay display)
     {
         string y = "[yellow]";
         string x = "[/]";
         return r switch
         {
             0 => $"{y}Ch3 (Wave){x}",
-            1 => LineReg(emulator, 0xFF1A, "NR30"),
-            2 => LineReg(emulator, 0xFF1B, "NR31"),
-            3 => LineReg(emulator, 0xFF1C, "NR32"),
-            4 => LineReg(emulator, 0xFF1D, "NR33"),
-            5 => LineReg(emulator, 0xFF1E, "NR34"),
+            1 => LineReg(emulator, 0xFF1A, "NR30", display),
+            2 => LineReg(emulator, 0xFF1B, "NR31", display),
+            3 => LineReg(emulator, 0xFF1C, "NR32", display),
+            4 => LineReg(emulator, 0xFF1D, "NR33", display),
+            5 => LineReg(emulator, 0xFF1E, "NR34", display),
             6 => "",
             7 => $"{y}Ch4 (Noise){x}",
-            8 => LineReg(emulator, 0xFF20, "NR41"),
-            9 => LineReg(emulator, 0xFF21, "NR42"),
-            10 => LineReg(emulator, 0xFF22, "NR43"),
-            11 => LineReg(emulator, 0xFF23, "NR44"),
+            8 => LineReg(emulator, 0xFF20, "NR41", display),
+            9 => LineReg(emulator, 0xFF21, "NR42", display),
+            10 => LineReg(emulator, 0xFF22, "NR43", display),
+            11 => LineReg(emulator, 0xFF23, "NR44", display),
             12 => "",
             13 => $"{y}Sound Ctrl{x}",
-            14 => LineReg(emulator, 0xFF24, "NR50"),
-            15 => LineReg(emulator, 0xFF25, "NR51"),
-            16 => LineReg(emulator, 0xFF26, "NR52"),
+            14 => LineReg(emulator, 0xFF24, "NR50", display),
+            15 => LineReg(emulator, 0xFF25, "NR51", display),
+            16 => LineReg(emulator, 0xFF26, "NR52", display),
             _ => "",
         };
     }

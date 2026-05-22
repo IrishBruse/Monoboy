@@ -1,6 +1,7 @@
 namespace Monoboy.Desktop.Debugger;
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 using Monoboy;
@@ -39,6 +40,15 @@ static class TuiDebuggerView
 
         int[] subWeights = [19, 19, 19, 19];
         int[] colW = TuiMarkup.DistributeWidths(midInner, gap, subWeights);
+
+        bool showBranchPanel = TuiBranchPreviewFormatter.TryBuildPanel(
+            emulator, s.PC, showDisasmSymbols, symbols, out ushort branchTarget, out List<string> branchPreviewLines);
+        string? branchTitleMarkup = showBranchPanel
+            ? TuiBranchPreviewFormatter.BuildTitleMarkup(branchTarget, showDisasmSymbols, symbols, emulator.RomBank)
+            : null;
+        int branchPanelLines = showBranchPanel
+            ? TuiBranchPreviewFormatter.PanelLineCount(branchPreviewLines)
+            : 0;
 
         const int pcLinesFromTop = 3;
         var disasmLines = TuiDisassemblyFormatter.BuildLines(
@@ -91,9 +101,29 @@ static class TuiDebuggerView
                 }
             }
 
-            string mid = r < registerRows
-                ? TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(TuiRegisterGridFormatter.BuildRow(emulator, s, r, colW, gap, registerLabelDisplay), midInner), midInner)
-                : new string(' ', midInner);
+            string mid;
+            if (r < registerRows)
+            {
+                mid = TuiMarkup.PadMarkup(
+                    TuiMarkup.ClipMarkup(TuiRegisterGridFormatter.BuildRow(emulator, s, r, colW, gap, registerLabelDisplay), midInner),
+                    midInner);
+            }
+            else if (showBranchPanel && r >= TuiBranchPreviewFormatter.PanelStartRow)
+            {
+                int panelRow = r - TuiBranchPreviewFormatter.PanelStartRow;
+                if (panelRow < branchPanelLines)
+                {
+                    mid = TuiBranchPreviewFormatter.BuildPanelRow(branchPreviewLines, branchTitleMarkup!, panelRow, midInner);
+                }
+                else
+                {
+                    mid = new string(' ', midInner);
+                }
+            }
+            else
+            {
+                mid = new string(' ', midInner);
+            }
 
             string mem;
             if (r == 0)

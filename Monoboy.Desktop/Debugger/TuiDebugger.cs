@@ -52,6 +52,7 @@ public static class TuiDebugger
 
         try
         {
+            TuiTerminalReset.ReleaseMouseCapture();
             Console.CursorVisible = false;
             while (!quit)
             {
@@ -194,6 +195,7 @@ public static class TuiDebugger
         }
         finally
         {
+            TuiTerminalReset.ReleaseMouseCapture();
             Console.CursorVisible = true;
         }
 

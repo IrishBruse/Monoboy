@@ -249,6 +249,99 @@ static class TuiDisassemblyFormatter
         && !markup.Contains("[grey]", StringComparison.Ordinal)
         && !markup.Contains("[green]", StringComparison.Ordinal);
 
+    /// <summary>Parse the instruction address from a disassembly markup line (not label lines).</summary>
+    internal static bool TryParseInstructionAddress(string markupLine, out ushort address)
+    {
+        address = 0;
+        const string marker = "[grey]";
+        int i = markupLine.IndexOf(marker, StringComparison.Ordinal);
+        if (i < 0)
+        {
+            return false;
+        }
+
+        int start = i + marker.Length;
+        int end = markupLine.IndexOf("[/]", start, StringComparison.Ordinal);
+        if (end <= start)
+        {
+            return false;
+        }
+
+        string hex = markupLine[start..end];
+        return ushort.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out address);
+    }
+
+    /// <summary>Static branch/call destination for JP, JR, CALL, and RST (not JP HL).</summary>
+    internal static bool TryGetBranchTarget(Emulator emulator, ushort addr, out ushort target)
+    {
+        target = 0;
+        byte op = emulator.Read(addr);
+        if (!Ops.Unprefixed.TryGetValue(op, out var instruction))
+        {
+            return false;
+        }
+
+        if (instruction.Mnemonic == Mnemonic.RST && instruction.Operands.Length > 0)
+        {
+            target = RstOperandToAddress(instruction.Operands[0]);
+            return true;
+        }
+
+        if (instruction.Mnemonic is not (Mnemonic.JP or Mnemonic.CALL or Mnemonic.JR))
+        {
+            return false;
+        }
+
+        if (instruction.Operands.Length == 1 && instruction.Operands[0] == Operand.HL)
+        {
+            return false;
+        }
+
+        foreach (Operand operand in instruction.Operands)
+        {
+            if (TryResolveTargetOperand(operand, emulator, addr, out target))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Disassemble up to <paramref name="maxInstructions"/> from <paramref name="target"/>.</summary>
+    internal static List<string> BuildPreviewLines(
+        Emulator emulator,
+        ushort target,
+        int maxInstructions,
+        bool showSymbols,
+        SymSymbolMap? symbols)
+    {
+        var lines = new List<string>();
+        ushort cursor = target;
+        const ushort noFocusPc = ushort.MaxValue;
+        for (int i = 0; i < maxInstructions; i++)
+        {
+            AppendInstructionBlock(lines, emulator, cursor, noFocusPc, showSymbols, symbols, markPc: false, out ushort size);
+            cursor += size;
+        }
+
+        return lines;
+    }
+
+    static ushort RstOperandToAddress(Operand operand) =>
+        operand switch
+        {
+            Operand.RST00 => 0x00,
+            Operand.RST08 => 0x08,
+            Operand.RST10 => 0x10,
+            Operand.RST18 => 0x18,
+            Operand.RST20 => 0x20,
+            Operand.RST28 => 0x28,
+            Operand.RST30 => 0x30,
+            Operand.RST38 => 0x38,
+            _ => 0,
+        };
+
     internal static int FindPcLineIndex(List<string> lines)
     {
         for (int i = 0; i < lines.Count; i++)

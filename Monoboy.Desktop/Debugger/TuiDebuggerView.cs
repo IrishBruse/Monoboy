@@ -42,16 +42,9 @@ static class TuiDebuggerView
         var disasmLines = TuiDisassemblyFormatter.BuildLines(
             emulator, s.PC, disasmSkip, maxContentLines + 4, pcLinesFromTop, symbols);
 
-        int disasmViewStart = 0;
-        if (disasmSkip == 0)
-        {
-            int pcLineIdx = TuiDisassemblyFormatter.FindPcLineIndex(disasmLines);
-            if (pcLineIdx >= 0)
-            {
-                // Pin > to a fixed row; labels share the lines-above slots, not extra scroll.
-                disasmViewStart = Math.Max(0, pcLineIdx - pcLinesFromTop);
-            }
-        }
+        int pcLineIdx = disasmSkip == 0
+            ? TuiDisassemblyFormatter.FindPcLineIndex(disasmLines)
+            : -1;
 
         string gapStr = new(' ', gap);
         int estChars = maxContentLines * (leftInner + midInner + memoryWidth + 64);
@@ -68,16 +61,23 @@ static class TuiDebuggerView
             }
             else
             {
-                int idx = disasmViewStart + r - 1;
+                int idx;
+                if (pcLineIdx < 0)
+                {
+                    idx = r - 1;
+                }
+                else if (pcLineIdx < pcLinesFromTop)
+                {
+                    // Short history: start at first line (no leading blanks).
+                    idx = r - 1;
+                }
+                else
+                {
+                    idx = pcLineIdx - pcLinesFromTop + (r - 1);
+                }
                 if (idx >= 0 && idx < disasmLines.Count)
                 {
-                    string line = TuiMarkup.ClipMarkup(disasmLines[idx], leftInner);
-                    if (TuiDisassemblyFormatter.IsLabelMarkupLine(disasmLines[idx]))
-                    {
-                        line = TuiMarkup.PadMarkup(line, 24);
-                    }
-
-                    left = TuiMarkup.PadMarkup(line, leftInner);
+                    left = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(disasmLines[idx], leftInner), leftInner);
                 }
                 else
                 {

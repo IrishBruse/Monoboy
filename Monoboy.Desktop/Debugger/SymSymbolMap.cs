@@ -8,7 +8,7 @@ using System.IO;
 /// <summary>RGBDS-style .sym companion (bank:address label per line).</summary>
 sealed class SymSymbolMap
 {
-    readonly Dictionary<(uint bank, ushort addr), string> labels = new();
+    readonly Dictionary<(uint bank, ushort addr), List<string>> labels = new();
 
     public static SymSymbolMap? TryLoadForRom(string romPath)
     {
@@ -37,21 +37,27 @@ sealed class SymSymbolMap
         return map;
     }
 
-    /// <summary>Resolve a label for a CPU address and the active ROM bank.</summary>
-    public bool TryGetLabel(ushort cpuAddr, byte romBank, out string label)
+    /// <summary>All labels at a CPU address (file order); bank 0 symbols apply in other banks too.</summary>
+    public bool TryGetLabels(ushort cpuAddr, byte romBank, out IReadOnlyList<string> names)
     {
-        if (labels.TryGetValue((romBank, cpuAddr), out label!))
+        if (TryGetLabelList((romBank, cpuAddr), out List<string>? list))
         {
+            names = list;
             return true;
         }
 
-        if (romBank != 0 && labels.TryGetValue((0, cpuAddr), out label!))
+        if (romBank != 0 && TryGetLabelList((0, cpuAddr), out list))
         {
+            names = list;
             return true;
         }
 
+        names = Array.Empty<string>();
         return false;
     }
+
+    bool TryGetLabelList((uint bank, ushort addr) key, out List<string>? list) =>
+        labels.TryGetValue(key, out list) && list is { Count: > 0 };
 
     void TryAddLine(string rawLine)
     {
@@ -72,7 +78,20 @@ sealed class SymSymbolMap
             return;
         }
 
-        labels[(bank, addr)] = tokens[1];
+        var key = (bank, addr);
+        if (!labels.TryGetValue(key, out List<string>? list))
+        {
+            list = new List<string>();
+            labels[key] = list;
+        }
+
+        string name = tokens[1];
+        if (list.Contains(name))
+        {
+            return;
+        }
+
+        list.Add(name);
     }
 
     static bool TryParseLocation(string token, out uint bank, out ushort addr)

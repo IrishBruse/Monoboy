@@ -38,7 +38,20 @@ static class TuiDebuggerView
         int[] subWeights = [19, 19, 19, 19];
         int[] colW = TuiMarkup.DistributeWidths(midInner, gap, subWeights);
 
-        var disasmLines = TuiDisassemblyFormatter.BuildLines(emulator, s.PC, disasmSkip, maxContentLines + 4, symbols);
+        const int pcLinesFromTop = 3;
+        var disasmLines = TuiDisassemblyFormatter.BuildLines(
+            emulator, s.PC, disasmSkip, maxContentLines + 4, pcLinesFromTop, symbols);
+
+        int disasmViewStart = 0;
+        if (disasmSkip == 0)
+        {
+            int pcLineIdx = TuiDisassemblyFormatter.FindPcLineIndex(disasmLines);
+            if (pcLineIdx >= 0)
+            {
+                // Pin > to a fixed row; labels share the lines-above slots, not extra scroll.
+                disasmViewStart = Math.Max(0, pcLineIdx - pcLinesFromTop);
+            }
+        }
 
         string gapStr = new(' ', gap);
         int estChars = maxContentLines * (leftInner + midInner + memoryWidth + 64);
@@ -55,10 +68,21 @@ static class TuiDebuggerView
             }
             else
             {
-                int idx = r - 1;
-                left = idx >= 0 && idx < disasmLines.Count
-                    ? TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(disasmLines[idx], leftInner), leftInner)
-                    : new string(' ', leftInner);
+                int idx = disasmViewStart + r - 1;
+                if (idx >= 0 && idx < disasmLines.Count)
+                {
+                    string line = TuiMarkup.ClipMarkup(disasmLines[idx], leftInner);
+                    if (TuiDisassemblyFormatter.IsLabelMarkupLine(disasmLines[idx]))
+                    {
+                        line = TuiMarkup.PadMarkup(line, 24);
+                    }
+
+                    left = TuiMarkup.PadMarkup(line, leftInner);
+                }
+                else
+                {
+                    left = new string(' ', leftInner);
+                }
             }
 
             string mid = r < registerRows

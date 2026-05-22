@@ -23,13 +23,27 @@ static class TuiRegisterGridFormatter
         return c1 + new string(' ', gap) + c2 + new string(' ', gap) + c3 + new string(' ', gap) + c4;
     }
 
+    /// <summary>Visible width of <c>[bold]FF40[/]: </c> / <c>[bold]KEY1[/]: </c> label prefix.</summary>
+    const int RegLabelVisibleWidth = 6;
+
     static string RegLabel(ushort addr, string name, RegisterLabelDisplay display) =>
         display == RegisterLabelDisplay.Address
             ? $"[bold]{addr:X4}[/]: "
             : $"[bold]{name}[/]: ";
 
+    static string LabelPlusValue(string label, string value, RegisterLabelDisplay display)
+    {
+        if (display == RegisterLabelDisplay.Address)
+        {
+            return label + value;
+        }
+
+        int pad = Math.Max(0, RegLabelVisibleWidth - TuiMarkup.VisibleLen(label));
+        return label + new string(' ', pad) + value;
+    }
+
     static string LcdRegLine(ushort addr, string name, byte val, RegisterLabelDisplay display) =>
-        RegLabel(addr, name, display) + $"[cyan]{val:X2}[/]";
+        LabelPlusValue(RegLabel(addr, name, display), $"[cyan]{val:X2}[/]", display);
 
     static string LcdLine(Emulator emulator, DebugState s, int r, RegisterLabelDisplay display)
     {
@@ -69,7 +83,7 @@ static class TuiRegisterGridFormatter
         $"[cyan]{v >> 8:X2} {v & 0xFF:X2}[/]";
 
     static string IoRegLine(Emulator emulator, ushort addr, string name, RegisterLabelDisplay display) =>
-        RegLabel(addr, name, display) + $"[cyan]{emulator.Read(addr):X2}[/]";
+        LabelPlusValue(RegLabel(addr, name, display), $"[cyan]{emulator.Read(addr):X2}[/]", display);
 
     static string CpuIrqSerialTimerLine(Emulator emulator, DebugState s, int r, RegisterLabelDisplay display)
     {
@@ -86,10 +100,10 @@ static class TuiRegisterGridFormatter
             6 => $"SP: {CpuReg16Markup(s.SP)}",
             7 => "",
             8 => $"{y}Interrupts{x}",
-            9 => RegLabel(0xFF0F, "IF", display) + $"[cyan]{s.IF:X2}[/]",
+            9 => LabelPlusValue(RegLabel(0xFF0F, "IF", display), $"[cyan]{s.IF:X2}[/]", display),
             10 => IoRegLine(emulator, 0xFF4D, "KEY1", display),
-            11 => RegLabel(0xFFFF, "IE", display) + $"[cyan]{s.IE:X2}[/]",
-            12 => $"IME: [cyan]{(s.Ime ? "on" : "off")}[/]",
+            11 => LabelPlusValue(RegLabel(0xFFFF, "IE", display), $"[cyan]{s.IE:X2}[/]", display),
+            12 => LabelPlusValue("[bold]IME[/]: ", $"[cyan]{(s.Ime ? "on" : "off")}[/]", display),
             13 => "",
             14 => $"{y}Serial Port{x}",
             15 => IoRegLine(emulator, 0xFF01, "SB", display),
@@ -133,7 +147,7 @@ static class TuiRegisterGridFormatter
     }
 
     static string LineReg(Emulator emulator, ushort a, string name, RegisterLabelDisplay display) =>
-        RegLabel(a, name, display) + $"[cyan]{emulator.Read(a):X2}[/]";
+        LabelPlusValue(RegLabel(a, name, display), $"[cyan]{emulator.Read(a):X2}[/]", display);
 
     static string WaveRow(Emulator emulator, int i)
     {

@@ -14,7 +14,7 @@ static class TuiDebuggerView
         Emulator emulator,
         int termW,
         int termH,
-        int disasmSkip,
+        int disasmLineSkip,
         int memRowSkip,
         DebuggerPaneFocus paneFocus,
         RegisterLabelDisplay registerLabelDisplay,
@@ -42,11 +42,9 @@ static class TuiDebuggerView
 
         const int pcLinesFromTop = 3;
         var disasmLines = TuiDisassemblyFormatter.BuildLines(
-            emulator, s.PC, disasmSkip, maxContentLines + 4, pcLinesFromTop, showDisasmSymbols, symbols);
+            emulator, s.PC, disasmLineSkip, maxContentLines + 4, pcLinesFromTop, showDisasmSymbols, symbols);
 
-        int pcLineIdx = disasmSkip == 0
-            ? TuiDisassemblyFormatter.FindPcLineIndex(disasmLines)
-            : -1;
+        int disasmViewStart = TuiDisassemblyFormatter.GetViewStartIndex(disasmLines, pcLinesFromTop, disasmLineSkip);
 
         string gapStr = new(' ', gap);
         int estChars = maxContentLines * (leftInner + midInner + memoryWidth + 64);
@@ -63,19 +61,15 @@ static class TuiDebuggerView
             }
             else
             {
-                int idx;
-                if (pcLineIdx < 0)
+                int idx = disasmViewStart + (r - 1);
+                if (idx >= disasmLines.Count && disasmLineSkip == 0)
                 {
-                    idx = r - 1;
-                }
-                else if (pcLineIdx < pcLinesFromTop)
-                {
-                    // Short history: start at first line (no leading blanks).
-                    idx = r - 1;
-                }
-                else
-                {
-                    idx = pcLineIdx - pcLinesFromTop + (r - 1);
+                    // Short history at PC: keep marker on a fixed row without trailing blanks.
+                    int pcLineIdx = TuiDisassemblyFormatter.FindPcLineIndex(disasmLines);
+                    if (pcLineIdx >= 0 && pcLineIdx < pcLinesFromTop)
+                    {
+                        idx = r - 1;
+                    }
                 }
                 if (idx >= 0 && idx < disasmLines.Count)
                 {

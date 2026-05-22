@@ -10,7 +10,7 @@ using Monoboy.Desktop.Debugger;
 
 /// <summary>
 /// Debugger TUI: left = disassembly; center = register grid; right = memory dump (full height, flush right).
-/// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane (disassembly can scroll before the current PC); Page Up/Down jump by ~one screen. V runs to VBlank. Ctrl+R reloads the ROM and resets scroll.
+/// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane one display line at a time; Page Up/Down jump by ~one screen. V runs to VBlank. Ctrl+R reloads the ROM and resets scroll.
 /// </summary>
 public static class TuiDebugger
 {
@@ -40,7 +40,7 @@ public static class TuiDebugger
 
         ReloadRom();
 
-        int disasmSkip = 0;
+        int disasmLineSkip = 0;
         int memRowSkip = 0;
         var paneFocus = DebuggerPaneFocus.Disassembly;
         var registerLabelDisplay = RegisterLabelDisplay.Name;
@@ -74,19 +74,19 @@ public static class TuiDebugger
                     {
                         case ConsoleKey.S:
                         emulator.Step();
-                        disasmSkip = 0;
+                        disasmLineSkip = 0;
                         break;
                         case ConsoleKey.F:
                         emulator.StepFrame();
-                        disasmSkip = 0;
+                        disasmLineSkip = 0;
                         break;
                         case ConsoleKey.V:
                         emulator.RunUntilVBlank();
-                        disasmSkip = 0;
+                        disasmLineSkip = 0;
                         break;
                         case ConsoleKey.R when (key.Modifiers & ConsoleModifiers.Control) != 0:
                         ReloadRom();
-                        disasmSkip = 0;
+                        disasmLineSkip = 0;
                         memRowSkip = 0;
                         break;
                         case ConsoleKey.R:
@@ -94,7 +94,7 @@ public static class TuiDebugger
                         {
                             emulator.Step();
                         }
-                        disasmSkip = 0;
+                        disasmLineSkip = 0;
                         break;
                         case ConsoleKey.Q:
                         quit = true;
@@ -108,7 +108,7 @@ public static class TuiDebugger
                         case ConsoleKey.UpArrow:
                         if (paneFocus == DebuggerPaneFocus.Disassembly)
                         {
-                            disasmSkip--;
+                            disasmLineSkip--;
                         }
                         else
                         {
@@ -120,7 +120,7 @@ public static class TuiDebugger
                         case ConsoleKey.DownArrow:
                         if (paneFocus == DebuggerPaneFocus.Disassembly)
                         {
-                            disasmSkip++;
+                            disasmLineSkip++;
                         }
                         else
                         {
@@ -131,7 +131,7 @@ public static class TuiDebugger
                         case ConsoleKey.PageDown:
                         if (paneFocus == DebuggerPaneFocus.Disassembly)
                         {
-                            disasmSkip += pageJump;
+                            disasmLineSkip += pageJump;
                         }
                         else
                         {
@@ -142,7 +142,7 @@ public static class TuiDebugger
                         case ConsoleKey.PageUp:
                         if (paneFocus == DebuggerPaneFocus.Disassembly)
                         {
-                            disasmSkip -= pageJump;
+                            disasmLineSkip -= pageJump;
                         }
                         else
                         {
@@ -151,7 +151,7 @@ public static class TuiDebugger
 
                         break;
                         case ConsoleKey.Home:
-                        disasmSkip = 0;
+                        disasmLineSkip = 0;
                         memRowSkip = 0;
                         break;
                         case ConsoleKey.A:
@@ -188,7 +188,7 @@ public static class TuiDebugger
                 }
 
                 TuiDebuggerView.DrawFrame(
-                    emulator, w, h, disasmSkip, memRowSkip, paneFocus, registerLabelDisplay, showDisasmSymbols, symbols);
+                    emulator, w, h, disasmLineSkip, memRowSkip, paneFocus, registerLabelDisplay, showDisasmSymbols, symbols);
                 needsRedraw = false;
             }
         }

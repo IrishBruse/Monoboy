@@ -28,48 +28,26 @@ static class TuiDisassemblyFormatter
     /// <summary>Visible column where standalone symbol labels start (aligned with addresses).</summary>
     internal static int LabelColumn => LinePrefix.Length;
 
-    /// <summary>Build lines with syntax highlighting; <paramref name="skip"/> moves the window in instruction steps from PC.</summary>
+    /// <summary>Build lines with syntax highlighting; <paramref name="lineSkip"/> scrolls the viewport in display lines from the PC-anchored position.</summary>
     /// <param name="instructionsAbovePc">How many prior instructions to include above PC.</param>
     internal static List<string> BuildLines(
         Emulator emulator,
         ushort pc,
-        int skip,
+        int lineSkip,
         int needLines,
         int instructionsAbovePc = 0,
         bool showSymbols = true,
         SymSymbolMap? symbols = null)
     {
         ushort anchor = pc;
-        if (skip > 0)
-        {
-            int consumed = 0;
-            while (consumed < skip)
-            {
-                ushort sz = GetInstructionByteSize(emulator, anchor);
-                anchor += sz;
-                consumed++;
-            }
-        }
-        else if (skip < 0)
-        {
-            for (int i = 0; i < -skip; i++)
-            {
-                if (!TryGetPreviousInstructionStart(emulator, anchor, out ushort prev))
-                {
-                    break;
-                }
-
-                anchor = prev;
-            }
-        }
-
         var lines = new List<string>();
-        ushort historyHead = anchor;
+        ushort rangeStart = anchor;
         const int historyMargin = 2;
         int historyTarget = instructionsAbovePc > 0 ? instructionsAbovePc + historyMargin : 0;
         if (historyTarget > 0)
         {
-            lines.AddRange(CollectLinesAboveMarker(emulator, anchor, pc, historyTarget, showSymbols, symbols, out historyHead));
+            lines.AddRange(CollectLinesAboveMarker(emulator, anchor, pc, historyTarget, showSymbols, symbols, out ushort historyHead));
+            rangeStart = historyHead;
         }
 
         int targetLines = Math.Max(needLines + 4, 40);
@@ -81,9 +59,68 @@ static class TuiDisassemblyFormatter
             cursor += size;
         }
 
-        EnsureInstructionsAbovePc(emulator, pc, lines, instructionsAbovePc, historyHead, showSymbols, symbols);
+        EnsureInstructionsAbovePc(emulator, pc, lines, instructionsAbovePc, rangeStart, showSymbols, symbols);
+        EnsureViewportLines(
+            lines,
+            emulator,
+            pc,
+            instructionsAbovePc,
+            lineSkip,
+            needLines,
+            ref rangeStart,
+            cursor,
+            showSymbols,
+            symbols);
 
         return lines;
+    }
+
+    /// <summary>First visible line index for the disassembly pane (after <paramref name="lineSkip"/>).</summary>
+    internal static int GetViewStartIndex(List<string> lines, int pcLinesFromTop, int lineSkip)
+    {
+        int pcLineIdx = FindPcLineIndex(lines);
+        if (pcLineIdx < 0)
+        {
+            return Math.Max(0, lineSkip);
+        }
+
+        if (pcLineIdx < pcLinesFromTop)
+        {
+            return Math.Max(0, lineSkip);
+        }
+
+        return Math.Max(0, pcLineIdx - pcLinesFromTop + lineSkip);
+    }
+
+    static void EnsureViewportLines(
+        List<string> lines,
+        Emulator emulator,
+        ushort pc,
+        int pcLinesFromTop,
+        int lineSkip,
+        int visibleLineCount,
+        ref ushort rangeStart,
+        ushort rangeEnd,
+        bool showSymbols,
+        SymSymbolMap? symbols)
+    {
+        while (GetViewStartIndex(lines, pcLinesFromTop, lineSkip) < 0)
+        {
+            if (!TryGetPreviousInstructionStart(emulator, rangeStart, out ushort prev))
+            {
+                break;
+            }
+
+            PrependInstructionBlock(lines, emulator, prev, pc, showSymbols, symbols);
+            rangeStart = prev;
+        }
+
+        ushort cursor = rangeEnd;
+        while (GetViewStartIndex(lines, pcLinesFromTop, lineSkip) + visibleLineCount > lines.Count)
+        {
+            AppendInstructionBlock(lines, emulator, cursor, pc, showSymbols, symbols, markPc: false, out ushort size);
+            cursor += size;
+        }
     }
 
     /// <summary>Pad history so the PC marker can sit <paramref name="needInstructions"/> lines below the top of the buffer.</summary>
@@ -168,7 +205,7 @@ static class TuiDisassemblyFormatter
         bool markPc,
         out ushort size)
     {
-        AddLabelLines(lines, showSymbols, symbols, lineAddr, emulator.RomBank);
+        AddLabelLines(lines, symbols, lineAddr, emulator.RomBank);
         string body = FormatLineMarkup(emulator, lineAddr, focusPc, showSymbols, symbols, out size);
         string prefix = markPc ? PcMarkerPrefix : LinePrefix;
         lines.Add(prefix + body);
@@ -192,12 +229,11 @@ static class TuiDisassemblyFormatter
 
     static void AddLabelLines(
         List<string> lines,
-        bool showSymbols,
         SymSymbolMap? symbols,
         ushort addr,
         byte romBank)
     {
-        if (!showSymbols || symbols == null || !symbols.TryGetLabels(addr, romBank, out IReadOnlyList<string> names))
+        if (symbols == null || !symbols.TryGetLabels(addr, romBank, out IReadOnlyList<string> names))
         {
             return;
         }
@@ -251,9 +287,17 @@ static class TuiDisassemblyFormatter
 
     internal static bool TryGetPreviousInstructionStart(Emulator emulator, ushort addr, out ushort prevStart)
     {
+        if (addr >= 2
+            && IsOneByteInstructionEndingAt(emulator, (ushort)(addr - 2), (ushort)(addr - 1))
+            && IsOneByteInstructionEndingAt(emulator, (ushort)(addr - 1), addr))
+        {
+            prevStart = (ushort)(addr - 1);
+            return true;
+        }
+
         const int maxLookback = 32;
-        ushort bestStart = 0;
-        ushort bestSize = 0;
+        ushort longestStart = 0;
+        ushort longestSize = 0;
 
         for (int delta = 1; delta <= maxLookback; delta++)
         {
@@ -270,21 +314,43 @@ static class TuiDisassemblyFormatter
                 continue;
             }
 
-            if (size > bestSize)
+            if (size > longestSize)
             {
-                bestStart = c;
-                bestSize = size;
+                longestStart = c;
+                longestSize = size;
             }
         }
 
-        if (bestSize == 0)
+        if (longestSize == 0)
         {
             prevStart = 0;
             return false;
         }
 
-        prevStart = bestStart;
+        if (!IsBranchInstructionStart(emulator, longestStart)
+            && addr >= 1
+            && IsOneByteInstructionEndingAt(emulator, (ushort)(addr - 1), addr))
+        {
+            prevStart = (ushort)(addr - 1);
+            return true;
+        }
+
+        prevStart = longestStart;
         return true;
+    }
+
+    static bool IsOneByteInstructionEndingAt(Emulator emulator, ushort start, ushort end) =>
+        GetInstructionByteSize(emulator, start) == 1 && start + 1 == end;
+
+    static bool IsBranchInstructionStart(Emulator emulator, ushort start)
+    {
+        byte op = emulator.Read(start);
+        if (!Ops.Unprefixed.TryGetValue(op, out var instruction))
+        {
+            return false;
+        }
+
+        return instruction.Mnemonic is Mnemonic.JP or Mnemonic.CALL or Mnemonic.JR;
     }
 
     static string FormatLineMarkup(
@@ -343,7 +409,7 @@ static class TuiDisassemblyFormatter
                 string? label = FormatTargetName(symbols, target, romBank);
                 if (label != null)
                 {
-                    return $"[yellow]{escAddr}[/] [bold white]{Markup.Escape(label)}[/]";
+                    return $"[bold white]{Markup.Escape(label)}[/]";
                 }
             }
 

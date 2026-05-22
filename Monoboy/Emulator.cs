@@ -145,17 +145,22 @@ public class Emulator
         TotalCycles += mCycles;
     }
 
-    public void StepFrame()
+    public void StepFrame() => RunUntilVBlank();
+
+    /// <summary>Run until the PPU enters VBlank (LY = 144). Stops after <paramref name="maxSteps"/> if LCD is off.</summary>
+    public void RunUntilVBlank(int maxSteps = 2_000_000)
     {
         if (cartridge == null)
         {
             return;
         }
 
-        while (!EnteredVSync)
+        EnteredVSync = false;
+        for (int i = 0; i < maxSteps && !EnteredVSync; i++)
         {
             Step();
         }
+
         EnteredVSync = false;
     }
 

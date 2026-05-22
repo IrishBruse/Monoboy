@@ -77,7 +77,13 @@ static class TuiDebuggerView
                 }
                 if (idx >= 0 && idx < disasmLines.Count)
                 {
-                    left = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(disasmLines[idx], leftInner), leftInner);
+                    string line = TuiMarkup.ClipMarkup(disasmLines[idx], leftInner);
+                    if (TuiDisassemblyFormatter.IsLabelMarkupLine(disasmLines[idx]))
+                    {
+                        line = new string(' ', TuiDisassemblyFormatter.MnemonicColumn - 4) + line;
+                    }
+
+                    left = TuiMarkup.PadMarkup(line, leftInner);
                 }
                 else
                 {
@@ -133,7 +139,7 @@ static class TuiDebuggerView
             ? "[bold cyan]Disasm[/] [dim grey]│ Mem[/]"
             : "[dim grey]Disasm │[/] [bold cyan]Mem[/]";
         string keysMarkup =
-            "  [red]S[/]tep  [red]F[/]rame  [red]R[/]un  [grey]^R[/]reset  [red]Q[/]uit  [red]P[/]review  [grey]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  [red]Tab[/] "
+            "  [red]S[/]tep  [red]F[/]rame  [red]V[/]blank  [red]R[/]un  [red]^R[/]reset  [red]Q[/]uit  [red]P[/]review  [red]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  [red]Tab[/] "
             + focusStr;
 
         string plain = Markup.Remove(keysMarkup);

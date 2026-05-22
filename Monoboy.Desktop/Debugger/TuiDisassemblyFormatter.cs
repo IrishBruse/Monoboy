@@ -73,9 +73,7 @@ static class TuiDisassemblyFormatter
         while (lines.Count < targetLines)
         {
             bool atPc = cursor == pc;
-            string body = FormatLineMarkup(emulator, cursor, pc, symbols, out ushort size);
-            string prefix = atPc ? PcMarkerPrefix : LinePrefix;
-            lines.Add(prefix + body);
+            AppendInstructionBlock(lines, emulator, cursor, pc, symbols, atPc, out ushort size);
             cursor += size;
         }
 
@@ -112,7 +110,7 @@ static class TuiDisassemblyFormatter
                 return;
             }
 
-            lines.Insert(0, FormatInstructionLine(emulator, prev, pc, symbols));
+            PrependInstructionBlock(lines, emulator, prev, pc, symbols);
             head = prev;
         }
     }
@@ -139,7 +137,7 @@ static class TuiDisassemblyFormatter
 
             walk = prev;
             collected++;
-            above.Insert(0, FormatInstructionLine(emulator, prev, focusPc, symbols));
+            PrependInstructionBlock(above, emulator, prev, focusPc, symbols);
         }
 
         historyHead = walk;
@@ -148,6 +146,54 @@ static class TuiDisassemblyFormatter
 
     static string FormatInstructionLine(Emulator emulator, ushort lineAddr, ushort focusPc, SymSymbolMap? symbols) =>
         LinePrefix + FormatLineMarkup(emulator, lineAddr, focusPc, symbols, out _);
+
+    static void AppendInstructionBlock(
+        List<string> lines,
+        Emulator emulator,
+        ushort lineAddr,
+        ushort focusPc,
+        SymSymbolMap? symbols,
+        bool markPc,
+        out ushort size)
+    {
+        AddLabelLines(lines, symbols, lineAddr, emulator.RomBank);
+        string body = FormatLineMarkup(emulator, lineAddr, focusPc, symbols, out size);
+        string prefix = markPc ? PcMarkerPrefix : LinePrefix;
+        lines.Add(prefix + body);
+    }
+
+    static void PrependInstructionBlock(
+        List<string> lines,
+        Emulator emulator,
+        ushort lineAddr,
+        ushort focusPc,
+        SymSymbolMap? symbols)
+    {
+        var block = new List<string>();
+        AppendInstructionBlock(block, emulator, lineAddr, focusPc, symbols, markPc: false, out _);
+        for (int i = block.Count - 1; i >= 0; i--)
+        {
+            lines.Insert(0, block[i]);
+        }
+    }
+
+    static void AddLabelLines(List<string> lines, SymSymbolMap? symbols, ushort addr, byte romBank)
+    {
+        if (symbols == null || !symbols.TryGetLabels(addr, romBank, out IReadOnlyList<string> names))
+        {
+            return;
+        }
+
+        lines.Add(LinePrefix + FormatLabelMarkup(names));
+    }
+
+    static string FormatLabelMarkup(IReadOnlyList<string> names) =>
+        $"[bold white]{Markup.Escape(string.Join(", ", names))}[/]";
+
+    internal static bool IsLabelMarkupLine(string markup) =>
+        markup.Contains("[bold white]", StringComparison.Ordinal)
+        && !markup.Contains("[grey]", StringComparison.Ordinal)
+        && !markup.Contains("[green]", StringComparison.Ordinal);
 
     internal static int FindPcLineIndex(List<string> lines)
     {
@@ -233,7 +279,6 @@ static class TuiDisassemblyFormatter
         byte op = emulator.Read(lineAddr);
         byte romBank = emulator.RomBank;
         string addrMk = $"[grey]{lineAddr:X4}[/]";
-        string labelMk = FormatAddressLabels(symbols, lineAddr, romBank);
 
         if (!Ops.Unprefixed.TryGetValue(op, out var instruction))
         {
@@ -241,7 +286,7 @@ static class TuiDisassemblyFormatter
             string byteMk = $"[cyan]{op:X2}[/]";
             string bytePad = new string(' ', BytesFieldVisibleWidth - 2);
             string gap = new string(' ', MnemonicGapVisibleWidth);
-            return $"{addrMk}{labelMk}: {byteMk}{bytePad}{gap}[bold red]DB[/] [yellow]${op:X2}[/]";
+            return $"{addrMk}: {byteMk}{bytePad}{gap}[bold red]DB[/] [yellow]${op:X2}[/]";
         }
 
         size = instruction.Bytes;
@@ -259,17 +304,7 @@ static class TuiDisassemblyFormatter
         string tail = opsStr.Length > 0 ? $" {opsStr}" : "";
 
         string mnemonicGap = new string(' ', MnemonicGapVisibleWidth);
-        return $"{addrMk}{labelMk}: {bytesMk}{mnemonicGap}{mnMk}{tail}";
-    }
-
-    static string FormatAddressLabels(SymSymbolMap? symbols, ushort addr, byte romBank)
-    {
-        if (symbols == null || !symbols.TryGetLabels(addr, romBank, out IReadOnlyList<string> names))
-        {
-            return string.Empty;
-        }
-
-        return $" [bold white]{Markup.Escape(string.Join(", ", names))}[/]";
+        return $"{addrMk}: {bytesMk}{mnemonicGap}{mnMk}{tail}";
     }
 
     static string OperandToMarkup(

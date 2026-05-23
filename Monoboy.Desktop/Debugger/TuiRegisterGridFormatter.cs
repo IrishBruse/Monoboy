@@ -1,11 +1,10 @@
 namespace Monoboy.Desktop.Debugger;
 
 using System;
-using System.Text;
 
 using Monoboy;
 
-/// <summary>Center column: CPU, LCD, IRQ/serial/timer, and APU register grids.</summary>
+/// <summary>Register column: CPU, LCD, and IRQ/serial/timer grids.</summary>
 static class TuiRegisterGridFormatter
 {
     internal static string BuildRow(
@@ -18,9 +17,7 @@ static class TuiRegisterGridFormatter
     {
         string c1 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(CpuIrqSerialTimerLine(emulator, s, row, labelDisplay), colW[0]), colW[0]);
         string c2 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(LcdLine(emulator, s, row, labelDisplay), colW[1]), colW[1]);
-        string c3 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(Ch12WaveLine(emulator, row, labelDisplay), colW[2]), colW[2]);
-        string c4 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(Ch34SoundLine(emulator, row, labelDisplay), colW[3]), colW[3]);
-        return c1 + new string(' ', gap) + c2 + new string(' ', gap) + c3 + new string(' ', gap) + c4;
+        return c1 + new string(' ', gap) + c2;
     }
 
     /// <summary>Visible width of <c>[bold]FF40[/]: </c> / <c>[bold]KEY1[/]: </c> label prefix.</summary>
@@ -113,73 +110,4 @@ static class TuiRegisterGridFormatter
         };
     }
 
-    static string Ch12WaveLine(Emulator emulator, int r, RegisterLabelDisplay display)
-    {
-        string y = "[yellow]";
-        string x = "[/]";
-        return r switch
-        {
-            0 => $"{y}Ch1 (Square){x}",
-            1 => LineReg(emulator, 0xFF10, "NR10", display),
-            2 => LineReg(emulator, 0xFF11, "NR11", display),
-            3 => LineReg(emulator, 0xFF12, "NR12", display),
-            4 => LineReg(emulator, 0xFF13, "NR13", display),
-            5 => LineReg(emulator, 0xFF14, "NR14", display),
-            6 => "",
-            7 => $"{y}Ch2 (Square){x}",
-            8 => LineReg(emulator, 0xFF16, "NR21", display),
-            9 => LineReg(emulator, 0xFF17, "NR22", display),
-            10 => LineReg(emulator, 0xFF18, "NR23", display),
-            11 => LineReg(emulator, 0xFF19, "NR24", display),
-            12 => "",
-            13 => $"{y}Wave RAM (FF30-F){x}",
-            14 => WaveRow(emulator, 0),
-            15 => WaveRow(emulator, 4),
-            16 => WaveRow(emulator, 8),
-            17 => WaveRow(emulator, 12),
-            _ => "",
-        };
-    }
-
-    static string LineReg(Emulator emulator, ushort a, string name, RegisterLabelDisplay display) =>
-        LabelPlusValue(RegLabel(a, name, display), $"[cyan]{emulator.Read(a):X2}[/]");
-
-    static string WaveRow(Emulator emulator, int i)
-    {
-        var sb = new StringBuilder();
-        for (int j = 0; j < 4; j++)
-        {
-            ushort a = (ushort)(0xFF30 + i + j);
-            sb.Append($"{emulator.Read(a):X2} ");
-        }
-        return sb.ToString().TrimEnd();
-
-    }
-
-    static string Ch34SoundLine(Emulator emulator, int r, RegisterLabelDisplay display)
-    {
-        string y = "[yellow]";
-        string x = "[/]";
-        return r switch
-        {
-            0 => $"{y}Ch3 (Wave){x}",
-            1 => LineReg(emulator, 0xFF1A, "NR30", display),
-            2 => LineReg(emulator, 0xFF1B, "NR31", display),
-            3 => LineReg(emulator, 0xFF1C, "NR32", display),
-            4 => LineReg(emulator, 0xFF1D, "NR33", display),
-            5 => LineReg(emulator, 0xFF1E, "NR34", display),
-            6 => "",
-            7 => $"{y}Ch4 (Noise){x}",
-            8 => LineReg(emulator, 0xFF20, "NR41", display),
-            9 => LineReg(emulator, 0xFF21, "NR42", display),
-            10 => LineReg(emulator, 0xFF22, "NR43", display),
-            11 => LineReg(emulator, 0xFF23, "NR44", display),
-            12 => "",
-            13 => $"{y}Sound Ctrl{x}",
-            14 => LineReg(emulator, 0xFF24, "NR50", display),
-            15 => LineReg(emulator, 0xFF25, "NR51", display),
-            16 => LineReg(emulator, 0xFF26, "NR52", display),
-            _ => "",
-        };
-    }
 }

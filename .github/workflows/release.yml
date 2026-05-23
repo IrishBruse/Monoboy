@@ -1,0 +1,137 @@
+name: Release
+
+# Push to main: bump patch from latest vX.Y.Z, create tag + GitHub release (no binaries yet).
+# Push tag v*: Native AOT publish for linux-x64 and win-x64, upload zips to that release.
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tag-and-release:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create tag and GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force 2>/dev/null || true
+
+          existing=$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+          if [[ -n "${existing}" ]]; then
+            echo "Commit already tagged ${existing}, skipping."
+            exit 0
+          fi
+
+          latest=$(git tag -l | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1 || true)
+          if [[ -z "${latest}" ]]; then
+            latest="v0.0.0"
+          fi
+          ver="${latest#v}"
+          IFS='.' read -r major minor patch <<< "${ver}"
+          major=${major:-0}
+          minor=${minor:-0}
+          patch=${patch:-0}
+          new_patch=$((10#${patch} + 1))
+          new_ver="${major}.${minor}.${new_patch}"
+          new_tag="v${new_ver}"
+
+          echo "Previous: ${latest} -> Next: ${new_tag}"
+          gh release create "${new_tag}" \
+            --target "${GITHUB_SHA}" \
+            --title "Monoboy ${new_tag}" \
+            --generate-notes
+
+  build:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+            slug: linux-x64
+          - rid: win-x64
+            slug: win-x64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish Monoboy.Desktop (Native AOT)
+        env:
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ github.ref_name }}
+          RID: ${{ matrix.rid }}
+          SLUG: ${{ matrix.slug }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          zip_name="Monoboy-${version}-${SLUG}.zip"
+          dotnet publish Monoboy.Desktop/Monoboy.Desktop.csproj \
+            -c Release \
+            -r "${RID}" \
+            --self-contained true \
+            -p:PublishAot=true \
+            -o "./artifacts"
+          (cd artifacts && zip -r "../${zip_name}" .)
+          echo "zip_name=${zip_name}" >> "${GITHUB_ENV}"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: monoboy-${{ matrix.slug }}
+          path: ${{ env.zip_name }}
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: monoboy-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Upload assets to GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          assets=(release-assets/*.zip)
+          if [[ ${#assets[@]} -eq 0 ]]; then
+            echo "No zip assets to upload" >&2
+            exit 1
+          fi
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${assets[@]}" --clobber
+          else
+            gh release create "${TAG}" \
+              "${assets[@]}" \
+              --title "Monoboy ${TAG}" \
+              --generate-notes
+          fi

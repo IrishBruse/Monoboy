@@ -380,14 +380,6 @@ static class TuiDisassemblyFormatter
 
     internal static bool TryGetPreviousInstructionStart(Emulator emulator, ushort addr, out ushort prevStart)
     {
-        if (addr >= 2
-            && IsOneByteInstructionEndingAt(emulator, (ushort)(addr - 2), (ushort)(addr - 1))
-            && IsOneByteInstructionEndingAt(emulator, (ushort)(addr - 1), addr))
-        {
-            prevStart = (ushort)(addr - 1);
-            return true;
-        }
-
         const int maxLookback = 32;
         ushort longestStart = 0;
         ushort longestSize = 0;
@@ -420,30 +412,8 @@ static class TuiDisassemblyFormatter
             return false;
         }
 
-        if (!IsBranchInstructionStart(emulator, longestStart)
-            && addr >= 1
-            && IsOneByteInstructionEndingAt(emulator, (ushort)(addr - 1), addr))
-        {
-            prevStart = (ushort)(addr - 1);
-            return true;
-        }
-
         prevStart = longestStart;
         return true;
-    }
-
-    static bool IsOneByteInstructionEndingAt(Emulator emulator, ushort start, ushort end) =>
-        GetInstructionByteSize(emulator, start) == 1 && start + 1 == end;
-
-    static bool IsBranchInstructionStart(Emulator emulator, ushort start)
-    {
-        byte op = emulator.Read(start);
-        if (!Ops.Unprefixed.TryGetValue(op, out var instruction))
-        {
-            return false;
-        }
-
-        return instruction.Mnemonic is Mnemonic.JP or Mnemonic.CALL or Mnemonic.JR;
     }
 
     static string FormatLineMarkup(

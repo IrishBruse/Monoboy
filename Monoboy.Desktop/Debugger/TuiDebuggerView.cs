@@ -8,7 +8,7 @@ using Monoboy;
 
 using Spectre.Console;
 
-/// <summary>Three-column layout: disassembly, register grid, memory; plus pinned footer.</summary>
+/// <summary>Four-column layout: disassembly, branch preview, registers, memory; plus pinned footer.</summary>
 static class TuiDebuggerView
 {
     internal static void DrawFrame(
@@ -30,16 +30,20 @@ static class TuiDebuggerView
         int registerRows = Math.Min(maxContentLines, registerContentRows);
 
         int gap = 1;
-        int leftPct = 26;
-        int leftInner = termW * leftPct / 100;
-        leftInner = Math.Clamp(leftInner, 8, Math.Max(8, termW - 28));
-        int rowBudget = Math.Max(1, termW - leftInner - 2 * gap);
-        int memoryWidth = (rowBudget * 42 + 50) / 100;
-        memoryWidth = Math.Clamp(memoryWidth, 1, Math.Max(1, rowBudget - 1));
-        int midInner = rowBudget - memoryWidth;
+        const int disasmTailWidth = 26;
+        int disasmWidth = TuiDisassemblyFormatter.MnemonicColumn + disasmTailWidth;
+        disasmWidth = Math.Clamp(disasmWidth, 44, 58);
+        int rightBudget = Math.Max(1, termW - disasmWidth - 3 * gap);
+        int memoryWidth = (rightBudget * 42 + 50) / 100;
+        memoryWidth = Math.Clamp(memoryWidth, 1, Math.Max(1, rightBudget - 24));
+        int branchWidth = Math.Clamp(34, 20, Math.Max(20, rightBudget - memoryWidth - 16));
+        int registerWidth = Math.Max(1, rightBudget - branchWidth - memoryWidth);
 
-        int[] subWeights = [19, 19, 19, 19];
-        int[] colW = TuiMarkup.DistributeWidths(midInner, gap, subWeights);
+        int[] subWeights = [50, 50];
+        int[] colW = TuiMarkup.DistributeWidths(registerWidth, gap, subWeights);
+
+        const int pcLinesFromTop = 3;
+        int branchPanelStartRow = TuiBranchPreviewFormatter.PanelStartRow(pcLinesFromTop);
 
         bool showBranchPanel = TuiBranchPreviewFormatter.TryBuildPanel(
             emulator, s.PC, showDisasmSymbols, symbols, out ushort branchTarget, out List<string> branchPreviewLines);
@@ -50,14 +54,13 @@ static class TuiDebuggerView
             ? TuiBranchPreviewFormatter.PanelLineCount(branchPreviewLines)
             : 0;
 
-        const int pcLinesFromTop = 3;
         var disasmLines = TuiDisassemblyFormatter.BuildLines(
             emulator, s.PC, disasmLineSkip, maxContentLines + 4, pcLinesFromTop, showDisasmSymbols, symbols);
 
         int disasmViewStart = TuiDisassemblyFormatter.GetViewStartIndex(disasmLines, pcLinesFromTop, disasmLineSkip);
 
         string gapStr = new(' ', gap);
-        int estChars = maxContentLines * (leftInner + midInner + memoryWidth + 64);
+        int estChars = maxContentLines * (disasmWidth + branchWidth + registerWidth + memoryWidth + 64);
         var frame = new StringBuilder(estChars);
         for (int r = 0; r < maxContentLines; r++)
         {
@@ -67,7 +70,7 @@ static class TuiDebuggerView
                 string disTitle = paneFocus == DebuggerPaneFocus.Disassembly
                     ? "[bold yellow]Disassembly[/]"
                     : "[dim]Disassembly[/]";
-                left = TuiMarkup.PadMarkup(disTitle, leftInner);
+                left = TuiMarkup.PadMarkup(disTitle, disasmWidth);
             }
             else
             {
@@ -83,7 +86,7 @@ static class TuiDebuggerView
                 }
                 if (idx >= 0 && idx < disasmLines.Count)
                 {
-                    string line = TuiMarkup.ClipMarkup(disasmLines[idx], leftInner);
+                    string line = TuiMarkup.ClipMarkup(disasmLines[idx], disasmWidth);
                     if (TuiDisassemblyFormatter.IsLabelMarkupLine(disasmLines[idx]))
                     {
                         int labelPad = TuiDisassemblyFormatter.LabelColumn - TuiDisassemblyFormatter.LinePrefix.Length;
@@ -93,36 +96,35 @@ static class TuiDebuggerView
                         }
                     }
 
-                    left = TuiMarkup.PadMarkup(line, leftInner);
+                    left = TuiMarkup.PadMarkup(line, disasmWidth);
                 }
                 else
                 {
-                    left = new string(' ', leftInner);
+                    left = new string(' ', disasmWidth);
                 }
             }
 
-            string mid;
-            if (r < registerRows)
+            string branch;
+            if (showBranchPanel && r >= branchPanelStartRow && r < branchPanelStartRow + branchPanelLines)
             {
-                mid = TuiMarkup.PadMarkup(
-                    TuiMarkup.ClipMarkup(TuiRegisterGridFormatter.BuildRow(emulator, s, r, colW, gap, registerLabelDisplay), midInner),
-                    midInner);
-            }
-            else if (showBranchPanel && r >= TuiBranchPreviewFormatter.PanelStartRow)
-            {
-                int panelRow = r - TuiBranchPreviewFormatter.PanelStartRow;
-                if (panelRow < branchPanelLines)
-                {
-                    mid = TuiBranchPreviewFormatter.BuildPanelRow(branchPreviewLines, branchTitleMarkup!, panelRow, midInner);
-                }
-                else
-                {
-                    mid = new string(' ', midInner);
-                }
+                int panelRow = r - branchPanelStartRow;
+                branch = TuiBranchPreviewFormatter.BuildPanelRow(branchPreviewLines, branchTitleMarkup!, panelRow, branchWidth);
             }
             else
             {
-                mid = new string(' ', midInner);
+                branch = new string(' ', branchWidth);
+            }
+
+            string reg;
+            if (r < registerRows)
+            {
+                reg = TuiMarkup.PadMarkupLeft(
+                    TuiMarkup.ClipMarkup(TuiRegisterGridFormatter.BuildRow(emulator, s, r, colW, gap, registerLabelDisplay), registerWidth),
+                    registerWidth);
+            }
+            else
+            {
+                reg = new string(' ', registerWidth);
             }
 
             string mem;
@@ -139,7 +141,7 @@ static class TuiDebuggerView
                 mem = TuiMarkup.PadMarkupLeft(TuiMarkup.ClipMarkup(memLine, memoryWidth), memoryWidth);
             }
 
-            string row = left + gapStr + mid + gapStr + mem;
+            string row = left + gapStr + branch + gapStr + reg + gapStr + mem;
             row = TuiMarkup.ClipMarkupToVisibleWidth(row, termW);
             frame.Append(row);
             frame.Append('\n');

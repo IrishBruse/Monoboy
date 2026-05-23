@@ -7,11 +7,11 @@ using Monoboy;
 
 using Spectre.Console;
 
-/// <summary>Compact disassembly preview of a branch/call target below the register grid.</summary>
+/// <summary>Compact disassembly preview of a branch/call target beside the PC row.</summary>
 static class TuiBranchPreviewFormatter
 {
-    /// <summary>First screen row for the preview block (below the 24-row register panel).</summary>
-    internal const int PanelStartRow = 24;
+    /// <summary>First screen row for the preview block (same row as the PC marker in disassembly).</summary>
+    internal static int PanelStartRow(int pcLinesFromTop) => 1 + pcLinesFromTop;
 
     internal const int MaxInstructionLines = 7;
 

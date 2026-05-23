@@ -9,7 +9,7 @@ using Monoboy;
 using Monoboy.Desktop.Debugger;
 
 /// <summary>
-/// Debugger TUI: left = disassembly; center = register grid; right = memory dump (full height, flush right).
+/// Debugger TUI: disassembly, branch preview (at PC row), registers (flush right), memory dump.
 /// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane one display line at a time; Page Up/Down jump by ~one screen. V runs to VBlank. Ctrl+R reloads the ROM and resets scroll.
 /// </summary>
 public static class TuiDebugger

@@ -174,7 +174,7 @@ static class TuiDebuggerView
         string paneToggle = FormatKeyToggle(
             "Tab", "Disasm", "Mem", paneFocus == DebuggerPaneFocus.Disassembly);
         string keysMarkup =
-            "  [red]S[/]tep  [red]F[/]rame  [red]V[/]blank  [red]R[/]un  [red]^R[/]reset  [red]Q[/]uit  [red]P[/]review  [red]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  "
+            "  [red]S[/]tep  [red]F[/]rame  [red]V[/]blank  [red]R[/]un  [red]^R[/]eset  [red]Q[/]uit  [red]P[/]review  [red]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  "
             + regToggle
             + "  "
             + paneToggle;
@@ -199,6 +199,6 @@ static class TuiDebuggerView
 
     static string FormatKeyToggle(string key, string left, string right, bool leftSelected) =>
         leftSelected
-            ? $"[red]{key}[/]([bold cyan]{left}[/] [dim grey]| {right}[/])"
-            : $"[red]{key}[/]([dim grey]{left} |[/] [bold cyan]{right}[/])";
+            ? $"[red]{key}[/]([bold cyan]{left}[/][grey]|[/][dim grey]{right}[/])"
+            : $"[red]{key}[/]([dim grey]{left}[/][grey]|[/][bold cyan]{right}[/])";
 }

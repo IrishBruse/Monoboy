@@ -382,8 +382,8 @@ static class TuiDisassemblyFormatter
     internal static bool TryGetPreviousInstructionStart(Emulator emulator, ushort addr, out ushort prevStart)
     {
         const int maxLookback = 32;
-        ushort longestStart = 0;
-        ushort longestSize = 0;
+        ushort bestStart = 0;
+        ushort bestSize = ushort.MaxValue;
 
         for (int delta = 1; delta <= maxLookback; delta++)
         {
@@ -400,20 +400,22 @@ static class TuiDisassemblyFormatter
                 continue;
             }
 
-            if (size > longestSize)
+            // Prefer the shortest match: backward decode is ambiguous, and the
+            // last executed instruction is usually the nearest (smallest) one.
+            if (size < bestSize)
             {
-                longestStart = c;
-                longestSize = size;
+                bestStart = c;
+                bestSize = size;
             }
         }
 
-        if (longestSize == 0)
+        if (bestSize == ushort.MaxValue)
         {
             prevStart = 0;
             return false;
         }
 
-        prevStart = longestStart;
+        prevStart = bestStart;
         return true;
     }
 

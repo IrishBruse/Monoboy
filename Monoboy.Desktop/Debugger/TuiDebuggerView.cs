@@ -39,17 +39,15 @@ static class TuiDebuggerView
         int branchWidth = Math.Clamp(34, 20, Math.Max(20, rightBudget - memoryWidth - 16));
         int registerWidth = Math.Max(1, rightBudget - branchWidth - memoryWidth);
 
-        int[] subWeights = [50, 50];
-        int[] colW = TuiMarkup.DistributeWidths(registerWidth, gap, subWeights);
+        const int registerSubGap = 3;
+        int[] subWeights = [48, 52];
+        int[] colW = TuiMarkup.DistributeWidths(registerWidth, registerSubGap, subWeights);
 
         const int pcLinesFromTop = 3;
         int branchPanelStartRow = TuiBranchPreviewFormatter.PanelStartRow(pcLinesFromTop);
 
         bool showBranchPanel = TuiBranchPreviewFormatter.TryBuildPanel(
-            emulator, s.PC, showDisasmSymbols, symbols, out ushort branchTarget, out List<string> branchPreviewLines);
-        string? branchTitleMarkup = showBranchPanel
-            ? TuiBranchPreviewFormatter.BuildTitleMarkup(branchTarget, showDisasmSymbols, symbols, emulator.RomBank)
-            : null;
+            emulator, s.PC, showDisasmSymbols, symbols, out _, out List<string> branchPreviewLines);
         int branchPanelLines = showBranchPanel
             ? TuiBranchPreviewFormatter.PanelLineCount(branchPreviewLines)
             : 0;
@@ -108,7 +106,7 @@ static class TuiDebuggerView
             if (showBranchPanel && r >= branchPanelStartRow && r < branchPanelStartRow + branchPanelLines)
             {
                 int panelRow = r - branchPanelStartRow;
-                branch = TuiBranchPreviewFormatter.BuildPanelRow(branchPreviewLines, branchTitleMarkup!, panelRow, branchWidth);
+                branch = TuiBranchPreviewFormatter.BuildPanelRow(branchPreviewLines, panelRow, branchWidth);
             }
             else
             {
@@ -119,7 +117,7 @@ static class TuiDebuggerView
             if (r < registerRows)
             {
                 reg = TuiMarkup.PadMarkupLeft(
-                    TuiMarkup.ClipMarkup(TuiRegisterGridFormatter.BuildRow(emulator, s, r, colW, gap, registerLabelDisplay), registerWidth),
+                    TuiMarkup.ClipMarkup(TuiRegisterGridFormatter.BuildRow(emulator, s, r, colW, registerSubGap, registerLabelDisplay), registerWidth),
                     registerWidth);
             }
             else
@@ -157,7 +155,7 @@ static class TuiDebuggerView
             Console.Write(TuiMarkup.StripSpectreTags(frameText));
         }
 
-        DrawPinnedFooter(termW, termH, paneFocus, registerLabelDisplay, showDisasmSymbols);
+        DrawPinnedFooter(termW, termH, paneFocus, registerLabelDisplay);
     }
 
     /// <summary>Last screen row: key hints; no trailing newline so it stays pinned.</summary>
@@ -165,22 +163,21 @@ static class TuiDebuggerView
         int termW,
         int termH,
         DebuggerPaneFocus paneFocus,
-        RegisterLabelDisplay registerLabelDisplay,
-        bool showDisasmSymbols)
+        RegisterLabelDisplay registerLabelDisplay)
     {
         int row = Math.Min(termH - 1, Math.Max(0, Console.WindowHeight - 1));
         int width = Math.Max(1, Math.Min(termW, Console.WindowWidth));
         Console.SetCursorPosition(0, row);
 
-        string focusStr = paneFocus == DebuggerPaneFocus.Disassembly
-            ? "[bold cyan]Disasm[/] [dim grey]│ Mem[/]"
-            : "[dim grey]Disasm │[/] [bold cyan]Mem[/]";
-        string regLabel = registerLabelDisplay == RegisterLabelDisplay.Address ? "addr" : "name";
-        string symLabel = showDisasmSymbols ? "sym" : "off";
+        string regToggle = FormatKeyToggle(
+            "A", "Addr", "Label", registerLabelDisplay == RegisterLabelDisplay.Address);
+        string paneToggle = FormatKeyToggle(
+            "Tab", "Disasm", "Mem", paneFocus == DebuggerPaneFocus.Disassembly);
         string keysMarkup =
-            "  [red]S[/]tep  [red]F[/]rame  [red]V[/]blank  [red]R[/]un  [red]^R[/]reset  [red]Q[/]uit  [red]P[/]review  [red]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  [red]Tab[/] "
-            + $"[red]A[/]({regLabel}/{symLabel})  "
-            + focusStr;
+            "  [red]S[/]tep  [red]F[/]rame  [red]V[/]blank  [red]R[/]un  [red]^R[/]reset  [red]Q[/]uit  [red]P[/]review  [red]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  "
+            + regToggle
+            + "  "
+            + paneToggle;
 
         string plain = Markup.Remove(keysMarkup);
         if (plain.Length >= width)
@@ -199,4 +196,9 @@ static class TuiDebuggerView
             Console.Write(plain.PadRight(width));
         }
     }
+
+    static string FormatKeyToggle(string key, string left, string right, bool leftSelected) =>
+        leftSelected
+            ? $"[red]{key}[/]([bold cyan]{left}[/] [dim grey]| {right}[/])"
+            : $"[red]{key}[/]([dim grey]{left} |[/] [bold cyan]{right}[/])";
 }

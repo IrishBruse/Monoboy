@@ -7,6 +7,8 @@ using Monoboy;
 /// <summary>Register column: CPU, LCD, and IRQ/serial/timer grids.</summary>
 static class TuiRegisterGridFormatter
 {
+    const int CpuColumnLeftPad = 5;
+
     internal static string BuildRow(
         Emulator emulator,
         DebugState s,
@@ -15,12 +17,17 @@ static class TuiRegisterGridFormatter
         int gap,
         RegisterLabelDisplay labelDisplay)
     {
-        string c1 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(CpuIrqSerialTimerLine(emulator, s, row, labelDisplay), colW[0]), colW[0]);
-        string c2 = TuiMarkup.PadMarkup(TuiMarkup.ClipMarkup(LcdLine(emulator, s, row, labelDisplay), colW[1]), colW[1]);
+        int cpuContentW = Math.Max(1, colW[0] - CpuColumnLeftPad);
+        string c1 = new string(' ', CpuColumnLeftPad) + TuiMarkup.PadMarkup(
+            TuiMarkup.ClipMarkup(CpuIrqSerialTimerLine(emulator, s, row, labelDisplay), cpuContentW),
+            cpuContentW);
+        string c2 = TuiMarkup.PadMarkup(
+            TuiMarkup.ClipMarkup(LcdLine(emulator, s, row, labelDisplay), colW[1]),
+            colW[1]);
         return c1 + new string(' ', gap) + c2;
     }
 
-    /// <summary>Visible width of <c>[bold]FF40[/]: </c> / <c>[bold]KEY1[/]: </c> label prefix.</summary>
+    /// <summary>Visible width of <c>[bold]FF40[/]: </c> / <c>[bold]OBP0[/]: </c> label prefix.</summary>
     const int RegLabelVisibleWidth = 6;
 
     static string RegLabel(ushort addr, string name, RegisterLabelDisplay display) =>

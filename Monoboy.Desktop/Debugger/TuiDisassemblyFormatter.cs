@@ -321,7 +321,8 @@ static class TuiDisassemblyFormatter
         const ushort noFocusPc = ushort.MaxValue;
         for (int i = 0; i < maxInstructions; i++)
         {
-            AppendInstructionBlock(lines, emulator, cursor, noFocusPc, showSymbols, symbols, markPc: false, out ushort size);
+            AppendInstructionBlock(
+                lines, emulator, cursor, noFocusPc, showSymbols, symbols, markPc: false, out ushort size);
             cursor += size;
         }
 

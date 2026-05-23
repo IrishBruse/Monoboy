@@ -24,6 +24,7 @@ public static class TuiDebugger
 
         string romPath = args.FirstOrDefault(x => !x.StartsWith("--", StringComparison.Ordinal)) ?? string.Empty;
         SymSymbolMap? symbols = null;
+        var alignment = new DisasmAlignmentCache();
         void ReloadRom()
         {
             if (!string.IsNullOrWhiteSpace(romPath) && File.Exists(romPath))
@@ -35,6 +36,35 @@ public static class TuiDebugger
             {
                 emulator.Open(new byte[0x10000]);
                 symbols = null;
+            }
+
+            alignment.Clear();
+            RecordStop(alignment, emulator);
+        }
+
+        static void RecordStop(DisasmAlignmentCache cache, Emulator emulator)
+        {
+            DebugState state = emulator.GetDebugState();
+            ushort size = TuiDisassemblyFormatter.GetInstructionByteSize(emulator, state.PC);
+            cache.RecordStop(emulator.RomBank, state.PC, size);
+        }
+
+        static void StepRecorded(Emulator emulator, DisasmAlignmentCache cache)
+        {
+            RecordStop(cache, emulator);
+            emulator.Step();
+        }
+
+        static void RunUntilVBlankRecorded(Emulator emulator, DisasmAlignmentCache cache)
+        {
+            for (int i = 0; i < 2_000_000; i++)
+            {
+                RecordStop(cache, emulator);
+                emulator.Step();
+                if (emulator.Read(0xFF44) >= Emulator.WindowHeight)
+                {
+                    return;
+                }
             }
         }
 
@@ -74,15 +104,15 @@ public static class TuiDebugger
                     switch (key.Key)
                     {
                         case ConsoleKey.S:
-                        emulator.Step();
+                        StepRecorded(emulator, alignment);
                         disasmLineSkip = 0;
                         break;
                         case ConsoleKey.F:
-                        emulator.StepFrame();
+                        RunUntilVBlankRecorded(emulator, alignment);
                         disasmLineSkip = 0;
                         break;
                         case ConsoleKey.V:
-                        emulator.RunUntilVBlank();
+                        RunUntilVBlankRecorded(emulator, alignment);
                         disasmLineSkip = 0;
                         break;
                         case ConsoleKey.R when (key.Modifiers & ConsoleModifiers.Control) != 0:
@@ -93,7 +123,7 @@ public static class TuiDebugger
                         case ConsoleKey.R:
                         for (int i = 0; i < 500; i++)
                         {
-                            emulator.Step();
+                            StepRecorded(emulator, alignment);
                         }
                         disasmLineSkip = 0;
                         break;
@@ -189,7 +219,7 @@ public static class TuiDebugger
                 }
 
                 TuiDebuggerView.DrawFrame(
-                    emulator, w, h, disasmLineSkip, memRowSkip, paneFocus, registerLabelDisplay, showDisasmSymbols, symbols);
+                    emulator, w, h, disasmLineSkip, memRowSkip, paneFocus, registerLabelDisplay, showDisasmSymbols, symbols, alignment);
                 needsRedraw = false;
             }
         }

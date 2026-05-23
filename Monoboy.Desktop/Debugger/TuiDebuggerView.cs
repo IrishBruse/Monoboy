@@ -20,7 +20,8 @@ static class TuiDebuggerView
         DebuggerPaneFocus paneFocus,
         RegisterLabelDisplay registerLabelDisplay,
         bool showDisasmSymbols,
-        SymSymbolMap? symbols = null)
+        SymSymbolMap? symbols = null,
+        DisasmAlignmentCache? alignment = null)
     {
         var s = emulator.GetDebugState();
 
@@ -53,7 +54,7 @@ static class TuiDebuggerView
             : 0;
 
         var disasmLines = TuiDisassemblyFormatter.BuildLines(
-            emulator, s.PC, disasmLineSkip, maxContentLines + 4, pcLinesFromTop, showDisasmSymbols, symbols);
+            emulator, s.PC, disasmLineSkip, maxContentLines + 4, pcLinesFromTop, showDisasmSymbols, symbols, alignment);
 
         int disasmViewStart = TuiDisassemblyFormatter.GetViewStartIndex(disasmLines, pcLinesFromTop, disasmLineSkip);
 

@@ -9,6 +9,7 @@ using System.IO;
 sealed class SymSymbolMap
 {
     readonly Dictionary<(uint bank, ushort addr), List<string>> labels = new();
+    readonly Dictionary<byte, ushort[]> anchorsByRomBank = new();
 
     public static SymSymbolMap? TryLoadForRom(string romPath)
     {
@@ -34,7 +35,87 @@ sealed class SymSymbolMap
             map.TryAddLine(rawLine);
         }
 
+        map.BuildAnchorIndex();
         return map;
+    }
+
+    /// <summary>Greatest symbol address &lt;= <paramref name="addr"/> for this ROM bank.</summary>
+    public bool TryGetAnchorAtOrBefore(byte romBank, ushort addr, out ushort anchor)
+    {
+        anchor = 0;
+        if (!TryGetAnchors(romBank, out ushort[] anchors) || anchors.Length == 0)
+        {
+            return false;
+        }
+
+        int lo = 0;
+        int hi = anchors.Length - 1;
+        int best = -1;
+        while (lo <= hi)
+        {
+            int mid = lo + ((hi - lo) >> 1);
+            if (anchors[mid] <= addr)
+            {
+                best = mid;
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid - 1;
+            }
+        }
+
+        if (best < 0)
+        {
+            return false;
+        }
+
+        anchor = anchors[best];
+        return true;
+    }
+
+    bool TryGetAnchors(byte romBank, out ushort[] anchors) =>
+        anchorsByRomBank.TryGetValue(romBank, out anchors!) && anchors.Length > 0;
+
+    void BuildAnchorIndex()
+    {
+        var sets = new Dictionary<byte, SortedSet<ushort>>();
+        foreach (var ((bank, addr), _) in labels)
+        {
+            byte romBank = (byte)Math.Min(bank, byte.MaxValue);
+            if (!sets.TryGetValue(romBank, out SortedSet<ushort>? set))
+            {
+                set = new SortedSet<ushort>();
+                sets[romBank] = set;
+            }
+
+            set.Add(addr);
+        }
+
+        if (!sets.TryGetValue(0, out SortedSet<ushort>? bank0))
+        {
+            bank0 = new SortedSet<ushort>();
+        }
+
+        foreach (var (romBank, set) in sets)
+        {
+            if (romBank == 0)
+            {
+                continue;
+            }
+
+            foreach (ushort addr in bank0)
+            {
+                set.Add(addr);
+            }
+
+            anchorsByRomBank[romBank] = [.. set];
+        }
+
+        if (bank0.Count > 0)
+        {
+            anchorsByRomBank[0] = [.. bank0];
+        }
     }
 
     /// <summary>All labels at a CPU address (file order); bank 0 symbols apply in other banks too.</summary>

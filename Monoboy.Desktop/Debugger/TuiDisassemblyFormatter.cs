@@ -37,7 +37,8 @@ static class TuiDisassemblyFormatter
         int needLines,
         int instructionsAbovePc = 0,
         bool showSymbols = true,
-        SymSymbolMap? symbols = null)
+        SymSymbolMap? symbols = null,
+        DisasmAlignmentCache? alignment = null)
     {
         ushort anchor = pc;
         var lines = new List<string>();
@@ -46,7 +47,8 @@ static class TuiDisassemblyFormatter
         int historyTarget = instructionsAbovePc > 0 ? instructionsAbovePc + historyMargin : 0;
         if (historyTarget > 0)
         {
-            lines.AddRange(CollectLinesAboveMarker(emulator, anchor, pc, historyTarget, showSymbols, symbols, out ushort historyHead));
+            lines.AddRange(CollectLinesAboveMarker(
+                emulator, anchor, pc, historyTarget, showSymbols, symbols, alignment, out ushort historyHead));
             rangeStart = historyHead;
         }
 
@@ -59,7 +61,7 @@ static class TuiDisassemblyFormatter
             cursor += size;
         }
 
-        EnsureInstructionsAbovePc(emulator, pc, lines, instructionsAbovePc, rangeStart, showSymbols, symbols);
+        EnsureInstructionsAbovePc(emulator, pc, lines, instructionsAbovePc, rangeStart, showSymbols, symbols, alignment);
         EnsureViewportLines(
             lines,
             emulator,
@@ -70,7 +72,8 @@ static class TuiDisassemblyFormatter
             ref rangeStart,
             cursor,
             showSymbols,
-            symbols);
+            symbols,
+            alignment);
 
         return lines;
     }
@@ -102,11 +105,13 @@ static class TuiDisassemblyFormatter
         ref ushort rangeStart,
         ushort rangeEnd,
         bool showSymbols,
-        SymSymbolMap? symbols)
+        SymSymbolMap? symbols,
+        DisasmAlignmentCache? alignment)
     {
+        byte romBank = emulator.RomBank;
         while (GetViewStartIndex(lines, pcLinesFromTop, lineSkip) < 0)
         {
-            if (!TryGetPreviousInstructionStart(emulator, rangeStart, out ushort prev))
+            if (!TryGetPreviousInstructionStart(emulator, romBank, rangeStart, symbols, alignment, out ushort prev))
             {
                 break;
             }
@@ -131,13 +136,15 @@ static class TuiDisassemblyFormatter
         int needInstructions,
         ushort historyHead,
         bool showSymbols,
-        SymSymbolMap? symbols)
+        SymSymbolMap? symbols,
+        DisasmAlignmentCache? alignment)
     {
         if (needInstructions <= 0)
         {
             return;
         }
 
+        byte romBank = emulator.RomBank;
         ushort head = historyHead;
         while (true)
         {
@@ -147,7 +154,7 @@ static class TuiDisassemblyFormatter
                 return;
             }
 
-            if (!TryGetPreviousInstructionStart(emulator, head, out ushort prev))
+            if (!TryGetPreviousInstructionStart(emulator, romBank, head, symbols, alignment, out ushort prev))
             {
                 return;
             }
@@ -165,15 +172,17 @@ static class TuiDisassemblyFormatter
         int needInstructions,
         bool showSymbols,
         SymSymbolMap? symbols,
+        DisasmAlignmentCache? alignment,
         out ushort historyHead)
     {
         var above = new List<string>();
         ushort walk = addr;
         int collected = 0;
+        byte romBank = emulator.RomBank;
 
         while (collected < needInstructions)
         {
-            if (!TryGetPreviousInstructionStart(emulator, walk, out ushort prev))
+            if (!TryGetPreviousInstructionStart(emulator, romBank, walk, symbols, alignment, out ushort prev))
             {
                 break;
             }
@@ -379,7 +388,23 @@ static class TuiDisassemblyFormatter
         return instruction.Bytes;
     }
 
-    internal static bool TryGetPreviousInstructionStart(Emulator emulator, ushort addr, out ushort prevStart)
+    internal static bool TryGetPreviousInstructionStart(
+        Emulator emulator,
+        byte romBank,
+        ushort addr,
+        SymSymbolMap? symbols,
+        DisasmAlignmentCache? alignment,
+        out ushort prevStart)
+    {
+        if (alignment != null && alignment.TryGetPreviousInstructionStart(emulator, romBank, addr, symbols, out prevStart))
+        {
+            return true;
+        }
+
+        return TryGetPreviousInstructionStartHeuristic(emulator, addr, out prevStart);
+    }
+
+    internal static bool TryGetPreviousInstructionStartHeuristic(Emulator emulator, ushort addr, out ushort prevStart)
     {
         const int maxLookback = 32;
         ushort bestStart = 0;

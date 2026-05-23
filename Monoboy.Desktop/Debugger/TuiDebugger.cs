@@ -10,7 +10,7 @@ using Monoboy.Desktop.Debugger;
 
 /// <summary>
 /// Debugger TUI: disassembly, branch preview (at PC row), registers (flush right), memory dump.
-/// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane one display line at a time; Page Up/Down jump by ~one screen. V runs to VBlank. Ctrl+R reloads the ROM and resets scroll.
+/// Resize uses Console size each frame. Tab switches focus between disassembly and memory; arrow keys scroll the focused pane one display line at a time; Page Up/Down jump by ~one screen. B prompts for a hex breakpoint (toggle); R runs until a breakpoint. Ctrl+R reloads the ROM and resets scroll.
 /// </summary>
 public static class TuiDebugger
 {
@@ -25,6 +25,7 @@ public static class TuiDebugger
         string romPath = args.FirstOrDefault(x => !x.StartsWith("--", StringComparison.Ordinal)) ?? string.Empty;
         SymSymbolMap? symbols = null;
         var alignment = new DisasmAlignmentCache();
+        var breakpoints = new DebuggerBreakpoints();
         void ReloadRom()
         {
             if (!string.IsNullOrWhiteSpace(romPath) && File.Exists(romPath))
@@ -39,6 +40,7 @@ public static class TuiDebugger
             }
 
             alignment.Clear();
+            breakpoints.Clear();
             RecordStop(alignment, emulator);
         }
 
@@ -49,23 +51,70 @@ public static class TuiDebugger
             cache.RecordStop(emulator.RomBank, state.PC, size);
         }
 
-        static void StepRecorded(Emulator emulator, DisasmAlignmentCache cache)
+        static void StepRecorded(Emulator emulator, DisasmAlignmentCache cache, DebuggerBreakpoints breakpoints)
         {
+            if (breakpoints.Contains(emulator.GetDebugState().PC))
+            {
+                RecordStop(cache, emulator);
+                return;
+            }
+
             RecordStop(cache, emulator);
             emulator.Step();
         }
 
-        static void RunUntilVBlankRecorded(Emulator emulator, DisasmAlignmentCache cache)
+        /// <returns>Status text when run stops early without hitting a breakpoint.</returns>
+        static string? RunUntilBreakpointRecorded(
+            Emulator emulator,
+            DisasmAlignmentCache cache,
+            DebuggerBreakpoints breakpoints,
+            Action redraw)
         {
-            for (int i = 0; i < 2_000_000; i++)
+            const int maxSteps = 2_000_000;
+            const int minRedrawIntervalMs = 100;
+            long lastRedrawMs = Environment.TickCount64 - minRedrawIntervalMs;
+
+            void MaybeRedraw(bool force)
             {
-                RecordStop(cache, emulator);
-                emulator.Step();
-                if (emulator.Read(0xFF44) >= Emulator.WindowHeight)
+                long now = Environment.TickCount64;
+                if (!force && now - lastRedrawMs < minRedrawIntervalMs)
                 {
                     return;
                 }
+
+                lastRedrawMs = now;
+                redraw();
             }
+
+            for (int i = 0; i < maxSteps; i++)
+            {
+                DebugState before = emulator.GetDebugState();
+                RecordStop(cache, emulator);
+                emulator.Step();
+                DebugState after = emulator.GetDebugState();
+
+                if (breakpoints.Contains(after.PC))
+                {
+                    MaybeRedraw(force: true);
+                    return null;
+                }
+
+                if (after.PC == before.PC)
+                {
+                    MaybeRedraw(force: true);
+                    if (after.Halted)
+                    {
+                        return "CPU halted - cannot run";
+                    }
+
+                    return "PC did not advance";
+                }
+
+                MaybeRedraw(force: false);
+            }
+
+            MaybeRedraw(force: true);
+            return "Breakpoint not reached";
         }
 
         ReloadRom();
@@ -77,6 +126,7 @@ public static class TuiDebugger
         bool showDisasmSymbols = true;
         bool quit = false;
         bool needsRedraw = true;
+        string? statusMessage = null;
         int lastTermW = -1;
         int lastTermH = -1;
 
@@ -96,24 +146,43 @@ public static class TuiDebugger
                     needsRedraw = true;
                 }
 
+                void DrawCurrentFrame()
+                {
+                    Console.SetCursorPosition(0, 0);
+                    TuiDebuggerView.DrawFrame(
+                        emulator,
+                        w,
+                        h,
+                        disasmLineSkip,
+                        memRowSkip,
+                        paneFocus,
+                        registerLabelDisplay,
+                        showDisasmSymbols,
+                        symbols,
+                        alignment,
+                        breakpoints,
+                        statusMessage);
+                }
+
                 if (Console.KeyAvailable)
                 {
                     needsRedraw = true;
                     var key = Console.ReadKey(intercept: true);
+                    statusMessage = null;
                     int pageJump = Math.Max(8, h - 3);
                     switch (key.Key)
                     {
                         case ConsoleKey.S:
-                        StepRecorded(emulator, alignment);
+                        StepRecorded(emulator, alignment, breakpoints);
                         disasmLineSkip = 0;
                         break;
-                        case ConsoleKey.F:
-                        RunUntilVBlankRecorded(emulator, alignment);
-                        disasmLineSkip = 0;
-                        break;
-                        case ConsoleKey.V:
-                        RunUntilVBlankRecorded(emulator, alignment);
-                        disasmLineSkip = 0;
+                        case ConsoleKey.B:
+                        if (TuiHexPrompt.TryReadAddress("Breakpoint hex: ", out ushort bpAddr))
+                        {
+                            breakpoints.Toggle(bpAddr);
+                            disasmLineSkip = 0;
+                        }
+
                         break;
                         case ConsoleKey.R when (key.Modifiers & ConsoleModifiers.Control) != 0:
                         ReloadRom();
@@ -121,11 +190,20 @@ public static class TuiDebugger
                         memRowSkip = 0;
                         break;
                         case ConsoleKey.R:
-                        for (int i = 0; i < 500; i++)
-                        {
-                            StepRecorded(emulator, alignment);
-                        }
                         disasmLineSkip = 0;
+                        if (breakpoints.Count == 0)
+                        {
+                            statusMessage = "No breakpoints - press B to add one";
+                        }
+                        else
+                        {
+                            statusMessage = RunUntilBreakpointRecorded(
+                                emulator,
+                                alignment,
+                                breakpoints,
+                                () => DrawCurrentFrame());
+                        }
+
                         break;
                         case ConsoleKey.Q:
                         quit = true;
@@ -213,13 +291,8 @@ public static class TuiDebugger
                 {
                     Console.Clear();
                 }
-                else
-                {
-                    Console.SetCursorPosition(0, 0);
-                }
 
-                TuiDebuggerView.DrawFrame(
-                    emulator, w, h, disasmLineSkip, memRowSkip, paneFocus, registerLabelDisplay, showDisasmSymbols, symbols, alignment);
+                DrawCurrentFrame();
                 needsRedraw = false;
             }
         }

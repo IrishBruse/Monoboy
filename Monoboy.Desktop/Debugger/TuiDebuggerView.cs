@@ -21,7 +21,9 @@ static class TuiDebuggerView
         RegisterLabelDisplay registerLabelDisplay,
         bool showDisasmSymbols,
         SymSymbolMap? symbols = null,
-        DisasmAlignmentCache? alignment = null)
+        DisasmAlignmentCache? alignment = null,
+        DebuggerBreakpoints? breakpoints = null,
+        string? statusMessage = null)
     {
         var s = emulator.GetDebugState();
 
@@ -54,7 +56,7 @@ static class TuiDebuggerView
             : 0;
 
         var disasmLines = TuiDisassemblyFormatter.BuildLines(
-            emulator, s.PC, disasmLineSkip, maxContentLines + 4, pcLinesFromTop, showDisasmSymbols, symbols, alignment);
+            emulator, s.PC, disasmLineSkip, maxContentLines + 4, pcLinesFromTop, showDisasmSymbols, symbols, alignment, breakpoints);
 
         int disasmViewStart = TuiDisassemblyFormatter.GetViewStartIndex(disasmLines, pcLinesFromTop, disasmLineSkip);
 
@@ -156,7 +158,7 @@ static class TuiDebuggerView
             Console.Write(TuiMarkup.StripSpectreTags(frameText));
         }
 
-        DrawPinnedFooter(termW, termH, paneFocus, registerLabelDisplay);
+        DrawPinnedFooter(termW, termH, paneFocus, registerLabelDisplay, breakpoints, statusMessage);
     }
 
     /// <summary>Last screen row: key hints; no trailing newline so it stays pinned.</summary>
@@ -164,7 +166,9 @@ static class TuiDebuggerView
         int termW,
         int termH,
         DebuggerPaneFocus paneFocus,
-        RegisterLabelDisplay registerLabelDisplay)
+        RegisterLabelDisplay registerLabelDisplay,
+        DebuggerBreakpoints? breakpoints,
+        string? statusMessage)
     {
         int row = Math.Min(termH - 1, Math.Max(0, Console.WindowHeight - 1));
         int width = Math.Max(1, Math.Min(termW, Console.WindowWidth));
@@ -174,11 +178,20 @@ static class TuiDebuggerView
             "A", "Addr", "Label", registerLabelDisplay == RegisterLabelDisplay.Address);
         string paneToggle = FormatKeyToggle(
             "Tab", "Disasm", "Mem", paneFocus == DebuggerPaneFocus.Disassembly);
+        string bpHint = breakpoints == null || breakpoints.Count == 0
+            ? "[red]B[/]reak"
+            : $"[red]B[/]reak [cyan]({breakpoints.Count})[/]";
         string keysMarkup =
-            "  [red]S[/]tep  [red]F[/]rame  [red]V[/]blank  [red]R[/]un  [red]^R[/]eset  [red]Q[/]uit  [red]P[/]review  [red]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  "
+            "  [red]S[/]tep  [red]R[/]un  "
+            + bpHint
+            + "  [red]^R[/]eset  [red]Q[/]uit  [red]P[/]review  [red]↑↓[/]scroll  [red]Pg[/] jump  [red]H[/]ome  "
             + regToggle
             + "  "
             + paneToggle;
+        if (!string.IsNullOrEmpty(statusMessage))
+        {
+            keysMarkup += "  [yellow]" + Markup.Escape(statusMessage) + "[/]";
+        }
 
         string plain = Markup.Remove(keysMarkup);
         if (plain.Length >= width)

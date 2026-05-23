@@ -17,6 +17,8 @@ static class TuiDisassemblyFormatter
 
     internal const string PcMarkerPrefix = "[bold yellow]>[/] ";
 
+    internal const string BreakpointPrefix = "[red]#[/] ";
+
     const int AddrFieldVisibleWidth = 6;
     const int BytesFieldVisibleWidth = 8;
     const int MnemonicGapVisibleWidth = 3;
@@ -38,7 +40,8 @@ static class TuiDisassemblyFormatter
         int instructionsAbovePc = 0,
         bool showSymbols = true,
         SymSymbolMap? symbols = null,
-        DisasmAlignmentCache? alignment = null)
+        DisasmAlignmentCache? alignment = null,
+        DebuggerBreakpoints? breakpoints = null)
     {
         ushort anchor = pc;
         var lines = new List<string>();
@@ -48,7 +51,7 @@ static class TuiDisassemblyFormatter
         if (historyTarget > 0)
         {
             lines.AddRange(CollectLinesAboveMarker(
-                emulator, anchor, pc, historyTarget, showSymbols, symbols, alignment, out ushort historyHead));
+                emulator, anchor, pc, historyTarget, showSymbols, symbols, alignment, breakpoints, out ushort historyHead));
             rangeStart = historyHead;
         }
 
@@ -57,11 +60,11 @@ static class TuiDisassemblyFormatter
         while (lines.Count < targetLines)
         {
             bool atPc = cursor == pc;
-            AppendInstructionBlock(lines, emulator, cursor, pc, showSymbols, symbols, atPc, out ushort size);
+            AppendInstructionBlock(lines, emulator, cursor, pc, showSymbols, symbols, breakpoints, atPc, out ushort size);
             cursor += size;
         }
 
-        EnsureInstructionsAbovePc(emulator, pc, lines, instructionsAbovePc, rangeStart, showSymbols, symbols, alignment);
+        EnsureInstructionsAbovePc(emulator, pc, lines, instructionsAbovePc, rangeStart, showSymbols, symbols, alignment, breakpoints);
         EnsureViewportLines(
             lines,
             emulator,
@@ -73,7 +76,8 @@ static class TuiDisassemblyFormatter
             cursor,
             showSymbols,
             symbols,
-            alignment);
+            alignment,
+            breakpoints);
 
         return lines;
     }
@@ -106,7 +110,8 @@ static class TuiDisassemblyFormatter
         ushort rangeEnd,
         bool showSymbols,
         SymSymbolMap? symbols,
-        DisasmAlignmentCache? alignment)
+        DisasmAlignmentCache? alignment,
+        DebuggerBreakpoints? breakpoints)
     {
         byte romBank = emulator.RomBank;
         while (GetViewStartIndex(lines, pcLinesFromTop, lineSkip) < 0)
@@ -116,14 +121,14 @@ static class TuiDisassemblyFormatter
                 break;
             }
 
-            PrependInstructionBlock(lines, emulator, prev, pc, showSymbols, symbols);
+            PrependInstructionBlock(lines, emulator, prev, pc, showSymbols, symbols, breakpoints);
             rangeStart = prev;
         }
 
         ushort cursor = rangeEnd;
         while (GetViewStartIndex(lines, pcLinesFromTop, lineSkip) + visibleLineCount > lines.Count)
         {
-            AppendInstructionBlock(lines, emulator, cursor, pc, showSymbols, symbols, markPc: false, out ushort size);
+            AppendInstructionBlock(lines, emulator, cursor, pc, showSymbols, symbols, breakpoints, markPc: false, out ushort size);
             cursor += size;
         }
     }
@@ -137,7 +142,8 @@ static class TuiDisassemblyFormatter
         ushort historyHead,
         bool showSymbols,
         SymSymbolMap? symbols,
-        DisasmAlignmentCache? alignment)
+        DisasmAlignmentCache? alignment,
+        DebuggerBreakpoints? breakpoints)
     {
         if (needInstructions <= 0)
         {
@@ -159,7 +165,7 @@ static class TuiDisassemblyFormatter
                 return;
             }
 
-            PrependInstructionBlock(lines, emulator, prev, pc, showSymbols, symbols);
+            PrependInstructionBlock(lines, emulator, prev, pc, showSymbols, symbols, breakpoints);
             head = prev;
         }
     }
@@ -173,6 +179,7 @@ static class TuiDisassemblyFormatter
         bool showSymbols,
         SymSymbolMap? symbols,
         DisasmAlignmentCache? alignment,
+        DebuggerBreakpoints? breakpoints,
         out ushort historyHead)
     {
         var above = new List<string>();
@@ -189,7 +196,7 @@ static class TuiDisassemblyFormatter
 
             walk = prev;
             collected++;
-            PrependInstructionBlock(above, emulator, prev, focusPc, showSymbols, symbols);
+            PrependInstructionBlock(above, emulator, prev, focusPc, showSymbols, symbols, breakpoints);
         }
 
         historyHead = walk;
@@ -211,12 +218,17 @@ static class TuiDisassemblyFormatter
         ushort focusPc,
         bool showSymbols,
         SymSymbolMap? symbols,
+        DebuggerBreakpoints? breakpoints,
         bool markPc,
         out ushort size)
     {
         AddLabelLines(lines, symbols, lineAddr, emulator.RomBank);
         string body = FormatLineMarkup(emulator, lineAddr, focusPc, showSymbols, symbols, out size);
-        string prefix = markPc ? PcMarkerPrefix : LinePrefix;
+        string prefix = markPc
+            ? PcMarkerPrefix
+            : breakpoints != null && breakpoints.Contains(lineAddr)
+                ? BreakpointPrefix
+                : LinePrefix;
         lines.Add(prefix + body);
     }
 
@@ -226,10 +238,11 @@ static class TuiDisassemblyFormatter
         ushort lineAddr,
         ushort focusPc,
         bool showSymbols,
-        SymSymbolMap? symbols)
+        SymSymbolMap? symbols,
+        DebuggerBreakpoints? breakpoints)
     {
         var block = new List<string>();
-        AppendInstructionBlock(block, emulator, lineAddr, focusPc, showSymbols, symbols, markPc: false, out _);
+        AppendInstructionBlock(block, emulator, lineAddr, focusPc, showSymbols, symbols, breakpoints, markPc: false, out _);
         for (int i = block.Count - 1; i >= 0; i--)
         {
             lines.Insert(0, block[i]);
@@ -331,7 +344,7 @@ static class TuiDisassemblyFormatter
         for (int i = 0; i < maxInstructions; i++)
         {
             AppendInstructionBlock(
-                lines, emulator, cursor, noFocusPc, showSymbols, symbols, markPc: false, out ushort size);
+                lines, emulator, cursor, noFocusPc, showSymbols, symbols, breakpoints: null, markPc: false, out ushort size);
             cursor += size;
         }
 

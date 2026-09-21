@@ -25,8 +25,6 @@ public class Application
         bool logHeader = args.Contains("--log-header");
         string romPath = args.Skip(1).FirstOrDefault(x => !x.StartsWith("--", StringComparison.Ordinal));
 
-        Console.WriteLine(args[0]);
-
         if (args.Contains("--custom-boot"))
         {
             emulator = new(GetEmbeddedFile("Monoboy.Desktop/Data/bootix_dmg.bin"))
@@ -58,8 +56,13 @@ public class Application
     {
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
 
+        int windowW = Emulator.WindowWidth * 4;
+        int windowH = Emulator.WindowHeight * 4;
+        int monitor = RaylibWindowPlacement.LaunchMonitor();
+
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
-        Raylib.InitWindow(Emulator.WindowWidth * 4, Emulator.WindowHeight * 4, "Monoboy");
+        Raylib.InitWindow(windowW, windowH, "Monoboy");
+        RaylibWindowPlacement.CenterOnMonitor(monitor, windowW, windowH);
         byte[] icon = GetEmbeddedFile("Monoboy.Desktop/Data/Icon.png");
         Raylib.SetWindowIcon(Raylib.LoadImageFromMemory(".png", icon));
         Raylib.SetWindowMinSize(Emulator.WindowWidth, Emulator.WindowHeight);

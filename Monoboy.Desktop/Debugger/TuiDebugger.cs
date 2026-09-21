@@ -51,14 +51,8 @@ public static class TuiDebugger
             cache.RecordStop(emulator.RomBank, state.PC, size);
         }
 
-        static void StepRecorded(Emulator emulator, DisasmAlignmentCache cache, DebuggerBreakpoints breakpoints)
+        static void StepRecorded(Emulator emulator, DisasmAlignmentCache cache)
         {
-            if (breakpoints.Contains(emulator.GetDebugState().PC))
-            {
-                RecordStop(cache, emulator);
-                return;
-            }
-
             RecordStop(cache, emulator);
             emulator.Step();
         }
@@ -173,7 +167,7 @@ public static class TuiDebugger
                     switch (key.Key)
                     {
                         case ConsoleKey.S:
-                        StepRecorded(emulator, alignment, breakpoints);
+                        StepRecorded(emulator, alignment);
                         disasmLineSkip = 0;
                         break;
                         case ConsoleKey.B:

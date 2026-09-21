@@ -166,7 +166,6 @@ public class Emulator
 
     public void Open(string path)
     {
-        Console.WriteLine("Opening " + path);
         Open(File.ReadAllBytes(path));
     }
 

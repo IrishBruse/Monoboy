@@ -12,12 +12,15 @@ using Spectre.Console;
 /// <summary>Disassembly column: instruction-sized scrolling and syntax-highlighted lines.</summary>
 static class TuiDisassemblyFormatter
 {
-    /// <summary>Two visible columns before address (matches <c>&gt; </c> marker width).</summary>
+    /// <summary>Two visible columns before address (breakpoint marker column).</summary>
     internal const string LinePrefix = "  ";
 
-    internal const string PcMarkerPrefix = "[bold yellow]>[/] ";
+    /// <summary>Current PC row: faint red tint on default terminal bg and bold (no leading marker).</summary>
+    internal const string PcHighlightOpen = "[bold on #0e0606]";
 
-    internal const string BreakpointPrefix = "[red]#[/] ";
+    internal const string PcHighlightClose = "[/]";
+
+    internal const string BreakpointPrefix = "[red]●[/] ";
 
     const int AddrFieldVisibleWidth = 6;
     const int BytesFieldVisibleWidth = 8;
@@ -224,11 +227,14 @@ static class TuiDisassemblyFormatter
     {
         AddLabelLines(lines, symbols, lineAddr, emulator.RomBank);
         string body = FormatLineMarkup(emulator, lineAddr, focusPc, showSymbols, symbols, out size);
-        string prefix = markPc
-            ? PcMarkerPrefix
-            : breakpoints != null && breakpoints.Contains(lineAddr)
-                ? BreakpointPrefix
-                : LinePrefix;
+        if (markPc)
+        {
+            body = $"{PcHighlightOpen}{body}{PcHighlightClose}";
+        }
+
+        string prefix = !markPc && breakpoints != null && breakpoints.Contains(lineAddr)
+            ? BreakpointPrefix
+            : LinePrefix;
         lines.Add(prefix + body);
     }
 
@@ -369,7 +375,7 @@ static class TuiDisassemblyFormatter
     {
         for (int i = 0; i < lines.Count; i++)
         {
-            if (lines[i].StartsWith(PcMarkerPrefix, StringComparison.Ordinal))
+            if (lines[i].Contains(PcHighlightOpen, StringComparison.Ordinal))
             {
                 return i;
             }
@@ -484,8 +490,7 @@ static class TuiDisassemblyFormatter
         string padBytes = bytesPlain.Length < 8 ? bytesPlain + new string(' ', 8 - bytesPlain.Length) : bytesPlain;
         string bytesMk = $"[cyan]{padBytes}[/]";
 
-        bool focus = lineAddr == focusPc;
-        string mnStyle = focus ? "[bold green]" : "[green]";
+        string mnStyle = "[green]";
         string mnMk = $"{mnStyle}{Markup.Escape(instruction.Mnemonic.ToString())}[/]";
 
         var ops = instruction.Operands.Select(o => OperandToMarkup(o, emulator, lineAddr, showSymbols, symbols, romBank));

@@ -31,7 +31,9 @@ public static class FramebufferPreviewWindow
         int layoutH = LabelH + (Emulator.WindowHeight * LcdScale) + Pad
             + LabelH + Math.Max(PpuDebugViewRenderer.VramTilesHeight * VramScale, oamH * OamScale) + Pad;
 
+        int monitor = RaylibWindowPlacement.LaunchMonitor();
         Raylib.InitWindow(layoutW, layoutH, "Monoboy");
+        RaylibWindowPlacement.CenterOnMonitor(monitor, layoutW, layoutH);
         Raylib.SetWindowMinSize(layoutW / 2, layoutH / 2);
         Raylib.SetExitKey(KeyboardKey.Escape);
         Raylib.SetTargetFPS(30);

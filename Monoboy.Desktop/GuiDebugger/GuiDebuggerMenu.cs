@@ -1,6 +1,7 @@
 namespace Monoboy.Desktop.GuiDebugger;
 
 using System;
+using System.Numerics;
 
 using Raylib_cs;
 
@@ -9,11 +10,6 @@ static class GuiDebuggerMenu
 {
     public const int RowHeight = 24;
     public const int FontSize = 13;
-
-    static readonly Color Background = new(0x1A, 0x1A, 0x22, 255);
-    static readonly Color Hover = new(0x2A, 0x2A, 0x34, 255);
-    static readonly Color Text = new(0xD8, 0xD8, 0xE0, 255);
-    static readonly Color Shortcut = new(0xD8, 0xD8, 0xE0, 255);
 
     public static int MeasureWidth(string[] labels, string[] shortcuts)
     {
@@ -39,7 +35,7 @@ static class GuiDebuggerMenu
     /// <returns>Hover row index, or -1.</returns>
     public static int Draw(Rectangle bounds, string[] labels, string[] shortcuts, Vector2 mouse)
     {
-        Raylib.DrawRectangleRec(bounds, Background);
+        Raylib.DrawRectangleRec(bounds, GuiDebuggerTheme.MenuBackground);
 
         int hoverIndex = -1;
         for (int i = 0; i < labels.Length; i++)
@@ -49,13 +45,13 @@ static class GuiDebuggerMenu
             if (hover)
             {
                 hoverIndex = i;
-                Raylib.DrawRectangleRec(row, Hover);
+                Raylib.DrawRectangleRec(row, GuiDebuggerTheme.MenuHover);
             }
 
             int textY = (int)row.Y + ((RowHeight - FontSize) / 2);
-            GuiDebuggerFont.Draw(labels[i], (int)row.X + 10, textY, FontSize, Text);
+            GuiDebuggerFont.Draw(labels[i], (int)row.X + 10, textY, FontSize, GuiDebuggerTheme.Value);
             int sw = GuiDebuggerFont.Measure(shortcuts[i], FontSize);
-            GuiDebuggerFont.Draw(shortcuts[i], (int)(row.X + row.Width - sw - 10), textY, FontSize, Shortcut);
+            GuiDebuggerFont.Draw(shortcuts[i], (int)(row.X + row.Width - sw - 10), textY, FontSize, GuiDebuggerTheme.Label);
         }
 
         return hoverIndex;

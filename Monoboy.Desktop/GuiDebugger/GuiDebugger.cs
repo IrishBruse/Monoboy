@@ -47,7 +47,10 @@ public sealed class GuiDebugger : IDisposable
     bool _showTiles;
     MenuId _openMenu;
     int _disasmScrollRows;
+    int _asmPreviewScrollRows;
+    ushort _asmPreviewScrollTarget;
     int _hexScrollRows;
+    int _registerScrollY;
     bool _disposed;
 
     enum MenuId
@@ -307,17 +310,24 @@ public sealed class GuiDebugger : IDisposable
 
         int screenW = Raylib.GetScreenWidth();
         int screenH = Raylib.GetScreenHeight();
+        float wheel = GuiScroll.ConsumeWheel();
         ComputeLayout(screenW, screenH, ShowPpuViews, out Rectangle lcdArea, out Rectangle disasmArea, out Rectangle registerArea, out Rectangle hexArea);
 
         Raylib.ClearBackground(GuiDebuggerTheme.Canvas);
-        DrawToolbar(screenW, running, ShowPpuViews);
+        DrawToolbar(screenW);
         DrawLcdPanel(lcdArea, emulator);
         DrawPanel(disasmArea);
-        GuiDisassemblyView.Draw(InsetForContent(disasmArea, hasTitle: false), emulator, ref _disasmScrollRows);
+        GuiDisassemblyView.Draw(
+            InsetForContent(disasmArea, hasTitle: false),
+            emulator,
+            wheel,
+            ref _disasmScrollRows,
+            ref _asmPreviewScrollRows,
+            ref _asmPreviewScrollTarget);
         DrawPanel(registerArea);
-        GuiRegisterPanels.Draw(InsetForContent(registerArea, hasTitle: false), emulator);
+        GuiRegisterPanels.Draw(InsetForContent(registerArea, hasTitle: false), emulator, wheel, ref _registerScrollY);
         DrawPanel(hexArea);
-        GuiMemoryDumpView.Draw(InsetForContent(hexArea, hasTitle: false), emulator, ref _hexScrollRows);
+        GuiMemoryDumpView.Draw(InsetForContent(hexArea, hasTitle: false), emulator, wheel, ref _hexScrollRows);
         DrawOpenMenu();
     }
 
@@ -386,16 +396,28 @@ public sealed class GuiDebugger : IDisposable
             Math.Max(0, panel.Height - top - 4));
     }
 
-    static void DrawToolbar(int screenW, bool running, bool showPpu)
+    void DrawToolbar(int screenW)
     {
         Raylib.DrawRectangle(0, 0, screenW, ToolbarHeight, GuiDebuggerTheme.PanelBackground);
         Raylib.DrawLine(0, ToolbarHeight - 1, screenW, ToolbarHeight - 1, GuiDebuggerTheme.PanelBorder);
 
-        Color runColor = running ? GuiDebuggerTheme.Title : GuiDebuggerTheme.ToolbarLabel;
-        Color ppuColor = showPpu ? GuiDebuggerTheme.Title : GuiDebuggerTheme.ToolbarLabel;
+        DrawMenuTitle("Run", RunHitRect(), _openMenu == MenuId.Run);
+        DrawMenuTitle("PPU", PpuHitRect(), _openMenu == MenuId.Ppu);
+    }
 
-        DrawToolbarLabel("Run", 12, runColor);
-        DrawToolbarLabel("PPU", 56, ppuColor);
+    void DrawMenuTitle(string text, Rectangle hit, bool open)
+    {
+        bool hover = Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), hit);
+        if (open || hover)
+        {
+            Raylib.DrawRectangleRec(hit, GuiDebuggerTheme.MenuHover);
+        }
+
+        Color color = open || hover ? GuiDebuggerTheme.Value : GuiDebuggerTheme.ToolbarLabel;
+        int textW = GuiDebuggerFont.Measure(text, ToolbarTextSize);
+        int x = (int)hit.X + Math.Max(0, ((int)hit.Width - textW) / 2);
+        int y = (int)hit.Y + Math.Max(0, ((int)hit.Height - ToolbarTextSize) / 2);
+        GuiDebuggerFont.Draw(text, x, y, ToolbarTextSize, color);
     }
 
     void DrawOpenMenu()
@@ -414,12 +436,6 @@ public sealed class GuiDebugger : IDisposable
     static Rectangle RunHitRect() => new(8, 2, 36, ToolbarHeight - 4);
 
     static Rectangle PpuHitRect() => new(50, 2, 40, ToolbarHeight - 4);
-
-    static void DrawToolbarLabel(string text, int x, Color color)
-    {
-        int y = (ToolbarHeight - ToolbarTextSize) / 2;
-        GuiDebuggerFont.Draw(text, x, y, ToolbarTextSize, color);
-    }
 
     static void DrawPanel(Rectangle area, string title = "")
     {
@@ -448,14 +464,14 @@ public sealed class GuiDebugger : IDisposable
         int ah = Math.Max(0, (int)area.Height);
         Raylib.BeginScissorMode(ax + 1, ay + 1, Math.Max(0, aw - 2), Math.Max(0, ah - 2));
 
-        if (_showPpu)
+        if (ShowPpuViews)
         {
             DrawPpuOverview(area, emulator);
         }
         else
         {
             var lcdRect = new Rectangle(area.X + 4, area.Y + 4, area.Width - 8, area.Height - 8);
-            DrawLcdBezel(lcdRect, _lcdTex);
+            DrawLcd(lcdRect, _lcdTex);
         }
 
         Raylib.EndScissorMode();
@@ -510,7 +526,7 @@ public sealed class GuiDebugger : IDisposable
 
     void DrawFittedLcd(Rectangle cell)
     {
-        DrawLcdBezel(cell, _lcdTex);
+        DrawLcd(cell, _lcdTex);
     }
 
     static void DrawFittedTexture(
@@ -543,25 +559,16 @@ public sealed class GuiDebugger : IDisposable
         Raylib.DrawTextureEx(tex, new(drawX, drawY), 0, scale, Color.White);
     }
 
-    static void DrawLcdBezel(Rectangle area, Texture2D lcdTex)
+    static void DrawLcd(Rectangle area, Texture2D lcdTex)
     {
-        const int bezel = 6;
-        int innerW = (int)area.Width - (bezel * 2);
-        int innerH = (int)area.Height - (bezel * 2);
+        int innerW = Math.Max(1, (int)area.Width);
+        int innerH = Math.Max(1, (int)area.Height);
         int scale = Math.Max(1, Math.Min(innerW / Emulator.WindowWidth, innerH / Emulator.WindowHeight));
         int drawW = Emulator.WindowWidth * scale;
         int drawH = Emulator.WindowHeight * scale;
-        float bezelX = area.X + ((area.Width - drawW - (bezel * 2)) * 0.5f);
-        float bezelY = area.Y + ((area.Height - drawH - (bezel * 2)) * 0.5f);
-        var bezelRect = new Rectangle(bezelX, bezelY, drawW + (bezel * 2), drawH + (bezel * 2));
-
-        Raylib.DrawRectangleRec(bezelRect, GuiDebuggerTheme.LcdBezel);
-        Raylib.DrawTextureEx(
-            lcdTex,
-            new(bezelRect.X + bezel, bezelRect.Y + bezel),
-            0,
-            scale,
-            Color.White);
+        float x = area.X + ((area.Width - drawW) * 0.5f);
+        float y = area.Y + ((area.Height - drawH) * 0.5f);
+        Raylib.DrawTextureEx(lcdTex, new(x, y), 0, scale, Color.White);
     }
 
     static void DrawTinyLabel(string text, float x, float y)
@@ -577,7 +584,7 @@ public sealed class GuiDebugger : IDisposable
             (int)(texY + (vy * scale)),
             Math.Max(1, (int)(vw * scale)),
             Math.Max(1, (int)(vh * scale)),
-            new Color(0xE0, 0x40, 0x40, 0xFF));
+            new Color(0xE0, 0x6C, 0x75, 0xFF));
     }
 
     void AllocatePpuTextures(Emulator emulator)

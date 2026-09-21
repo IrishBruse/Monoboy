@@ -17,13 +17,10 @@ public static class GuiMemoryDumpView
 {
     const int FontSize = 13;
     const int LineHeight = 18;
-    const int ScrollbarWidth = 8;
     const int BytesPerRow = 16;
     const int TotalRows = 0x10000 / BytesPerRow;
 
-    static readonly Color AddressGrey = new(0x8A, 0x8A, 0x9E, 255);
-
-    public static void Draw(Rectangle area, Emulator emulator, ref int scrollRows)
+    public static void Draw(Rectangle area, Emulator emulator, float wheel, ref int scrollRows)
     {
         int areaX = (int)area.X;
         int areaY = (int)area.Y;
@@ -38,19 +35,10 @@ public static class GuiMemoryDumpView
 
         int visibleRows = Math.Max(1, areaH / LineHeight);
         int maxScroll = Math.Max(0, TotalRows - visibleRows);
+        GuiScroll.ApplyWheel(area, wheel, ref scrollRows, maxScroll);
         scrollRows = Math.Clamp(scrollRows, 0, maxScroll);
 
-        if (Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), area))
-        {
-            float wheel = Raylib.GetMouseWheelMove();
-            if (wheel != 0)
-            {
-                scrollRows -= (int)Math.Sign(wheel);
-                scrollRows = Math.Clamp(scrollRows, 0, maxScroll);
-            }
-        }
-
-        Raylib.BeginScissorMode(areaX, areaY, areaW - ScrollbarWidth, areaH);
+        Raylib.BeginScissorMode(areaX, areaY, Math.Max(0, areaW - GuiScroll.Width), areaH);
         for (int row = 0; row < visibleRows; row++)
         {
             int rowIndex = scrollRows + row;
@@ -65,13 +53,8 @@ public static class GuiMemoryDumpView
 
         Raylib.EndScissorMode();
 
-        DrawScrollbar(
-            areaX + areaW - ScrollbarWidth,
-            areaY,
-            ScrollbarWidth,
-            areaH,
-            scrollRows,
-            maxScroll);
+        var bar = new Rectangle(areaX + areaW - GuiScroll.Width, areaY, GuiScroll.Width, areaH);
+        GuiScroll.Draw(2, bar, ref scrollRows, maxScroll);
     }
 
     static void DrawHexRow(int x, int y, Emulator emulator, ushort rowAddr)
@@ -79,7 +62,7 @@ public static class GuiMemoryDumpView
         int cursorX = x;
 
         string addr = $"{rowAddr:X4}  ";
-        GuiDebuggerFont.Draw(addr, cursorX, y + 2, FontSize, AddressGrey);
+        GuiDebuggerFont.Draw(addr, cursorX, y + 2, FontSize, GuiDebuggerTheme.Address);
         cursorX += GuiDebuggerFont.Measure(addr, FontSize);
 
         var ascii = new StringBuilder(BytesPerRow);
@@ -129,21 +112,5 @@ public static class GuiMemoryDumpView
             GuiDebuggerFont.Draw(ch, cx, y + 2, FontSize, color);
             cx += GuiDebuggerFont.Measure(ch, FontSize);
         }
-    }
-
-    static void DrawScrollbar(int x, int y, int width, int height, int scrollRows, int maxScrollRows)
-    {
-        Raylib.DrawRectangle(x, y, width, height, GuiDebuggerTheme.ScrollbarTrack);
-        Raylib.DrawLine(x, y, x, y + height, GuiDebuggerTheme.PanelBorder);
-
-        if (height <= 4 || maxScrollRows <= 0)
-        {
-            return;
-        }
-
-        int thumbH = Math.Max(8, height / 16);
-        float t = Math.Clamp(scrollRows / (float)maxScrollRows, 0f, 1f);
-        int thumbY = y + (int)((height - thumbH) * t);
-        Raylib.DrawRectangle(x + 1, thumbY, Math.Max(1, width - 2), thumbH, GuiDebuggerTheme.ScrollbarThumb);
     }
 }

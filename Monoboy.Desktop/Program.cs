@@ -3,7 +3,7 @@ namespace Monoboy.Desktop;
 using System;
 using System.Linq;
 
-using Monoboy.Desktop.TuiDebugger;
+using TuiDebuggerApp = Monoboy.Desktop.TuiDebugger.TuiDebugger;
 
 public class Program
 {
@@ -24,7 +24,7 @@ public class Program
 
         if (args.Contains("--debug"))
         {
-            TuiDebugger.Run(args);
+            TuiDebuggerApp.Run(args);
             return;
         }
 

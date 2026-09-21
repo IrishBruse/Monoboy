@@ -6,8 +6,9 @@ using System.Linq;
 using System.Reflection;
 
 using Monoboy.Constants;
-using Monoboy.Desktop.GuiDebugger;
 using Monoboy.Utility;
+
+using GuiDebuggerView = Monoboy.Desktop.GuiDebugger.GuiDebugger;
 
 using NativeFileDialogSharp;
 
@@ -22,7 +23,7 @@ public class Application
     bool debuggerOpen;
     int playWindowW;
     int playWindowH;
-    GuiDebugger? debugger;
+    GuiDebuggerView? debugger;
 
     public Application()
     {
@@ -233,9 +234,9 @@ public class Application
         {
             playWindowW = Raylib.GetScreenWidth();
             playWindowH = Raylib.GetScreenHeight();
-            debugger ??= new GuiDebugger();
+            debugger ??= new GuiDebuggerView();
             Raylib.SetWindowMinSize(640, 480);
-            Raylib.SetWindowSize(GuiDebugger.DefaultWidth, GuiDebugger.DefaultHeight);
+            Raylib.SetWindowSize(GuiDebuggerView.DefaultWidth, GuiDebuggerView.DefaultHeight);
             Raylib.SetWindowTitle("Monoboy Debugger");
         }
         else

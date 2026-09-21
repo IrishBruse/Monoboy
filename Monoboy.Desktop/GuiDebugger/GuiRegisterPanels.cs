@@ -48,7 +48,7 @@ public static class GuiRegisterPanels
         }
     }
 
-    public static void Draw(Rectangle area, Emulator emulator)
+    public static void Draw(Rectangle area, Emulator emulator, float wheel, ref int scrollY)
     {
         int areaX = (int)area.X;
         int areaY = (int)area.Y;
@@ -59,16 +59,24 @@ public static class GuiRegisterPanels
             return;
         }
 
-        DebugState s = emulator.GetDebugState();
-        int colW = Math.Max(1, (areaW - ColumnGutter * 3) / 4);
-        int valueX = GuiDebuggerFont.CharWidth(RowSize) * 13;
+        int maxScroll = Math.Max(0, RequiredDrawHeight - areaH);
+        GuiScroll.ApplyWheel(area, wheel, ref scrollY, maxScroll);
+        scrollY = Math.Clamp(scrollY, 0, maxScroll);
 
-        Raylib.BeginScissorMode(areaX, areaY, areaW, areaH);
-        DrawColumn1(new Rectangle(areaX, areaY, colW, areaH), emulator, s, valueX);
-        DrawColumn2(new Rectangle(areaX + colW + ColumnGutter, areaY, colW, areaH), emulator, s, valueX);
-        DrawColumn3(new Rectangle(areaX + (colW + ColumnGutter) * 2, areaY, colW, areaH), emulator, valueX);
-        DrawColumn4(new Rectangle(areaX + (colW + ColumnGutter) * 3, areaY, colW, areaH), emulator, valueX);
+        DebugState s = emulator.GetDebugState();
+        int colW = Math.Max(1, (areaW - GuiScroll.Width - ColumnGutter * 3) / 4);
+        int valueX = GuiDebuggerFont.CharWidth(RowSize) * 13;
+        int originY = areaY - scrollY;
+
+        Raylib.BeginScissorMode(areaX, areaY, Math.Max(0, areaW - GuiScroll.Width), areaH);
+        DrawColumn1(new Rectangle(areaX, originY, colW, areaH + scrollY), emulator, s, valueX);
+        DrawColumn2(new Rectangle(areaX + colW + ColumnGutter, originY, colW, areaH + scrollY), emulator, s, valueX);
+        DrawColumn3(new Rectangle(areaX + (colW + ColumnGutter) * 2, originY, colW, areaH + scrollY), emulator, valueX);
+        DrawColumn4(new Rectangle(areaX + (colW + ColumnGutter) * 3, originY, colW, areaH + scrollY), emulator, valueX);
         Raylib.EndScissorMode();
+
+        var bar = new Rectangle(areaX + areaW - GuiScroll.Width, areaY, GuiScroll.Width, areaH);
+        GuiScroll.Draw(3, bar, ref scrollY, maxScroll);
     }
 
     static void DrawColumn1(Rectangle col, Emulator emulator, DebugState s, int valueX)

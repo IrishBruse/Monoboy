@@ -1,4 +1,4 @@
-namespace Monoboy.Desktop.Debugger;
+namespace Monoboy.Desktop.GuiDebugger;
 
 using Raylib_cs;
 

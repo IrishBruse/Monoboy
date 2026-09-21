@@ -1,4 +1,4 @@
-namespace Monoboy.Desktop.Debugger;
+namespace Monoboy.Desktop.GuiDebugger;
 
 using System;
 
@@ -8,26 +8,18 @@ using Monoboy.Constants;
 using Raylib_cs;
 
 /// <summary>
-/// Four-column register mosaic for the GUI debugger.
-/// Colors come from <see cref="GuiDebuggerTheme"/> when present:
-/// <see cref="GuiDebuggerTheme.Canvas"/>,
-/// <see cref="GuiDebuggerTheme.PanelBackground"/> (panel fill),
-/// <see cref="GuiDebuggerTheme.PanelBorder"/> (1px outline),
-/// <see cref="GuiDebuggerTheme.Title"/> (centered section headers),
-/// <see cref="GuiDebuggerTheme.Label"/> (row labels),
-/// <see cref="GuiDebuggerTheme.Value"/> (row values).
+/// Four-column register mosaic. Theme: Title, Label, Value, PanelBackground, PanelBorder.
 /// </summary>
 public static class GuiRegisterPanels
 {
-    const int ColumnGutter = 6;
-    const int PanelGap = 3;
-    const int PanelPad = 3;
-    const int TitleSize = 10;
-    const int RowSize = 9;
-    const int TitleRowHeight = 12;
-    const int DataRowHeight = 10;
+    const int ColumnGutter = 8;
+    const int PanelGap = 6;
+    const int PanelPad = 8;
+    const int TitleSize = 13;
+    const int RowSize = 13;
+    const int TitleRowHeight = 18;
+    const int DataRowHeight = 16;
 
-    /// <summary>Vertical pixels needed for the tallest register column (no outer pane inset).</summary>
     public static int RequiredDrawHeight
     {
         get
@@ -69,18 +61,19 @@ public static class GuiRegisterPanels
 
         DebugState s = emulator.GetDebugState();
         int colW = Math.Max(1, (areaW - ColumnGutter * 3) / 4);
+        int valueX = GuiDebuggerFont.CharWidth(RowSize) * 13;
 
         Raylib.BeginScissorMode(areaX, areaY, areaW, areaH);
-        DrawColumn1(new Rectangle(areaX, areaY, colW, areaH), emulator, s);
-        DrawColumn2(new Rectangle(areaX + colW + ColumnGutter, areaY, colW, areaH), emulator, s);
-        DrawColumn3(new Rectangle(areaX + (colW + ColumnGutter) * 2, areaY, colW, areaH), emulator);
-        DrawColumn4(new Rectangle(areaX + (colW + ColumnGutter) * 3, areaY, colW, areaH), emulator);
+        DrawColumn1(new Rectangle(areaX, areaY, colW, areaH), emulator, s, valueX);
+        DrawColumn2(new Rectangle(areaX + colW + ColumnGutter, areaY, colW, areaH), emulator, s, valueX);
+        DrawColumn3(new Rectangle(areaX + (colW + ColumnGutter) * 2, areaY, colW, areaH), emulator, valueX);
+        DrawColumn4(new Rectangle(areaX + (colW + ColumnGutter) * 3, areaY, colW, areaH), emulator, valueX);
         Raylib.EndScissorMode();
     }
 
-    static void DrawColumn1(Rectangle col, Emulator emulator, DebugState s)
+    static void DrawColumn1(Rectangle col, Emulator emulator, DebugState s, int valueX)
     {
-        var w = new ColumnWriter(col);
+        var w = new ColumnWriter(col, valueX);
         w.BeginPanel("LCD", 11);
         IoRow(w, emulator, Reg.LCDC, "LCDC");
         IoRow(w, emulator, Reg.STAT, "STAT");
@@ -106,17 +99,15 @@ public static class GuiRegisterPanels
         w.EndPanel();
 
         w.BeginPanel("vRAM DMA", 3);
-        LabelValueRow(w, "FF51-52 Src",
-            $"{emulator.Read(Reg.HDMA1):X2}{emulator.Read(Reg.HDMA2):X2}");
-        LabelValueRow(w, "FF53-54 Dest",
-            $"{emulator.Read(Reg.HDMA3):X2}{emulator.Read(Reg.HDMA4):X2}");
+        LabelValueRow(w, "FF51-52 Src", $"{emulator.Read(Reg.HDMA1):X2}{emulator.Read(Reg.HDMA2):X2}");
+        LabelValueRow(w, "FF53-54 Dest", $"{emulator.Read(Reg.HDMA3):X2}{emulator.Read(Reg.HDMA4):X2}");
         LabelValueRow(w, "FF55 Length", $"{emulator.Read(Reg.HDMA5):X2}");
         w.EndPanel();
     }
 
-    static void DrawColumn2(Rectangle col, Emulator emulator, DebugState s)
+    static void DrawColumn2(Rectangle col, Emulator emulator, DebugState s, int valueX)
     {
-        var w = new ColumnWriter(col);
+        var w = new ColumnWriter(col, valueX);
         w.BeginPanel("CPU", 6);
         Reg16Row(w, "AF", s.AF);
         Reg16Row(w, "BC", s.BC);
@@ -127,7 +118,7 @@ public static class GuiRegisterPanels
         w.EndPanel();
 
         w.BeginPanel("Interrupts", 4);
-        LabelValueRow(w, "FF0F IF", $"{s.IF:X2}");
+        IoRow(w, emulator, 0xFF0F, "IF");
         IoRow(w, emulator, Reg.KEY1, "KEY1");
         LabelValueRow(w, "FFFF IE", $"{s.IE:X2}");
         LabelValueRow(w, "IME", s.Ime ? "on" : "off");
@@ -146,9 +137,9 @@ public static class GuiRegisterPanels
         w.EndPanel();
     }
 
-    static void DrawColumn3(Rectangle col, Emulator emulator)
+    static void DrawColumn3(Rectangle col, Emulator emulator, int valueX)
     {
-        var w = new ColumnWriter(col);
+        var w = new ColumnWriter(col, valueX);
         w.BeginPanel("Ch1 (Square)", 5);
         IoRow(w, emulator, Reg.NR10, "NR10");
         IoRow(w, emulator, Reg.NR11, "NR11");
@@ -164,14 +155,14 @@ public static class GuiRegisterPanels
         IoRow(w, emulator, Reg.NR24, "NR24");
         w.EndPanel();
 
-        w.BeginPanel("Wave RAM (FF30-FF3F)", 4);
+        w.BeginPanel("Wave RAM (FF30-F)", 4);
         DrawWaveRamGrid(w, emulator);
         w.EndPanel();
     }
 
-    static void DrawColumn4(Rectangle col, Emulator emulator)
+    static void DrawColumn4(Rectangle col, Emulator emulator, int valueX)
     {
-        var w = new ColumnWriter(col);
+        var w = new ColumnWriter(col, valueX);
         w.BeginPanel("Ch3 (Wave)", 5);
         IoRow(w, emulator, Reg.NR30, "NR30");
         IoRow(w, emulator, Reg.NR31, "NR31");
@@ -198,17 +189,16 @@ public static class GuiRegisterPanels
     {
         const int cols = 4;
         const int rows = 4;
-        const int cellGap = 2;
+        int cellW = Math.Max(GuiDebuggerFont.CharWidth(RowSize) * 3, (w.ContentWidth - 6) / cols);
         for (int row = 0; row < rows; row++)
         {
-            int y = w.ContentY + row * DataRowHeight;
-            int cellW = Math.Max(1, (w.ContentWidth - (cols - 1) * cellGap) / cols);
+            int y = w.NextRowY();
             for (int col = 0; col < cols; col++)
             {
                 int index = row * cols + col;
                 ushort addr = (ushort)(0xFF30 + index);
                 string text = $"{emulator.Read(addr):X2}";
-                int x = w.ContentX + col * (cellW + cellGap);
+                int x = w.ContentX + col * cellW;
                 GuiDebuggerFont.Draw(text, x, y, RowSize, PanelValueColor);
             }
         }
@@ -229,30 +219,34 @@ public static class GuiRegisterPanels
     static void LabelValueRow(ColumnWriter w, string label, string value)
     {
         int y = w.NextRowY();
-        string prefix = $"{label}: ";
+        string prefix = $"{label}:";
         GuiDebuggerFont.Draw(prefix, w.ContentX, y, RowSize, PanelLabelColor);
-        int prefixW = GuiDebuggerFont.Measure(prefix, RowSize);
-        GuiDebuggerFont.Draw(value, w.ContentX + prefixW, y, RowSize, PanelValueColor);
+        int vx = w.ContentX + w.ValueX;
+        if (vx < w.ContentX + GuiDebuggerFont.Measure(prefix, RowSize) + 6)
+        {
+            vx = w.ContentX + GuiDebuggerFont.Measure(prefix, RowSize) + 6;
+        }
+
+        GuiDebuggerFont.Draw(value, vx, y, RowSize, PanelValueColor);
     }
 
-    // Fallback palette if GuiDebuggerTheme is absent: Canvas #1E1C28, panel #22202E, border #3E4148,
-    // titles #CCDA8B, labels #A9B1D6, values #FEFBFF (see GuiDebuggerTheme).
     static Color PanelTitleColor => GuiDebuggerTheme.Title;
     static Color PanelLabelColor => GuiDebuggerTheme.Label;
     static Color PanelValueColor => GuiDebuggerTheme.Value;
     static Color PanelFillColor => GuiDebuggerTheme.PanelBackground;
     static Color PanelBorderColor => GuiDebuggerTheme.PanelBorder;
 
-    struct ColumnWriter
+    sealed class ColumnWriter
     {
         readonly Rectangle _col;
         int _y;
         int _contentY;
         int _contentRows;
 
-        public ColumnWriter(Rectangle col)
+        public ColumnWriter(Rectangle col, int valueX)
         {
             _col = col;
+            ValueX = valueX;
             _y = (int)col.Y;
             _contentY = 0;
             _contentRows = 0;
@@ -261,6 +255,7 @@ public static class GuiRegisterPanels
         public int ContentX => (int)_col.X + PanelPad;
         public int ContentWidth => Math.Max(1, (int)_col.Width - PanelPad * 2);
         public int ContentY => _contentY;
+        public int ValueX { get; }
 
         public void BeginPanel(string title, int contentRows)
         {
@@ -275,7 +270,7 @@ public static class GuiRegisterPanels
             int titleY = (int)panel.Y + PanelPad;
             GuiDebuggerFont.Draw(title, titleX, titleY, TitleSize, PanelTitleColor);
 
-            _contentY = titleY + TitleRowHeight;
+            _contentY = (int)panel.Y + PanelPad + TitleRowHeight;
         }
 
         public void EndPanel()

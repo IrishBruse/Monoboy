@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Monoboy;
+using Monoboy.Desktop.TuiDebugger;
 
 /// <summary>
 /// Headless mode: same ROM/bootstrap setup as <see cref="TuiDebugger"/>, runs for

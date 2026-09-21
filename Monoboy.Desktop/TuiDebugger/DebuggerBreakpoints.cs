@@ -1,4 +1,4 @@
-namespace Monoboy.Desktop.Debugger;
+namespace Monoboy.Desktop.TuiDebugger;
 
 using System.Collections.Generic;
 

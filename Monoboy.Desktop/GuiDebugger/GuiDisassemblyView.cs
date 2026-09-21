@@ -1,6 +1,7 @@
-namespace Monoboy.Desktop.Debugger;
+namespace Monoboy.Desktop.GuiDebugger;
 
 using System;
+using Monoboy.Desktop.TuiDebugger;
 using System.Collections.Generic;
 using System.Text;
 

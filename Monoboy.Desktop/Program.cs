@@ -3,6 +3,8 @@ namespace Monoboy.Desktop;
 using System;
 using System.Linq;
 
+using Monoboy.Desktop.TuiDebugger;
+
 public class Program
 {
     public static void Main()

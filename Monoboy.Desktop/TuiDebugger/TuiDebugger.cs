@@ -1,4 +1,4 @@
-namespace Monoboy.Desktop;
+namespace Monoboy.Desktop.TuiDebugger;
 
 using System;
 using System.IO;
@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 
 using Monoboy;
-using Monoboy.Desktop.Debugger;
 
 /// <summary>
 /// Debugger TUI: disassembly, branch preview (at PC row), registers (flush right), memory dump.

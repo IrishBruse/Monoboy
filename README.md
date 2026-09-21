@@ -24,15 +24,15 @@ The **Monoboy.Desktop** project is the main executable. With no extra arguments 
 
 | Mode                 | Flag        | Description                                                                                                                      |
 | -------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Graphical            | _(default)_ | Full emulator UI with keyboard/gamepad input.                                                                                    |
-| Console debugger     | `--debug`   | Terminal UI: disassembly, register grid, memory dump, and optional framebuffer preview.                                          |
+| Graphical            | _(default)_ | Full emulator UI with keyboard/gamepad input. Press **F12** to show or hide the GUI debugger.                                    |
+| TUI debugger         | `--debug`   | Terminal debugger: disassembly, registers, memory dump, breakpoints.                                                             |
 | Headless test runner | `--test`    | Runs the core for a fixed number of steps or frames, then prints **one JSON object** on stdout (for automated tests or tooling). |
 
 ### Common arguments
 
 - **`-h` / `--help`** — Print usage and exit.
 - **ROM path** — Optional. Give the path to a `.gb` / `.gbc` file as the first argument that does **not** start with `--`. If it is missing or the file does not exist, the core boots with an empty 64 KiB buffer (same idea as the debugger when no ROM is loaded).
-- **`--log-header`** — Print cartridge header information when opening a ROM (TUI and graphical modes).
+- **`--log-header`** — Print cartridge header information when opening a ROM (debugger and graphical modes).
 - **`--custom-boot`** — Use the embedded bootix boot ROM instead of the built-in boot (graphical mode only).
 
 Examples:
@@ -43,24 +43,20 @@ monoboy --debug path/to/game.gb
 monoboy --test path/to/test.gb --steps 5000
 ```
 
+### GUI debugger (F12)
+
+In the graphical window, press **F12** to show or hide the debugger (LCD, disassembly, registers, memory dump). No extra CLI flag is required.
+
+| Input | Action |
+| ----- | ------ |
+| **F12** | Show or hide the debugger. |
+| **Run** (toolbar) | Start or pause execution. |
+| **F10** | Step one CPU instruction when paused. |
+| **PPU** (toolbar) | Show or hide PPU views (BG, WIN, VRAM, OAM). |
+
 ### `--debug` (TUI debugger)
 
-Spectre.Console-based layout: disassembly on the left, register / I/O panels in the center, full-height memory dump on the right. The view tracks terminal size; resize the window to reflow.
-
-| Key                     | Action                                                        |
-| ----------------------- | ------------------------------------------------------------- |
-| **S**                   | Step one CPU instruction.                                     |
-| **F**                   | Step one frame (until the next VBlank boundary).              |
-| **R**                   | Run 500 instructions.                                         |
-| **Ctrl+R**              | Reset emulator (reload ROM from disk).                      |
-| **Q**                   | Quit.                                                         |
-| **Tab**                 | Switch focus between disassembly and memory panes.            |
-| **Arrow keys**          | Scroll the focused pane (disassembly or memory).              |
-| **Page Up / Page Down** | Scroll by about one screen in the focused pane.               |
-| **Home**                | Reset disassembly and memory scroll to the default positions. |
-| **P**                   | Open a framebuffer preview popup.                             |
-
-![](Images/Tui.png)
+Terminal debugger. Common keys: **S** step, **R** run to breakpoint, **B** toggle breakpoint, **Tab** switch pane, arrows / Page Up / Page Down scroll, **Ctrl+R** reload ROM.
 
 ### `--test` (JSON snapshot)
 
@@ -103,6 +99,7 @@ monoboy --test rom.gb --memory 0xC000:256
 | Dump Memory           | F5       |                       |
 | Dump Background Image | F6       |                       |
 | Dump Tilemap Image    | F7       |                       |
+| Toggle GUI debugger   | F12      |                       |
 
 ## Palette
 

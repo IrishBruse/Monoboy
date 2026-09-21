@@ -18,6 +18,10 @@ public class Application
 
     bool speedup;
     bool paused;
+    bool debuggerOpen;
+    int playWindowW;
+    int playWindowH;
+    GuiDebugger? debugger;
 
     public Application()
     {
@@ -91,17 +95,32 @@ public class Application
                 }
             }
 
-            Raylib.UpdateTexture(framebuffer, emulator.Framebuffer);
-
-            Raylib.BeginDrawing();
+            if (debuggerOpen && debugger != null)
             {
-                Raylib.ClearBackground(new Color(0xD0, 0xD0, 0x58, 0xFF));
-                int scale = Math.Min(Math.Max(width / Emulator.WindowWidth, 1), Math.Max(height / Emulator.WindowHeight, 1));
-                Raylib.DrawTextureEx(framebuffer, new((width - (Emulator.WindowWidth * scale)) * 0.5f, (height - (Emulator.WindowHeight * scale)) * 0.5f), 0, scale, Color.White);
+                bool running = !paused;
+                debugger.HandleInput(emulator, ref running);
+                paused = !running;
+                debugger.UpdateTextures(emulator);
+
+                Raylib.BeginDrawing();
+                debugger.Draw(emulator, running: !paused);
+                Raylib.EndDrawing();
             }
-            Raylib.EndDrawing();
+            else
+            {
+                Raylib.UpdateTexture(framebuffer, emulator.Framebuffer);
+
+                Raylib.BeginDrawing();
+                {
+                    Raylib.ClearBackground(new Color(0xD0, 0xD0, 0x58, 0xFF));
+                    int scale = Math.Min(Math.Max(width / Emulator.WindowWidth, 1), Math.Max(height / Emulator.WindowHeight, 1));
+                    Raylib.DrawTextureEx(framebuffer, new((width - (Emulator.WindowWidth * scale)) * 0.5f, (height - (Emulator.WindowHeight * scale)) * 0.5f), 0, scale, Color.White);
+                }
+                Raylib.EndDrawing();
+            }
         }
 
+        debugger?.Dispose();
         Raylib.CloseAudioDevice();
         Raylib.CloseWindow();
     }
@@ -178,6 +197,12 @@ public class Application
     {
         speedup = Raylib.IsKeyDown(KeyboardKey.F);
 
+        if (Raylib.IsKeyPressed(KeyboardKey.F12))
+        {
+            ToggleDebugger();
+            return;
+        }
+
         if (Raylib.IsKeyDown(KeyboardKey.LeftShift) && Raylib.IsKeyPressed(KeyboardKey.P))
         {
             paused = false;
@@ -197,6 +222,28 @@ public class Application
             emulator.Dump("F5");
             DumpBackground("dumps/F5/background.png");
             DumpTileset("dumps/F5/tileset.png");
+        }
+    }
+
+    void ToggleDebugger()
+    {
+        debuggerOpen = !debuggerOpen;
+        if (debuggerOpen)
+        {
+            playWindowW = Raylib.GetScreenWidth();
+            playWindowH = Raylib.GetScreenHeight();
+            debugger ??= new GuiDebugger();
+            Raylib.SetWindowMinSize(640, 480);
+            Raylib.SetWindowSize(GuiDebugger.DefaultWidth, GuiDebugger.DefaultHeight);
+            Raylib.SetWindowTitle("Monoboy Debugger");
+        }
+        else
+        {
+            Raylib.SetWindowMinSize(Emulator.WindowWidth, Emulator.WindowHeight);
+            int restoreW = playWindowW > 0 ? playWindowW : Emulator.WindowWidth * 4;
+            int restoreH = playWindowH > 0 ? playWindowH : Emulator.WindowHeight * 4;
+            Raylib.SetWindowSize(restoreW, restoreH);
+            Raylib.SetWindowTitle("Monoboy");
         }
     }
 

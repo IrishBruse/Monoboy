@@ -20,12 +20,12 @@ static class CliHelp
 
             Modes:
               (default)   Raylib window (graphical emulator)
-              --debug     Terminal UI debugger
+              --debug     Terminal (TUI) debugger
               --test      Headless run; prints one JSON object on stdout
 
             Options:
               -h, --help       Show this help and exit
-              --log-header     Print cartridge header when opening a ROM (TUI and graphical)
+              --log-header     Print cartridge header when opening a ROM (debugger and graphical)
               --custom-boot    Use embedded bootix boot ROM instead of built-in boot
 
             --test options:

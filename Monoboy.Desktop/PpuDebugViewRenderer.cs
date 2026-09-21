@@ -135,26 +135,20 @@ static class PpuDebugViewRenderer
     {
         int width = OamGridWidth;
         int height = OamGridHeight(emulator);
+        int tileBase = spriteHeight == 16 ? tileId & 0xFE : tileId;
 
         for (int ty = 0; ty < spriteHeight; ty++)
         {
-            int tileRow = spriteHeight == 16 && ty >= 8 ? ty - 8 : ty;
-            int vramTile = spriteHeight == 16 && ty >= 8 ? tileId + 1 : tileId;
-            int row = mirrorY ? spriteHeight - 1 - ty : tileRow;
+            int row = mirrorY ? spriteHeight - 1 - ty : ty;
             int line = row * 2;
 
-            byte data1 = emulator.Read((ushort)(VramBase + (vramTile * 16) + line));
-            byte data2 = emulator.Read((ushort)(VramBase + (vramTile * 16) + line + 1));
+            byte data1 = emulator.Read((ushort)(VramBase + (tileBase * 16) + line));
+            byte data2 = emulator.Read((ushort)(VramBase + (tileBase * 16) + line + 1));
 
             for (int tx = 0; tx < 8; tx++)
             {
                 int pixelBit = mirrorX ? tx : 7 - tx;
                 byte palletIndex = (byte)(((data2 >> pixelBit) & 1) << 1 | ((data1 >> pixelBit) & 1));
-                if (palletIndex == 0)
-                {
-                    continue;
-                }
-
                 byte colorIndex = (byte)((obp >> (palletIndex * 2)) & 0b11);
                 int px = destX + tx;
                 int py = destY + ty;

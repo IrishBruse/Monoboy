@@ -164,13 +164,18 @@ public class Emulator
         EnteredVSync = false;
     }
 
+    /// <summary>Path passed to <see cref="Open(string)"/>, when the ROM was opened from a file.</summary>
+    public string? RomPath { get; private set; }
+
     public void Open(string path)
     {
         Open(File.ReadAllBytes(path));
+        RomPath = path;
     }
 
     public void Open(byte[] data)
     {
+        RomPath = null;
         cartridge = new();
 
         Reset();

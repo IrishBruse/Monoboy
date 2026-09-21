@@ -1,25 +1,64 @@
 namespace Monoboy.Desktop.GuiDebugger;
 
+using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
+using ImGuiNET;
+
 using Monoboy;
+using Monoboy.Desktop.TuiDebugger;
 using Monoboy.Disassembler;
 
 using Raylib_cs;
 
-/// <summary>Syntax-highlighted disassembly line drawing (TUI color semantics, Raylib output).</summary>
+/// <summary>Syntax-highlighted disassembly line drawing (TUI color semantics, ImGui output).</summary>
 static class GuiDisassemblySyntax
 {
-    public const int FontSize = 13;
     const int AddrFieldWidth = 6;
     const int BytesFieldWidth = 8;
     const int MnemonicGapWidth = 3;
 
-    public static void DrawLine(int x, int y, Emulator emulator, ushort lineAddr, bool isPcRow)
+    static Vector4 C(Color color) =>
+        new(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+
+    public readonly struct Line
     {
-        int textY = y + 2;
+        public bool IsLabel { get; init; }
+
+        public ushort Address { get; init; }
+
+        public string Label { get; init; }
+
+        public static Line Instruction(ushort address) => new() { Address = address };
+
+        public static Line Symbol(ushort address, string label) =>
+            new() { IsLabel = true, Address = address, Label = label };
+    }
+
+    public static void AppendBlock(List<Line> lines, Emulator emulator, ushort addr, SymSymbolMap? symbols)
+    {
+        if (symbols != null
+            && symbols.TryGetLabels(addr, emulator.RomBank, out IReadOnlyList<string> names)
+            && names.Count > 0)
+        {
+            lines.Add(Line.Symbol(addr, string.Join(", ", names)));
+        }
+
+        lines.Add(Line.Instruction(addr));
+    }
+
+    public static void DrawLabel(string label)
+    {
+        ImGui.PushTextWrapPos(-1f);
+        ImGui.TextColored(C(GuiDebuggerTheme.DisasmSymbol), label);
+        ImGui.PopTextWrapPos();
+    }
+
+    public static void DrawLine(Emulator emulator, ushort lineAddr, bool isPcRow, SymSymbolMap? symbols = null)
+    {
         Color addrColor = isPcRow ? GuiDebuggerTheme.Value : GuiDebuggerTheme.Address;
-        int cx = DrawRun(x, textY, $"{lineAddr:X4}:".PadRight(AddrFieldWidth), addrColor);
+        DrawRun($"{lineAddr:X4}:".PadRight(AddrFieldWidth), addrColor);
 
         byte op = emulator.Read(lineAddr);
         if (op == 0xCB)
@@ -27,44 +66,48 @@ static class GuiDisassemblySyntax
             byte cbOp = emulator.Read((ushort)(lineAddr + 1));
             if (Ops.CBprefixed.TryGetValue(cbOp, out Instruction? cbInsn))
             {
-                cx = DrawBytesField(cx, textY, emulator, lineAddr, cbInsn.Bytes);
-                cx = DrawGap(cx, textY);
-                DrawInstruction(cx, textY, emulator, lineAddr, cbInsn);
+                DrawBytesField(emulator, lineAddr, cbInsn.Bytes);
+                DrawGap();
+                DrawInstruction(emulator, lineAddr, cbInsn, symbols);
+                ImGui.NewLine();
                 return;
             }
 
-            cx = DrawBytesField(cx, textY, emulator, lineAddr, 2);
-            cx = DrawGap(cx, textY);
-            DrawRun(cx, textY, "DB CB", GuiDebuggerTheme.DisasmUnknown);
+            DrawBytesField(emulator, lineAddr, 2);
+            DrawGap();
+            DrawRun("DB CB", GuiDebuggerTheme.DisasmUnknown);
+            ImGui.NewLine();
             return;
         }
 
         if (!Ops.Unprefixed.TryGetValue(op, out Instruction? instruction))
         {
-            cx = DrawBytesField(cx, textY, emulator, lineAddr, 1);
-            cx = DrawGap(cx, textY);
-            cx = DrawRun(cx, textY, "DB", GuiDebuggerTheme.DisasmUnknown);
-            DrawRun(cx, textY, $" ${op:X2}", GuiDebuggerTheme.DisasmImmediate);
+            DrawBytesField(emulator, lineAddr, 1);
+            DrawGap();
+            DrawRun("DB", GuiDebuggerTheme.DisasmUnknown);
+            DrawRun($" ${op:X2}", GuiDebuggerTheme.DisasmImmediate);
+            ImGui.NewLine();
             return;
         }
 
-        cx = DrawBytesField(cx, textY, emulator, lineAddr, instruction.Bytes);
-        cx = DrawGap(cx, textY);
-        DrawInstruction(cx, textY, emulator, lineAddr, instruction);
+        DrawBytesField(emulator, lineAddr, instruction.Bytes);
+        DrawGap();
+        DrawInstruction(emulator, lineAddr, instruction, symbols);
+        ImGui.NewLine();
     }
 
-    static void DrawInstruction(int x, int y, Emulator emulator, ushort lineAddr, Instruction instruction)
+    static void DrawInstruction(Emulator emulator, ushort lineAddr, Instruction instruction, SymSymbolMap? symbols)
     {
-        int cx = DrawRun(x, y, instruction.Mnemonic.ToString(), GuiDebuggerTheme.DisasmMnemonic);
+        DrawRun(instruction.Mnemonic.ToString(), GuiDebuggerTheme.DisasmMnemonic);
         foreach (Operand operand in instruction.Operands)
         {
-            cx = DrawRun(cx, y, " ", GuiDebuggerTheme.DisasmOperand);
-            string text = FormatOperandText(operand, emulator, lineAddr);
-            cx = DrawRun(cx, y, text, OperandColor(operand, emulator, lineAddr));
+            DrawRun(" ", GuiDebuggerTheme.DisasmOperand);
+            string text = FormatOperandText(operand, emulator, lineAddr, symbols);
+            DrawRun(text, OperandColor(operand, emulator, lineAddr, symbols));
         }
     }
 
-    static int DrawBytesField(int x, int y, Emulator emulator, ushort lineAddr, int size)
+    static void DrawBytesField(Emulator emulator, ushort lineAddr, int size)
     {
         var parts = new StringBuilder();
         for (int i = 0; i < size; i++)
@@ -79,19 +122,27 @@ static class GuiDisassemblySyntax
 
         string plain = parts.ToString();
         string padded = plain.Length < BytesFieldWidth ? plain.PadRight(BytesFieldWidth) : plain;
-        return DrawRun(x, y, padded, GuiDebuggerTheme.DisasmBytes);
+        DrawRun(padded, GuiDebuggerTheme.DisasmBytes);
     }
 
-    static int DrawGap(int x, int y) => DrawRun(x, y, new string(' ', MnemonicGapWidth), GuiDebuggerTheme.Value);
+    static void DrawGap() => DrawRun(new string(' ', MnemonicGapWidth), GuiDebuggerTheme.Value);
 
-    static int DrawRun(int x, int y, string text, Color color)
+    static void DrawRun(string text, Color color)
     {
-        GuiDebuggerFont.Draw(text, x, y, FontSize, color);
-        return x + GuiDebuggerFont.Measure(text, FontSize);
+        ImGui.PushTextWrapPos(-1f);
+        ImGui.TextColored(C(color), text);
+        ImGui.PopTextWrapPos();
+        ImGui.SameLine(0, 0);
     }
 
-    static Color OperandColor(Operand operand, Emulator emulator, ushort atPc)
+    static Color OperandColor(Operand operand, Emulator emulator, ushort atPc, SymSymbolMap? symbols)
     {
+        if (TryResolveTargetOperand(operand, emulator, atPc, out ushort target)
+            && TryGetSymbolName(symbols, emulator, target, out _))
+        {
+            return GuiDebuggerTheme.DisasmSymbol;
+        }
+
         if (TryResolveTargetOperand(operand, emulator, atPc, out _))
         {
             return GuiDebuggerTheme.DisasmImmediate;
@@ -109,10 +160,15 @@ static class GuiDisassemblySyntax
         };
     }
 
-    static string FormatOperandText(Operand operand, Emulator emulator, ushort atPc)
+    static string FormatOperandText(Operand operand, Emulator emulator, ushort atPc, SymSymbolMap? symbols)
     {
         if (TryResolveTargetOperand(operand, emulator, atPc, out ushort target))
         {
+            if (TryGetSymbolName(symbols, emulator, target, out string name))
+            {
+                return name;
+            }
+
             return FormatTargetAddressText(operand, target);
         }
 
@@ -158,4 +214,18 @@ static class GuiDisassemblySyntax
 
     static ushort ReadU16(Emulator emulator, ushort addr) =>
         (ushort)(emulator.Read(addr) | (emulator.Read((ushort)(addr + 1)) << 8));
+
+    static bool TryGetSymbolName(SymSymbolMap? symbols, Emulator emulator, ushort target, out string name)
+    {
+        name = string.Empty;
+        if (symbols == null
+            || !symbols.TryGetLabels(target, emulator.RomBank, out IReadOnlyList<string> names)
+            || names.Count == 0)
+        {
+            return false;
+        }
+
+        name = names[0];
+        return true;
+    }
 }

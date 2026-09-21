@@ -2,36 +2,34 @@ namespace Monoboy.Desktop.GuiDebugger;
 
 using System;
 using System.IO;
+using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Text;
+
+using ImGuiNET;
 
 using Monoboy;
 using Monoboy.Constants;
-using Monoboy.Desktop.TuiDebugger;
 
 using Raylib_cs;
 
+using rlImGui_cs;
+
 /// <summary>
-/// Raylib GUI debugger overlay for the graphical emulator window.
-/// Toggle with F12. Does not own the window.
+/// Raylib + ImGui dockable GUI debugger. Toggle with F12. Does not own the window.
 /// </summary>
 public sealed class GuiDebugger : IDisposable
 {
     public const int DefaultWidth = 1400;
     public const int DefaultHeight = 900;
 
-    const int ToolbarHeight = 28;
-    const float LeftColumnFraction = 0.42f;
-    const float RegisterPaneFraction = 0.60f;
-    const int MinHexPaneHeight = 96;
-    const float LcdPaneFraction = 0.50f;
-    const int OuterPad = 6;
-    const int PanelTitleSize = 14;
-    const int ToolbarTextSize = 14;
-    const int PanelHeader = 22;
+    const string DockSpaceName = "MonoboyDock";
 
     readonly byte[] _lcdBuf = new byte[Emulator.WindowWidth * Emulator.WindowHeight * 4];
     readonly Texture2D _lcdTex;
-    readonly Font _font;
-    readonly bool _ownsFont;
+    readonly string _iniPath;
+    static byte[]? _iniFilenameUtf8;
+    static GCHandle _iniFilenameHandle;
 
     byte[]? _bgMapBuf;
     byte[]? _winMapBuf;
@@ -42,114 +40,38 @@ public sealed class GuiDebugger : IDisposable
     Texture2D _vramTex;
     Texture2D _oamTex;
     int _oamGridH;
-    bool _showBg;
-    bool _showOam;
-    bool _showTiles;
-    MenuId _openMenu;
-    int _disasmScrollRows;
-    int _asmPreviewScrollRows;
-    ushort _asmPreviewScrollTarget;
-    int _hexScrollRows;
-    int _registerScrollY;
+    bool _defaultDockAttempted;
     bool _disposed;
+    bool _wantsKeyboard;
 
-    enum MenuId
-    {
-        None,
-        Run,
-        Ppu
-    }
-
-    static readonly string[] RunLabels =
-    [
-        "Step",
-        "Next",
-        "Continue",
-        "Stop",
-        "Reset",
-        "Next VBlank"
-    ];
-
-    static readonly string[] RunShortcuts =
-    [
-        "F3",
-        "F8",
-        "F9",
-        "Shift+F9",
-        "Control+R",
-        "F10"
-    ];
-
-    static readonly string[] PpuLabels =
-    [
-        "OAM Viewer",
-        "BG Viewer",
-        "TilesViewer"
-    ];
-
-    static readonly string[] PpuShortcuts =
-    [
-        "Shift+O",
-        "Shift+B",
-        "Shift+T"
-    ];
-
-    bool ShowPpuViews => _showBg || _showOam || _showTiles;
+    bool _showLcd = true;
+    bool _showBg = true;
+    bool _showWin = true;
+    bool _showVram = true;
+    bool _showOam = true;
+    bool _showDisassembly = true;
+    bool _showRegisters = true;
+    bool _showMemory = true;
 
     public GuiDebugger()
     {
-        (_font, _ownsFont) = TryLoadMonospaceFont();
-        GuiDebuggerFont.Font = _font;
-        GuiDebuggerFont.UseMono = _ownsFont;
+        rlImGui.SetupUserFonts = GuiDebuggerFonts.Configure;
+        rlImGui.Setup(darkTheme: true, enableDocking: true);
+        GuiDebuggerTheme.ApplyImGuiStyle();
+
+        _iniPath = Path.Combine(AppContext.BaseDirectory, "monoboy-layout.ini");
+        SetIniFilename(_iniPath);
+
         _lcdTex = CreateTexture(Emulator.WindowWidth, Emulator.WindowHeight);
     }
+
+    public bool WantsKeyboard => _wantsKeyboard;
+
+    bool ShowPpuTextures => _showBg || _showWin || _showVram || _showOam;
 
     public void HandleInput(Emulator emulator, ref bool running)
     {
         HandleShortcuts(emulator, ref running);
-
-        if (!Raylib.IsMouseButtonPressed(MouseButton.Left))
-        {
-            return;
-        }
-
-        var mouse = Raylib.GetMousePosition();
-        if (_openMenu == MenuId.Run)
-        {
-            Rectangle menu = RunMenuBounds();
-            int row = GuiDebuggerMenu.HitRow(menu, RunLabels.Length, mouse);
-            if (row >= 0)
-            {
-                ApplyRunCommand(row, emulator, ref running);
-                _openMenu = MenuId.None;
-                return;
-            }
-        }
-        else if (_openMenu == MenuId.Ppu)
-        {
-            Rectangle menu = PpuMenuBounds();
-            int row = GuiDebuggerMenu.HitRow(menu, PpuLabels.Length, mouse);
-            if (row >= 0)
-            {
-                ApplyPpuCommand(row);
-                _openMenu = MenuId.None;
-                return;
-            }
-        }
-
-        if (Raylib.CheckCollisionPointRec(mouse, RunHitRect()))
-        {
-            _openMenu = _openMenu == MenuId.Run ? MenuId.None : MenuId.Run;
-            return;
-        }
-
-        if (Raylib.CheckCollisionPointRec(mouse, PpuHitRect()))
-        {
-            _openMenu = _openMenu == MenuId.Ppu ? MenuId.None : MenuId.Ppu;
-            return;
-        }
-
-        _openMenu = MenuId.None;
     }
 
     void HandleShortcuts(Emulator emulator, ref bool running)
@@ -159,23 +81,31 @@ public sealed class GuiDebugger : IDisposable
 
         if (Raylib.IsKeyPressed(KeyboardKey.F3))
         {
-            ApplyRunCommand(0, emulator, ref running);
+            GuiDebugRunCommands.Apply(GuiDebugRunCommands.StepInto, emulator, ref running);
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.F8))
         {
-            ApplyRunCommand(1, emulator, ref running);
+            GuiDebugRunCommands.Apply(GuiDebugRunCommands.StepOver, emulator, ref running);
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.F9))
         {
-            ApplyRunCommand(shift ? 3 : 2, emulator, ref running);
+            GuiDebugRunCommands.Apply(shift ? GuiDebugRunCommands.Pause : GuiDebugRunCommands.Continue, emulator, ref running);
         }
         else if (control && Raylib.IsKeyPressed(KeyboardKey.R))
         {
-            ApplyRunCommand(4, emulator, ref running);
+            GuiDebugRunCommands.Apply(GuiDebugRunCommands.Reset, emulator, ref running);
         }
         else if (Raylib.IsKeyPressed(KeyboardKey.F10))
         {
-            ApplyRunCommand(5, emulator, ref running);
+            GuiDebugRunCommands.Apply(GuiDebugRunCommands.NextVBlank, emulator, ref running);
+        }
+        else if (shift && Raylib.IsKeyPressed(KeyboardKey.F11))
+        {
+            GuiDebugRunCommands.Apply(GuiDebugRunCommands.StepOut, emulator, ref running);
+        }
+        else if (Raylib.IsKeyPressed(KeyboardKey.F11))
+        {
+            GuiDebugRunCommands.Apply(GuiDebugRunCommands.StepInto, emulator, ref running);
         }
         else if (shift && Raylib.IsKeyPressed(KeyboardKey.O))
         {
@@ -191,35 +121,6 @@ public sealed class GuiDebugger : IDisposable
         }
     }
 
-    void ApplyRunCommand(int index, Emulator emulator, ref bool running)
-    {
-        switch (index)
-        {
-            case 0:
-                running = false;
-                emulator.Step();
-                break;
-            case 1:
-                running = false;
-                StepOver(emulator);
-                break;
-            case 2:
-                running = true;
-                break;
-            case 3:
-                running = false;
-                break;
-            case 4:
-                running = false;
-                emulator.Reset();
-                break;
-            case 5:
-                running = false;
-                emulator.StepFrame();
-                break;
-        }
-    }
-
     void ApplyPpuCommand(int index)
     {
         switch (index)
@@ -228,52 +129,19 @@ public sealed class GuiDebugger : IDisposable
                 _showOam = !_showOam;
                 break;
             case 1:
-                _showBg = !_showBg;
+                bool on = !_showBg;
+                _showBg = on;
+                _showWin = on;
                 break;
             case 2:
-                _showTiles = !_showTiles;
+                _showVram = !_showVram;
                 break;
         }
-    }
-
-    static void StepOver(Emulator emulator)
-    {
-        ushort pc = emulator.GetDebugState().PC;
-        byte op = emulator.Read(pc);
-        bool isCall = op is 0xC4 or 0xCC or 0xCD or 0xD4 or 0xDC;
-        bool isRst = op is 0xC7 or 0xCF or 0xD7 or 0xDF or 0xE7 or 0xEF or 0xF7 or 0xFF;
-        if (!isCall && !isRst)
-        {
-            emulator.Step();
-            return;
-        }
-
-        ushort next = (ushort)(pc + TuiDisassemblyFormatter.GetInstructionByteSize(emulator, pc));
-        for (int i = 0; i < 1_000_000; i++)
-        {
-            emulator.Step();
-            if (emulator.GetDebugState().PC == next)
-            {
-                return;
-            }
-        }
-    }
-
-    static Rectangle RunMenuBounds()
-    {
-        int w = GuiDebuggerMenu.MeasureWidth(RunLabels, RunShortcuts);
-        return GuiDebuggerMenu.Bounds(8, ToolbarHeight - 1, w, RunLabels.Length);
-    }
-
-    static Rectangle PpuMenuBounds()
-    {
-        int w = GuiDebuggerMenu.MeasureWidth(PpuLabels, PpuShortcuts);
-        return GuiDebuggerMenu.Bounds(50, ToolbarHeight - 1, w, PpuLabels.Length);
     }
 
     public void UpdateTextures(Emulator emulator)
     {
-        if (ShowPpuViews && _bgMapBuf == null)
+        if (ShowPpuTextures && _bgMapBuf == null)
         {
             AllocatePpuTextures(emulator);
         }
@@ -281,7 +149,7 @@ public sealed class GuiDebugger : IDisposable
         Array.Copy(emulator.Framebuffer, _lcdBuf, _lcdBuf.Length);
         Raylib.UpdateTexture(_lcdTex, _lcdBuf);
 
-        if (ShowPpuViews && _bgMapBuf != null)
+        if (ShowPpuTextures && _bgMapBuf != null)
         {
             int oamHeight = PpuDebugViewRenderer.OamGridHeight(emulator);
             if (oamHeight != _oamGridH)
@@ -303,288 +171,424 @@ public sealed class GuiDebugger : IDisposable
         }
     }
 
-    public void Draw(Emulator emulator, bool running)
+    public void Draw(Emulator emulator, ref bool running)
     {
-        GuiDebuggerFont.Font = _font;
-        GuiDebuggerFont.UseMono = _ownsFont;
-
-        int screenW = Raylib.GetScreenWidth();
-        int screenH = Raylib.GetScreenHeight();
-        float wheel = GuiScroll.ConsumeWheel();
-        ComputeLayout(screenW, screenH, ShowPpuViews, out Rectangle lcdArea, out Rectangle disasmArea, out Rectangle registerArea, out Rectangle hexArea);
-
         Raylib.ClearBackground(GuiDebuggerTheme.Canvas);
-        DrawToolbar(screenW);
-        DrawLcdPanel(lcdArea, emulator);
-        DrawPanel(disasmArea);
-        GuiDisassemblyView.Draw(
-            InsetForContent(disasmArea, hasTitle: false),
-            emulator,
-            wheel,
-            ref _disasmScrollRows,
-            ref _asmPreviewScrollRows,
-            ref _asmPreviewScrollTarget);
-        DrawPanel(registerArea);
-        GuiRegisterPanels.Draw(InsetForContent(registerArea, hasTitle: false), emulator, wheel, ref _registerScrollY);
-        DrawPanel(hexArea);
-        GuiMemoryDumpView.Draw(InsetForContent(hexArea, hasTitle: false), emulator, wheel, ref _hexScrollRows);
-        DrawOpenMenu();
+        rlImGui.Begin();
+        GuiDebuggerTheme.ApplyImGuiStyle();
+        GuiMouseCursor.ClearTabBands();
+        DrawDockAndWindows(emulator, ref running);
+        _wantsKeyboard = ImGui.GetIO().WantCaptureKeyboard;
+        GuiMouseCursor.Apply();
+        rlImGui.End();
     }
 
-    public void Dispose()
+    void DrawDockAndWindows(Emulator emulator, ref bool running)
     {
-        if (_disposed)
+        ImGuiViewportPtr viewport = ImGui.GetMainViewport();
+        ImGui.SetNextWindowPos(viewport.WorkPos);
+        ImGui.SetNextWindowSize(viewport.WorkSize);
+        ImGui.SetNextWindowViewport(viewport.ID);
+
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+
+        ImGuiWindowFlags hostFlags =
+            ImGuiWindowFlags.MenuBar
+            | ImGuiWindowFlags.NoDocking
+            | ImGuiWindowFlags.NoTitleBar
+            | ImGuiWindowFlags.NoResize
+            | ImGuiWindowFlags.NoMove
+            | ImGuiWindowFlags.NoBringToFrontOnFocus
+            | ImGuiWindowFlags.NoNavFocus;
+
+        ImGui.Begin("##MonoboyDebuggerHost", hostFlags);
+        ImGui.PopStyleVar(3);
+
+        DrawMainMenuBar(emulator, ref running);
+        GuiDebugToolbar.Draw(emulator, ref running);
+
+        uint dockSpaceId = ImGui.GetID(DockSpaceName);
+        ImGui.DockSpace(dockSpaceId, Vector2.Zero, ImGuiDockNodeFlags.None);
+        if (!_defaultDockAttempted)
+        {
+            _defaultDockAttempted = true;
+            if (!File.Exists(_iniPath))
+            {
+                BuildDefaultDock(dockSpaceId, viewport.WorkSize);
+            }
+        }
+
+        ImGui.End();
+
+        DrawToolWindows(emulator, running);
+    }
+
+    void DrawMainMenuBar(Emulator emulator, ref bool running)
+    {
+        if (!ImGui.BeginMenuBar())
         {
             return;
         }
 
-        _disposed = true;
-        Raylib.UnloadTexture(_lcdTex);
-        if (_bgMapBuf != null)
+        if (ImGui.BeginMenu("Run"))
         {
-            Raylib.UnloadTexture(_bgMapTex);
-            Raylib.UnloadTexture(_winMapTex);
-            Raylib.UnloadTexture(_vramTex);
-            Raylib.UnloadTexture(_oamTex);
+            if (ImGui.MenuItem("Step Into", "F3"))
+            {
+                GuiDebugRunCommands.Apply(GuiDebugRunCommands.StepInto, emulator, ref running);
+            }
+
+            if (ImGui.MenuItem("Step Over", "F8"))
+            {
+                GuiDebugRunCommands.Apply(GuiDebugRunCommands.StepOver, emulator, ref running);
+            }
+
+            if (ImGui.MenuItem("Step Out", "Shift+F11"))
+            {
+                GuiDebugRunCommands.Apply(GuiDebugRunCommands.StepOut, emulator, ref running);
+            }
+
+            if (ImGui.MenuItem("Continue", "F9"))
+            {
+                GuiDebugRunCommands.Apply(GuiDebugRunCommands.Continue, emulator, ref running);
+            }
+
+            if (ImGui.MenuItem("Pause", "Shift+F9"))
+            {
+                GuiDebugRunCommands.Apply(GuiDebugRunCommands.Pause, emulator, ref running);
+            }
+
+            if (ImGui.MenuItem("Reset", "Ctrl+R"))
+            {
+                GuiDebugRunCommands.Apply(GuiDebugRunCommands.Reset, emulator, ref running);
+            }
+
+            if (ImGui.MenuItem("Next VBlank", "F10"))
+            {
+                GuiDebugRunCommands.Apply(GuiDebugRunCommands.NextVBlank, emulator, ref running);
+            }
+
+            ImGui.EndMenu();
         }
 
-        if (_ownsFont)
+        if (ImGui.BeginMenu("View"))
         {
-            Raylib.UnloadFont(_font);
-        }
-    }
-
-    static void ComputeLayout(
-        int screenW,
-        int screenH,
-        bool showPpu,
-        out Rectangle lcdArea,
-        out Rectangle disasmArea,
-        out Rectangle registerArea,
-        out Rectangle hexArea)
-    {
-        int contentTop = ToolbarHeight + OuterPad;
-        int contentH = screenH - contentTop - OuterPad;
-        int leftW = (int)(screenW * LeftColumnFraction);
-        int rightX = leftW + OuterPad;
-        int rightW = screenW - rightX - OuterPad;
-        int innerLeftW = leftW - (OuterPad * 2);
-
-        float lcdFrac = showPpu ? 0.62f : LcdPaneFraction;
-        int lcdH = Math.Max(120, (int)(contentH * lcdFrac));
-        int disasmMin = 140;
-        lcdH = Math.Min(lcdH, contentH - OuterPad - disasmMin);
-        lcdArea = new(OuterPad, contentTop, innerLeftW, lcdH);
-        disasmArea = new(OuterPad, contentTop + lcdH + OuterPad, innerLeftW, contentH - lcdH - OuterPad);
-
-        int regInsetPad = 8;
-        int regMinH = GuiRegisterPanels.RequiredDrawHeight + regInsetPad;
-        int regH = Math.Max(regMinH, (int)(contentH * RegisterPaneFraction));
-        regH = Math.Min(regH, contentH - OuterPad - MinHexPaneHeight);
-        regH = Math.Max(regMinH, regH);
-        registerArea = new(rightX, contentTop, rightW, regH);
-        hexArea = new(rightX, contentTop + regH + OuterPad, rightW, contentH - regH - OuterPad);
-    }
-
-    static Rectangle InsetForContent(Rectangle panel, bool hasTitle = true)
-    {
-        int top = hasTitle ? PanelHeader : 4;
-        return new(
-            panel.X + 4,
-            panel.Y + top,
-            Math.Max(0, panel.Width - 8),
-            Math.Max(0, panel.Height - top - 4));
-    }
-
-    void DrawToolbar(int screenW)
-    {
-        Raylib.DrawRectangle(0, 0, screenW, ToolbarHeight, GuiDebuggerTheme.PanelBackground);
-        Raylib.DrawLine(0, ToolbarHeight - 1, screenW, ToolbarHeight - 1, GuiDebuggerTheme.PanelBorder);
-
-        DrawMenuTitle("Run", RunHitRect(), _openMenu == MenuId.Run);
-        DrawMenuTitle("PPU", PpuHitRect(), _openMenu == MenuId.Ppu);
-    }
-
-    void DrawMenuTitle(string text, Rectangle hit, bool open)
-    {
-        bool hover = Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), hit);
-        if (open || hover)
-        {
-            Raylib.DrawRectangleRec(hit, GuiDebuggerTheme.MenuHover);
+            ToggleViewMenuItem("LCD", ref _showLcd);
+            ToggleViewMenuItem("BG", ref _showBg);
+            ToggleViewMenuItem("WIN", ref _showWin);
+            ToggleViewMenuItem("VRAM", ref _showVram);
+            ToggleViewMenuItem("OAM", ref _showOam);
+            ToggleViewMenuItem("Disassembly", ref _showDisassembly);
+            ToggleViewMenuItem("Registers", ref _showRegisters);
+            ToggleViewMenuItem("Memory", ref _showMemory);
+            ImGui.EndMenu();
         }
 
-        Color color = open || hover ? GuiDebuggerTheme.Value : GuiDebuggerTheme.ToolbarLabel;
-        int textW = GuiDebuggerFont.Measure(text, ToolbarTextSize);
-        int x = (int)hit.X + Math.Max(0, ((int)hit.Width - textW) / 2);
-        int y = (int)hit.Y + Math.Max(0, ((int)hit.Height - ToolbarTextSize) / 2);
-        GuiDebuggerFont.Draw(text, x, y, ToolbarTextSize, color);
+        ImGui.EndMenuBar();
     }
 
-    void DrawOpenMenu()
+    static void ToggleViewMenuItem(string label, ref bool visible)
     {
-        var mouse = Raylib.GetMousePosition();
-        if (_openMenu == MenuId.Run)
+        if (ImGui.MenuItem(label, null, visible))
         {
-            GuiDebuggerMenu.Draw(RunMenuBounds(), RunLabels, RunShortcuts, mouse);
-        }
-        else if (_openMenu == MenuId.Ppu)
-        {
-            GuiDebuggerMenu.Draw(PpuMenuBounds(), PpuLabels, PpuShortcuts, mouse);
+            visible = !visible;
         }
     }
 
-    static Rectangle RunHitRect() => new(8, 2, 36, ToolbarHeight - 4);
-
-    static Rectangle PpuHitRect() => new(50, 2, 40, ToolbarHeight - 4);
-
-    static void DrawPanel(Rectangle area, string title = "")
+    void DrawToolWindows(Emulator emulator, bool running)
     {
-        Raylib.DrawRectangleRec(area, GuiDebuggerTheme.PanelBackground);
-        Raylib.DrawRectangleLinesEx(area, 1, GuiDebuggerTheme.PanelBorder);
+        DrawOptionalWindow("LCD", ref _showLcd, DrawLcdImage);
 
-        if (title.Length == 0)
+        DrawOptionalWindow("BG", ref _showBg, () =>
+        {
+            DrawFittedTexture(
+                _bgMapTex,
+                PpuDebugViewRenderer.TileMapPixels,
+                PpuDebugViewRenderer.TileMapPixels,
+                integerScale: false,
+                out Vector2 origin,
+                out float scale);
+            DrawViewportRect(
+                origin,
+                scale,
+                PpuDebugViewRenderer.TileMapPixels,
+                PpuDebugViewRenderer.TileMapPixels,
+                emulator.Read(0xFF43),
+                emulator.Read(0xFF42),
+                Emulator.WindowWidth,
+                Emulator.WindowHeight);
+        });
+
+        DrawOptionalWindow("WIN", ref _showWin, () =>
+        {
+            DrawFittedTexture(
+                _winMapTex,
+                PpuDebugViewRenderer.TileMapPixels,
+                PpuDebugViewRenderer.TileMapPixels,
+                integerScale: false,
+                out Vector2 origin,
+                out float scale);
+            byte lcdc = emulator.Read(0xFF40);
+            if ((lcdc & Flags.WindowEnabled) != 0)
+            {
+                int wx = emulator.Read(0xFF4B) - 7;
+                int wy = emulator.Read(0xFF4A);
+                int winW = Math.Max(0, Emulator.WindowWidth - Math.Max(0, wx));
+                int winH = Math.Max(0, Emulator.WindowHeight - wy);
+                DrawViewportRect(
+                    origin,
+                    scale,
+                    PpuDebugViewRenderer.TileMapPixels,
+                    PpuDebugViewRenderer.TileMapPixels,
+                    0,
+                    0,
+                    winW,
+                    winH);
+            }
+        });
+
+        DrawOptionalWindow("VRAM", ref _showVram, () =>
+        {
+            DrawFittedTexture(
+                _vramTex,
+                PpuDebugViewRenderer.VramTilesWidth,
+                PpuDebugViewRenderer.VramTilesHeight,
+                integerScale: false,
+                out _,
+                out _);
+        });
+
+        DrawOptionalWindow("OAM", ref _showOam, () =>
+        {
+            int gridH = Math.Max(1, _oamGridH);
+            Vector2 avail = ImGui.GetContentRegionAvail();
+            DrawFittedTexture(
+                _oamTex,
+                PpuDebugViewRenderer.OamGridWidth,
+                gridH,
+                integerScale: false,
+                out Vector2 origin,
+                out float scale);
+            if (avail.X >= 1 && avail.Y >= 1)
+            {
+                int cellH = Math.Max(1, gridH / PpuDebugViewRenderer.OamGridRows);
+                DrawCellGrid(
+                    origin,
+                    scale,
+                    PpuDebugViewRenderer.OamGridCols,
+                    PpuDebugViewRenderer.OamGridRows,
+                    PpuDebugViewRenderer.OamCellWidth,
+                    cellH);
+            }
+        });
+
+        DrawOptionalWindow("Disassembly", ref _showDisassembly, () => GuiDisassemblyView.Draw(emulator, running));
+        DrawOptionalWindow("Registers", ref _showRegisters, () => GuiRegisterPanels.Draw(emulator));
+        DrawOptionalWindow("Memory", ref _showMemory, () => GuiMemoryDumpView.Draw(emulator));
+    }
+
+    static void DrawOptionalWindow(string title, ref bool open, Action draw)
+    {
+        if (!open)
         {
             return;
         }
 
-        float titleW = GuiDebuggerFont.Measure(title, PanelTitleSize);
-        float titleX = area.X + ((area.Width - titleW) * 0.5f);
-        float titleY = area.Y + 4;
-        GuiDebuggerFont.Draw(title, (int)titleX, (int)titleY, PanelTitleSize, GuiDebuggerTheme.Title);
+        if (ImGui.Begin(title, ref open))
+        {
+            GuiMouseCursor.NoteCurrentWindowTab();
+            draw();
+        }
+
+        ImGui.End();
     }
 
-    void DrawLcdPanel(Rectangle area, Emulator emulator)
+    void DrawLcdImage()
     {
-        Raylib.DrawRectangleRec(area, GuiDebuggerTheme.PanelBackground);
-        Raylib.DrawRectangleLinesEx(area, 1, GuiDebuggerTheme.PanelBorder);
-
-        int ax = (int)area.X;
-        int ay = (int)area.Y;
-        int aw = Math.Max(0, (int)area.Width);
-        int ah = Math.Max(0, (int)area.Height);
-        Raylib.BeginScissorMode(ax + 1, ay + 1, Math.Max(0, aw - 2), Math.Max(0, ah - 2));
-
-        if (ShowPpuViews)
+        Vector2 avail = ImGui.GetContentRegionAvail();
+        int scale = Math.Max(
+            1,
+            Math.Min((int)(avail.X / Emulator.WindowWidth), (int)(avail.Y / Emulator.WindowHeight)));
+        int drawW = Emulator.WindowWidth * scale;
+        int drawH = Emulator.WindowHeight * scale;
+        float offsetX = (avail.X - drawW) * 0.5f;
+        float offsetY = (avail.Y - drawH) * 0.5f;
+        if (offsetX > 0)
         {
-            DrawPpuOverview(area, emulator);
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + offsetX);
+        }
+
+        if (offsetY > 0)
+        {
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + offsetY);
+        }
+
+        rlImGui.ImageSize(_lcdTex, drawW, drawH);
+    }
+
+    void DrawFittedTexture(
+        Texture2D tex,
+        int srcW,
+        int srcH,
+        bool integerScale,
+        out Vector2 imageOrigin,
+        out float scale)
+    {
+        Vector2 avail = ImGui.GetContentRegionAvail();
+        imageOrigin = ImGui.GetCursorScreenPos();
+        scale = 1;
+
+        if (srcW < 1 || srcH < 1 || avail.X < 1 || avail.Y < 1)
+        {
+            return;
+        }
+
+        if (integerScale)
+        {
+            int intScale = Math.Max(
+                1,
+                Math.Min((int)(avail.X / srcW), (int)(avail.Y / srcH)));
+            scale = intScale;
         }
         else
         {
-            var lcdRect = new Rectangle(area.X + 4, area.Y + 4, area.Width - 8, area.Height - 8);
-            DrawLcd(lcdRect, _lcdTex);
+            scale = Math.Min(avail.X / srcW, avail.Y / srcH);
+            if (scale <= 0)
+            {
+                scale = 0.01f;
+            }
         }
 
-        Raylib.EndScissorMode();
-    }
-
-    void DrawPpuOverview(Rectangle area, Emulator emulator)
-    {
-        const int pad = 6;
-        const int gap = 6;
-        const int labelH = 14;
-        float innerX = area.X + pad;
-        float innerY = area.Y + pad;
-        float innerW = Math.Max(8, area.Width - (pad * 2));
-        float innerH = Math.Max(8, area.Height - (pad * 2));
-        float topH = innerH * 0.58f;
-        float botH = innerH - topH - gap;
-        float colW = (innerW - (gap * 2)) / 3f;
-
-        var lcdCell = new Rectangle(innerX, innerY + labelH, colW, topH - labelH);
-        var bgCell = new Rectangle(innerX + colW + gap, innerY + labelH, colW, topH - labelH);
-        var winCell = new Rectangle(innerX + ((colW + gap) * 2), innerY + labelH, colW, topH - labelH);
-        float botY = innerY + topH + gap;
-        float vramW = innerW * 0.62f;
-        var vramCell = new Rectangle(innerX, botY + labelH, vramW, botH - labelH);
-        var oamCell = new Rectangle(innerX + vramW + gap, botY + labelH, innerW - vramW - gap, botH - labelH);
-
-        DrawTinyLabel("LCD", innerX, innerY);
-        DrawFittedLcd(lcdCell);
-
-        DrawTinyLabel("BG", bgCell.X, innerY);
-        DrawFittedTexture(_bgMapTex, bgCell, PpuDebugViewRenderer.TileMapPixels, PpuDebugViewRenderer.TileMapPixels, out float bgX, out float bgY, out float bgScale);
-        DrawViewportRect(bgX, bgY, bgScale, emulator.Read(0xFF43), emulator.Read(0xFF42), Emulator.WindowWidth, Emulator.WindowHeight);
-
-        DrawTinyLabel("WIN", winCell.X, innerY);
-        DrawFittedTexture(_winMapTex, winCell, PpuDebugViewRenderer.TileMapPixels, PpuDebugViewRenderer.TileMapPixels, out float winX, out float winY, out float winScale);
-        byte lcdc = emulator.Read(0xFF40);
-        if ((lcdc & Flags.WindowEnabled) != 0)
+        int drawW = Math.Max(1, (int)(srcW * scale));
+        int drawH = Math.Max(1, (int)(srcH * scale));
+        float offsetX = (avail.X - drawW) * 0.5f;
+        float offsetY = (avail.Y - drawH) * 0.5f;
+        if (offsetX > 0)
         {
-            int wx = emulator.Read(0xFF4B) - 7;
-            int wy = emulator.Read(0xFF4A);
-            int winW = Math.Max(0, Emulator.WindowWidth - Math.Max(0, wx));
-            int winH = Math.Max(0, Emulator.WindowHeight - wy);
-            DrawViewportRect(winX, winY, winScale, 0, 0, winW, winH);
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + offsetX);
         }
 
-        DrawTinyLabel("VRAM", vramCell.X, botY);
-        DrawFittedTexture(_vramTex, vramCell, PpuDebugViewRenderer.VramTilesWidth, PpuDebugViewRenderer.VramTilesHeight, out _, out _, out _);
-
-        DrawTinyLabel("OAM", oamCell.X, botY);
-        DrawFittedTexture(_oamTex, oamCell, PpuDebugViewRenderer.OamGridWidth, Math.Max(1, _oamGridH), out _, out _, out _);
-    }
-
-    void DrawFittedLcd(Rectangle cell)
-    {
-        DrawLcd(cell, _lcdTex);
-    }
-
-    static void DrawFittedTexture(
-        Texture2D tex,
-        Rectangle cell,
-        int srcW,
-        int srcH,
-        out float drawX,
-        out float drawY,
-        out float scale)
-    {
-        if (srcW < 1 || srcH < 1 || cell.Width < 1 || cell.Height < 1)
+        if (offsetY > 0)
         {
-            drawX = cell.X;
-            drawY = cell.Y;
-            scale = 1;
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + offsetY);
+        }
+
+        imageOrigin = ImGui.GetCursorScreenPos();
+        rlImGui.ImageSize(tex, drawW, drawH);
+    }
+
+    static void DrawViewportRect(
+        Vector2 imageOrigin,
+        float scale,
+        int mapW,
+        int mapH,
+        int vx,
+        int vy,
+        int vw,
+        int vh)
+    {
+        if (mapW < 1 || mapH < 1 || vw < 1 || vh < 1)
+        {
             return;
         }
 
-        scale = Math.Min(cell.Width / srcW, cell.Height / srcH);
-        if (scale <= 0)
+        vx = ((vx % mapW) + mapW) % mapW;
+        vy = ((vy % mapH) + mapH) % mapH;
+
+        ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+        uint color = GuiDebuggerTheme.ViewportOutlineU32;
+
+        int widthLeft = vw;
+        int mapX = vx;
+        while (widthLeft > 0)
         {
-            scale = 0.01f;
+            int segmentW = Math.Min(widthLeft, mapW - mapX);
+            int heightLeft = vh;
+            int mapY = vy;
+            while (heightLeft > 0)
+            {
+                int segmentH = Math.Min(heightLeft, mapH - mapY);
+                Vector2 min = imageOrigin + new Vector2(mapX * scale, mapY * scale);
+                Vector2 max = min + new Vector2(Math.Max(1, segmentW * scale), Math.Max(1, segmentH * scale));
+                drawList.AddRect(min, max, color, 0, ImDrawFlags.None, 1f);
+                heightLeft -= segmentH;
+                mapY = 0;
+            }
+
+            widthLeft -= segmentW;
+            mapX = 0;
+        }
+    }
+
+    static void DrawCellGrid(Vector2 origin, float scale, int cols, int rows, int cellW, int cellH)
+    {
+        if (cols < 1 || rows < 1 || cellW < 1 || cellH < 1 || scale <= 0)
+        {
+            return;
         }
 
-        float dw = srcW * scale;
-        float dh = srcH * scale;
-        drawX = cell.X + ((cell.Width - dw) * 0.5f);
-        drawY = cell.Y + ((cell.Height - dh) * 0.5f);
-        Raylib.DrawTextureEx(tex, new(drawX, drawY), 0, scale, Color.White);
+        ImDrawListPtr drawList = ImGui.GetWindowDrawList();
+        uint color = ImGui.ColorConvertFloat4ToU32(new Vector4(
+            GuiDebuggerTheme.PanelBorder.R / 255f,
+            GuiDebuggerTheme.PanelBorder.G / 255f,
+            GuiDebuggerTheme.PanelBorder.B / 255f,
+            1f));
+
+        float width = cols * cellW * scale;
+        float height = rows * cellH * scale;
+        for (int col = 0; col <= cols; col++)
+        {
+            float x = origin.X + (col * cellW * scale);
+            drawList.AddLine(new Vector2(x, origin.Y), new Vector2(x, origin.Y + height), color);
+        }
+
+        for (int row = 0; row <= rows; row++)
+        {
+            float y = origin.Y + (row * cellH * scale);
+            drawList.AddLine(new Vector2(origin.X, y), new Vector2(origin.X + width, y), color);
+        }
     }
 
-    static void DrawLcd(Rectangle area, Texture2D lcdTex)
+    static void BuildDefaultDock(uint dockSpaceId, Vector2 viewportSize)
     {
-        int innerW = Math.Max(1, (int)area.Width);
-        int innerH = Math.Max(1, (int)area.Height);
-        int scale = Math.Max(1, Math.Min(innerW / Emulator.WindowWidth, innerH / Emulator.WindowHeight));
-        int drawW = Emulator.WindowWidth * scale;
-        int drawH = Emulator.WindowHeight * scale;
-        float x = area.X + ((area.Width - drawW) * 0.5f);
-        float y = area.Y + ((area.Height - drawH) * 0.5f);
-        Raylib.DrawTextureEx(lcdTex, new(x, y), 0, scale, Color.White);
+        ImGuiDockBuilder.RemoveNode(dockSpaceId);
+        ImGuiDockBuilder.AddNode(dockSpaceId, ImGuiDockNodeFlagsDockSpace);
+        ImGuiDockBuilder.SetNodeSize(dockSpaceId, viewportSize);
+
+        ImGuiDockBuilder.SplitNode(dockSpaceId, ImGuiDir.Left, 0.42f, out uint dockLeftId, out uint dockRightId);
+        ImGuiDockBuilder.SplitNode(dockLeftId, ImGuiDir.Up, 0.62f, out uint dockLeftTopId, out uint dockLeftBottomId);
+        ImGuiDockBuilder.SplitNode(dockLeftTopId, ImGuiDir.Up, 0.58f, out uint dockTopBandId, out uint dockLowerBandId);
+
+        ImGuiDockBuilder.SplitNode(dockTopBandId, ImGuiDir.Left, 1f / 3f, out uint dockLcdId, out uint dockTopRestId);
+        ImGuiDockBuilder.SplitNode(dockTopRestId, ImGuiDir.Left, 0.5f, out uint dockBgId, out uint dockWinId);
+        ImGuiDockBuilder.SplitNode(dockLowerBandId, ImGuiDir.Left, 0.62f, out uint dockVramId, out uint dockOamId);
+        ImGuiDockBuilder.SplitNode(dockRightId, ImGuiDir.Up, 0.60f, out uint dockRegistersId, out uint dockMemoryId);
+
+        ImGuiDockBuilder.DockWindow("LCD", dockLcdId);
+        ImGuiDockBuilder.DockWindow("BG", dockBgId);
+        ImGuiDockBuilder.DockWindow("WIN", dockWinId);
+        ImGuiDockBuilder.DockWindow("VRAM", dockVramId);
+        ImGuiDockBuilder.DockWindow("OAM", dockOamId);
+        ImGuiDockBuilder.DockWindow("Disassembly", dockLeftBottomId);
+        ImGuiDockBuilder.DockWindow("Registers", dockRegistersId);
+        ImGuiDockBuilder.DockWindow("Memory", dockMemoryId);
+
+        ImGuiDockBuilder.Finish(dockSpaceId);
     }
 
-    static void DrawTinyLabel(string text, float x, float y)
-    {
-        const int size = 10;
-        GuiDebuggerFont.Draw(text, (int)x, (int)y, size, GuiDebuggerTheme.Label);
-    }
+    const ImGuiDockNodeFlags ImGuiDockNodeFlagsDockSpace = (ImGuiDockNodeFlags)1024;
 
-    static void DrawViewportRect(float texX, float texY, float scale, int vx, int vy, int vw, int vh)
+    static unsafe void SetIniFilename(string path)
     {
-        Raylib.DrawRectangleLines(
-            (int)(texX + (vx * scale)),
-            (int)(texY + (vy * scale)),
-            Math.Max(1, (int)(vw * scale)),
-            Math.Max(1, (int)(vh * scale)),
-            new Color(0xE0, 0x6C, 0x75, 0xFF));
+        if (_iniFilenameHandle.IsAllocated)
+        {
+            _iniFilenameHandle.Free();
+        }
+
+        _iniFilenameUtf8 = Encoding.UTF8.GetBytes(path + "\0");
+        _iniFilenameHandle = GCHandle.Alloc(_iniFilenameUtf8, GCHandleType.Pinned);
+        ImGui.GetIO().NativePtr->IniFilename = (byte*)_iniFilenameHandle.AddrOfPinnedObject();
     }
 
     void AllocatePpuTextures(Emulator emulator)
@@ -611,26 +615,81 @@ public sealed class GuiDebugger : IDisposable
         return texture;
     }
 
-    static (Font Font, bool Owns) TryLoadMonospaceFont()
+    public void Dispose()
     {
-        ReadOnlySpan<string> paths =
-        [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-            "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
-            "C:\\Windows\\Fonts\\consola.ttf",
-        ];
-
-        foreach (string path in paths)
+        if (_disposed)
         {
-            if (File.Exists(path))
-            {
-                Font font = Raylib.LoadFontEx(path, 32, null, 0);
-                Raylib.SetTextureFilter(font.Texture, TextureFilter.Bilinear);
-                return (font, true);
-            }
+            return;
         }
 
-        return (Raylib.GetFontDefault(), false);
+        _disposed = true;
+        Raylib.UnloadTexture(_lcdTex);
+        if (_bgMapBuf != null)
+        {
+            Raylib.UnloadTexture(_bgMapTex);
+            Raylib.UnloadTexture(_winMapTex);
+            Raylib.UnloadTexture(_vramTex);
+            Raylib.UnloadTexture(_oamTex);
+        }
+
+        rlImGui.Shutdown();
+        if (_iniFilenameHandle.IsAllocated)
+        {
+            _iniFilenameHandle.Free();
+        }
     }
+}
+
+/// <summary>cimgui DockBuilder API (not exposed on ImGui.NET).</summary>
+static unsafe class ImGuiDockBuilder
+{
+    [DllImport("cimgui", CallingConvention = CallingConvention.Cdecl)]
+    static extern void igDockBuilderRemoveNode(uint nodeId);
+
+    [DllImport("cimgui", CallingConvention = CallingConvention.Cdecl)]
+    static extern void igDockBuilderAddNode(uint nodeId, ImGuiDockNodeFlags flags);
+
+    [DllImport("cimgui", CallingConvention = CallingConvention.Cdecl)]
+    static extern void igDockBuilderSetNodeSize(uint nodeId, Vector2 size);
+
+    [DllImport("cimgui", CallingConvention = CallingConvention.Cdecl)]
+    static extern uint igDockBuilderSplitNode(
+        uint nodeId,
+        ImGuiDir splitDir,
+        float sizeRatioForNodeAtDir,
+        uint* outIdAtDir,
+        uint* outIdAtOppositeDir);
+
+    [DllImport("cimgui", CallingConvention = CallingConvention.Cdecl)]
+    static extern void igDockBuilderDockWindow(byte* windowName, uint nodeId);
+
+    [DllImport("cimgui", CallingConvention = CallingConvention.Cdecl)]
+    static extern void igDockBuilderFinish(uint nodeId);
+
+    public static void RemoveNode(uint nodeId) => igDockBuilderRemoveNode(nodeId);
+
+    public static void AddNode(uint nodeId, ImGuiDockNodeFlags flags) => igDockBuilderAddNode(nodeId, flags);
+
+    public static void SetNodeSize(uint nodeId, Vector2 size) => igDockBuilderSetNodeSize(nodeId, size);
+
+    public static uint SplitNode(uint nodeId, ImGuiDir splitDir, float ratio, out uint idAtDir, out uint idOpposite)
+    {
+        uint atDir;
+        uint opposite;
+        igDockBuilderSplitNode(nodeId, splitDir, ratio, &atDir, &opposite);
+        idAtDir = atDir;
+        idOpposite = opposite;
+        return atDir;
+    }
+
+    public static void DockWindow(string windowName, uint nodeId)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(windowName + "\0");
+        fixed (byte* ptr = bytes)
+        {
+            igDockBuilderDockWindow(ptr, nodeId);
+        }
+    }
+
+    public static void Finish(uint nodeId) => igDockBuilderFinish(nodeId);
 }

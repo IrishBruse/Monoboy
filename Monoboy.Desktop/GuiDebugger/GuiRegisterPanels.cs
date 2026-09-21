@@ -1,6 +1,9 @@
 namespace Monoboy.Desktop.GuiDebugger;
 
 using System;
+using System.Numerics;
+
+using ImGuiNET;
 
 using Monoboy;
 using Monoboy.Constants;
@@ -12,13 +15,14 @@ using Raylib_cs;
 /// </summary>
 public static class GuiRegisterPanels
 {
-    const int ColumnGutter = 8;
     const int PanelGap = 6;
     const int PanelPad = 8;
-    const int TitleSize = 13;
-    const int RowSize = 13;
     const int TitleRowHeight = 18;
     const int DataRowHeight = 16;
+    const float ValueColumnWidth = 130f;
+
+    static Vector4 C(Color color) =>
+        new(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
 
     public static int RequiredDrawHeight
     {
@@ -48,40 +52,58 @@ public static class GuiRegisterPanels
         }
     }
 
-    public static void Draw(Rectangle area, Emulator emulator, float wheel, ref int scrollY)
+    public static void Draw(Emulator emulator)
     {
-        int areaX = (int)area.X;
-        int areaY = (int)area.Y;
-        int areaW = Math.Max(0, (int)area.Width);
-        int areaH = Math.Max(0, (int)area.Height);
-        if (areaW <= 0 || areaH <= 0)
+        Vector2 avail = ImGui.GetContentRegionAvail();
+        if (avail.X <= 0 || avail.Y <= 0)
         {
             return;
         }
 
-        int maxScroll = Math.Max(0, RequiredDrawHeight - areaH);
-        GuiScroll.ApplyWheel(area, wheel, ref scrollY, maxScroll);
-        scrollY = Math.Clamp(scrollY, 0, maxScroll);
-
         DebugState s = emulator.GetDebugState();
-        int colW = Math.Max(1, (areaW - GuiScroll.Width - ColumnGutter * 3) / 4);
-        int valueX = GuiDebuggerFont.CharWidth(RowSize) * 13;
-        int originY = areaY - scrollY;
 
-        Raylib.BeginScissorMode(areaX, areaY, Math.Max(0, areaW - GuiScroll.Width), areaH);
-        DrawColumn1(new Rectangle(areaX, originY, colW, areaH + scrollY), emulator, s, valueX);
-        DrawColumn2(new Rectangle(areaX + colW + ColumnGutter, originY, colW, areaH + scrollY), emulator, s, valueX);
-        DrawColumn3(new Rectangle(areaX + (colW + ColumnGutter) * 2, originY, colW, areaH + scrollY), emulator, valueX);
-        DrawColumn4(new Rectangle(areaX + (colW + ColumnGutter) * 3, originY, colW, areaH + scrollY), emulator, valueX);
-        Raylib.EndScissorMode();
+        const float minCol = 160f;
+        const float gap = 8f;
+        int cols = Math.Clamp((int)((avail.X + gap) / (minCol + gap)), 1, 4);
+        float colW = Math.Max(1f, (avail.X - gap * (cols - 1)) / cols);
 
-        var bar = new Rectangle(areaX + areaW - GuiScroll.Width, areaY, GuiScroll.Width, areaH);
-        GuiScroll.Draw(3, bar, ref scrollY, maxScroll);
+        ImGui.PushStyleColor(ImGuiCol.ChildBg, C(GuiDebuggerTheme.PanelBackground));
+        ImGui.BeginChild("RegistersScroll", new Vector2(Math.Max(1f, avail.X), Math.Max(1f, avail.Y)), ImGuiChildFlags.None);
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (i % cols != 0)
+            {
+                ImGui.SameLine(0, gap);
+            }
+
+            ImGui.BeginChild($"reg-col-{i}", new Vector2(colW, 0), ImGuiChildFlags.AutoResizeY);
+            switch (i)
+            {
+                case 0:
+                    DrawColumn1(emulator, s);
+                    break;
+                case 1:
+                    DrawColumn2(emulator, s);
+                    break;
+                case 2:
+                    DrawColumn3(emulator);
+                    break;
+                default:
+                    DrawColumn4(emulator);
+                    break;
+            }
+
+            ImGui.EndChild();
+        }
+
+        ImGui.EndChild();
+        ImGui.PopStyleColor();
     }
 
-    static void DrawColumn1(Rectangle col, Emulator emulator, DebugState s, int valueX)
+    static void DrawColumn1(Emulator emulator, DebugState s)
     {
-        var w = new ColumnWriter(col, valueX);
+        var w = new ColumnWriter();
         w.BeginPanel("LCD", 11);
         IoRow(w, emulator, Reg.LCDC, "LCDC");
         IoRow(w, emulator, Reg.STAT, "STAT");
@@ -113,9 +135,9 @@ public static class GuiRegisterPanels
         w.EndPanel();
     }
 
-    static void DrawColumn2(Rectangle col, Emulator emulator, DebugState s, int valueX)
+    static void DrawColumn2(Emulator emulator, DebugState s)
     {
-        var w = new ColumnWriter(col, valueX);
+        var w = new ColumnWriter();
         w.BeginPanel("CPU", 6);
         Reg16Row(w, "AF", s.AF);
         Reg16Row(w, "BC", s.BC);
@@ -145,9 +167,9 @@ public static class GuiRegisterPanels
         w.EndPanel();
     }
 
-    static void DrawColumn3(Rectangle col, Emulator emulator, int valueX)
+    static void DrawColumn3(Emulator emulator)
     {
-        var w = new ColumnWriter(col, valueX);
+        var w = new ColumnWriter();
         w.BeginPanel("Ch1 (Square)", 5);
         IoRow(w, emulator, Reg.NR10, "NR10");
         IoRow(w, emulator, Reg.NR11, "NR11");
@@ -168,9 +190,9 @@ public static class GuiRegisterPanels
         w.EndPanel();
     }
 
-    static void DrawColumn4(Rectangle col, Emulator emulator, int valueX)
+    static void DrawColumn4(Emulator emulator)
     {
-        var w = new ColumnWriter(col, valueX);
+        var w = new ColumnWriter();
         w.BeginPanel("Ch3 (Wave)", 5);
         IoRow(w, emulator, Reg.NR30, "NR30");
         IoRow(w, emulator, Reg.NR31, "NR31");
@@ -197,17 +219,24 @@ public static class GuiRegisterPanels
     {
         const int cols = 4;
         const int rows = 4;
-        int cellW = Math.Max(GuiDebuggerFont.CharWidth(RowSize) * 3, (w.ContentWidth - 6) / cols);
         for (int row = 0; row < rows; row++)
         {
-            int y = w.NextRowY();
             for (int col = 0; col < cols; col++)
             {
+                if (col > 0)
+                {
+                    ImGui.SameLine();
+                }
+
                 int index = row * cols + col;
                 ushort addr = (ushort)(0xFF30 + index);
                 string text = $"{emulator.Read(addr):X2}";
-                int x = w.ContentX + col * cellW;
-                GuiDebuggerFont.Draw(text, x, y, RowSize, PanelValueColor);
+                ImGui.TextColored(C(GuiDebuggerTheme.Value), text);
+            }
+
+            if (row < rows - 1)
+            {
+                ImGui.Spacing();
             }
         }
     }
@@ -220,78 +249,41 @@ public static class GuiRegisterPanels
 
     static void GoldLabelRow(ColumnWriter w, string text)
     {
-        int y = w.NextRowY();
-        GuiDebuggerFont.Draw(text, w.ContentX, y, RowSize, PanelTitleColor);
+        _ = w;
+        ImGui.TextColored(C(GuiDebuggerTheme.Title), text);
     }
 
     static void LabelValueRow(ColumnWriter w, string label, string value)
     {
-        int y = w.NextRowY();
-        string prefix = $"{label}:";
-        GuiDebuggerFont.Draw(prefix, w.ContentX, y, RowSize, PanelLabelColor);
-        int vx = w.ContentX + w.ValueX;
-        if (vx < w.ContentX + GuiDebuggerFont.Measure(prefix, RowSize) + 6)
-        {
-            vx = w.ContentX + GuiDebuggerFont.Measure(prefix, RowSize) + 6;
-        }
-
-        GuiDebuggerFont.Draw(value, vx, y, RowSize, PanelValueColor);
+        _ = w;
+        ImGui.TextColored(C(GuiDebuggerTheme.Label), $"{label}:");
+        ImGui.SameLine(ValueColumnWidth);
+        ImGui.TextColored(C(GuiDebuggerTheme.Value), value);
     }
-
-    static Color PanelTitleColor => GuiDebuggerTheme.Title;
-    static Color PanelLabelColor => GuiDebuggerTheme.Label;
-    static Color PanelValueColor => GuiDebuggerTheme.Value;
-    static Color PanelFillColor => GuiDebuggerTheme.PanelBackground;
-    static Color PanelBorderColor => GuiDebuggerTheme.PanelBorder;
 
     sealed class ColumnWriter
     {
-        readonly Rectangle _col;
-        int _y;
-        int _contentY;
-        int _contentRows;
-
-        public ColumnWriter(Rectangle col, int valueX)
-        {
-            _col = col;
-            ValueX = valueX;
-            _y = (int)col.Y;
-            _contentY = 0;
-            _contentRows = 0;
-        }
-
-        public int ContentX => (int)_col.X + PanelPad;
-        public int ContentWidth => Math.Max(1, (int)_col.Width - PanelPad * 2);
-        public int ContentY => _contentY;
-        public int ValueX { get; }
-
         public void BeginPanel(string title, int contentRows)
         {
-            _contentRows = contentRows;
-            int panelH = PanelPad + TitleRowHeight + contentRows * DataRowHeight + PanelPad;
-            var panel = new Rectangle(_col.X, _y, _col.Width, panelH);
-            Raylib.DrawRectangle((int)panel.X, (int)panel.Y, (int)panel.Width, (int)panel.Height, PanelFillColor);
-            Raylib.DrawRectangleLines((int)panel.X, (int)panel.Y, (int)panel.Width, (int)panel.Height, PanelBorderColor);
+            float lineH = ImGui.GetTextLineHeightWithSpacing();
+            float panelH = PanelPad * 2 + lineH + TitleRowHeight + contentRows * DataRowHeight;
 
-            int titleW = GuiDebuggerFont.Measure(title, TitleSize);
-            int titleX = (int)panel.X + Math.Max(0, ((int)panel.Width - titleW) / 2);
-            int titleY = (int)panel.Y + PanelPad;
-            GuiDebuggerFont.Draw(title, titleX, titleY, TitleSize, PanelTitleColor);
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, C(GuiDebuggerTheme.PanelBackground));
+            ImGui.PushStyleColor(ImGuiCol.Border, C(GuiDebuggerTheme.PanelBorder));
+            ImGui.BeginChild(title, new Vector2(-1, panelH), ImGuiChildFlags.Borders);
 
-            _contentY = (int)panel.Y + PanelPad + TitleRowHeight;
+            float titleW = ImGui.CalcTextSize(title).X;
+            float regionW = ImGui.GetContentRegionAvail().X;
+            ImGui.SetCursorPosX(Math.Max(0, (regionW - titleW) * 0.5f));
+            ImGui.TextColored(C(GuiDebuggerTheme.Title), title);
+            ImGui.Separator();
         }
 
         public void EndPanel()
         {
-            int panelH = PanelPad + TitleRowHeight + _contentRows * DataRowHeight + PanelPad;
-            _y += panelH + PanelGap;
-        }
-
-        public int NextRowY()
-        {
-            int y = _contentY;
-            _contentY += DataRowHeight;
-            return y;
+            ImGui.EndChild();
+            ImGui.PopStyleColor(2);
+            ImGui.Dummy(new Vector2(0, PanelGap));
         }
     }
 }

@@ -45,14 +45,20 @@ monoboy --test path/to/test.gb --steps 5000
 
 ### GUI debugger (F12)
 
-In the graphical window, press **F12** to show or hide the debugger (LCD, disassembly, registers, memory dump). No extra CLI flag is required.
+In the graphical window, press **F12** to show or hide the debugger. It uses dockable ImGui windows (LCD, PPU views, disassembly, registers, memory). Drag a splitter to resize panes. Drag a window title bar out to float it. Drop a window on another to tab it. Use the **View** menu to reopen a window you closed with **X**. Layout is saved in `monoboy-layout.ini` next to the executable. No extra CLI flag is required.
 
 | Input | Action |
 | ----- | ------ |
 | **F12** | Show or hide the debugger. |
-| **Run** (toolbar) | Start or pause execution. |
-| **F10** | Step one CPU instruction when paused. |
-| **PPU** (toolbar) | Show or hide PPU views (BG, WIN, VRAM, OAM). |
+| **F3** | Step one CPU instruction. |
+| **F8** | Step over (next). |
+| **F9** | Continue execution. |
+| **Shift+F9** | Stop (pause). |
+| **Ctrl+R** | Reset the emulator. |
+| **F10** | Step one frame (next VBlank). |
+| **Shift+O** | Toggle OAM viewer window. |
+| **Shift+B** | Toggle BG and WIN viewer windows. |
+| **Shift+T** | Toggle VRAM (tiles) viewer window. |
 
 ### `--debug` (TUI debugger)
 

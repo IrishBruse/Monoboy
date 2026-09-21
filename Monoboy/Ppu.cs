@@ -238,13 +238,18 @@ public class Ppu(Memory memory, Emulator emulator, Cpu cpu, byte[] framebuffer)
     {
         int spriteSize = LCDC.GetBit(Flags.SpritesSize) ? 16 : 8;
 
-        for (int i = 64; i >= 0; i--)
+        for (int i = 39; i >= 0; i--)
         {
             ushort offset = (ushort)(0xFE00 + (i * 4));
 
             int y = memory[(ushort)(offset + 0)] - 16;
             int x = memory[(ushort)(offset + 1)] - 8;
             byte tileID = memory[(ushort)(offset + 2)];
+            if (spriteSize == 16)
+            {
+                tileID &= 0xFE;
+            }
+
             byte flags = memory[(ushort)(offset + 3)];
             byte obp = flags.GetBit(0b10000) ? OBP1 : OBP0;
 

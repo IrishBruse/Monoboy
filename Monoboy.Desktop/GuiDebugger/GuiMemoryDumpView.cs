@@ -1,7 +1,10 @@
 namespace Monoboy.Desktop.GuiDebugger;
 
 using System;
+using System.Numerics;
 using System.Text;
+
+using ImGuiNET;
 
 using Monoboy;
 
@@ -15,70 +18,60 @@ using Raylib_cs;
 /// </summary>
 public static class GuiMemoryDumpView
 {
-    const int FontSize = 13;
-    const int LineHeight = 18;
     const int BytesPerRow = 16;
     const int TotalRows = 0x10000 / BytesPerRow;
 
-    public static void Draw(Rectangle area, Emulator emulator, float wheel, ref int scrollRows)
+    static Vector4 C(Color color) =>
+        new(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+
+    public static void Draw(Emulator emulator)
     {
-        int areaX = (int)area.X;
-        int areaY = (int)area.Y;
-        int areaW = Math.Max(0, (int)area.Width);
-        int areaH = Math.Max(0, (int)area.Height);
-        if (areaW <= 0 || areaH <= 0)
+        Vector2 avail = ImGui.GetContentRegionAvail();
+        if (avail.X <= 0 || avail.Y <= 0)
         {
             return;
         }
 
-        Raylib.DrawRectangle(areaX, areaY, areaW, areaH, GuiDebuggerTheme.PanelBackground);
+        ImGui.BeginChild("MemoryDump", new Vector2(Math.Max(1f, avail.X), Math.Max(1f, avail.Y)), ImGuiChildFlags.None);
+        float lineH = ImGui.GetTextLineHeightWithSpacing();
 
-        int visibleRows = Math.Max(1, areaH / LineHeight);
-        int maxScroll = Math.Max(0, TotalRows - visibleRows);
-        GuiScroll.ApplyWheel(area, wheel, ref scrollRows, maxScroll);
-        scrollRows = Math.Clamp(scrollRows, 0, maxScroll);
-
-        Raylib.BeginScissorMode(areaX, areaY, Math.Max(0, areaW - GuiScroll.Width), areaH);
-        for (int row = 0; row < visibleRows; row++)
+        ImGuiListClipperPtr clipper = GuiImGuiClipper.Create();
+        try
         {
-            int rowIndex = scrollRows + row;
-            if (rowIndex >= TotalRows)
+            clipper.Begin(TotalRows, lineH);
+            while (clipper.Step())
             {
-                break;
+                for (int rowIndex = clipper.DisplayStart; rowIndex < clipper.DisplayEnd; rowIndex++)
+                {
+                    DrawHexRow(emulator, (ushort)(rowIndex * BytesPerRow));
+                }
             }
 
-            int y = areaY + row * LineHeight;
-            DrawHexRow(areaX + 2, y, emulator, (ushort)(rowIndex * BytesPerRow));
+            clipper.End();
         }
-
-        Raylib.EndScissorMode();
-
-        var bar = new Rectangle(areaX + areaW - GuiScroll.Width, areaY, GuiScroll.Width, areaH);
-        GuiScroll.Draw(2, bar, ref scrollRows, maxScroll);
+        finally
+        {
+            clipper.Destroy();
+        }
+        ImGui.EndChild();
     }
 
-    static void DrawHexRow(int x, int y, Emulator emulator, ushort rowAddr)
+    static void DrawHexRow(Emulator emulator, ushort rowAddr)
     {
-        int cursorX = x;
-
-        string addr = $"{rowAddr:X4}  ";
-        GuiDebuggerFont.Draw(addr, cursorX, y + 2, FontSize, GuiDebuggerTheme.Address);
-        cursorX += GuiDebuggerFont.Measure(addr, FontSize);
+        DrawRun($"{rowAddr:X4}  ", GuiDebuggerTheme.Address);
 
         var ascii = new StringBuilder(BytesPerRow);
         for (int col = 0; col < BytesPerRow; col++)
         {
             if (col == 8)
             {
-                DrawSeparator(ref cursorX, y, "| ");
+                DrawSeparator("| ");
             }
 
             ushort absAddr = (ushort)(rowAddr + col);
             byte val = emulator.Read(absAddr);
             Color byteColor = val == 0 ? GuiDebuggerTheme.HexDimZero : GuiDebuggerTheme.Value;
-            string cell = $"{val:X2} ";
-            GuiDebuggerFont.Draw(cell, cursorX, y + 2, FontSize, byteColor);
-            cursorX += GuiDebuggerFont.Measure(cell, FontSize);
+            DrawRun($"{val:X2} ", byteColor);
 
             if (val >= 0x20 && val <= 0x7E)
             {
@@ -90,27 +83,27 @@ public static class GuiMemoryDumpView
             }
         }
 
-        DrawSeparator(ref cursorX, y, "| ");
-        DrawAsciiRun(cursorX, y, ascii.ToString());
+        DrawSeparator("| ");
+        DrawAsciiRun(ascii.ToString());
+        ImGui.NewLine();
     }
 
-    static void DrawSeparator(ref int cursorX, int y, string text)
+    static void DrawSeparator(string text) => DrawRun(text, GuiDebuggerTheme.PanelBorder);
+
+    static void DrawRun(string text, Color color)
     {
-        GuiDebuggerFont.Draw(text, cursorX, y + 2, FontSize, GuiDebuggerTheme.PanelBorder);
-        cursorX += GuiDebuggerFont.Measure(text, FontSize);
+        ImGui.TextColored(C(color), text);
+        ImGui.SameLine(0, 0);
     }
 
-    static void DrawAsciiRun(int x, int y, string run)
+    static void DrawAsciiRun(string run)
     {
-        int cx = x;
         for (int i = 0; i < run.Length; i++)
         {
             char c = run[i];
             bool dim = c == '.';
             Color color = dim ? GuiDebuggerTheme.HexDimZero : GuiDebuggerTheme.Value;
-            string ch = c.ToString();
-            GuiDebuggerFont.Draw(ch, cx, y + 2, FontSize, color);
-            cx += GuiDebuggerFont.Measure(ch, FontSize);
+            DrawRun(c.ToString(), color);
         }
     }
 }

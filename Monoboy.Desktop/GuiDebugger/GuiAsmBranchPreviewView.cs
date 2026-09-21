@@ -2,6 +2,9 @@ namespace Monoboy.Desktop.GuiDebugger;
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
+
+using ImGuiNET;
 
 using Monoboy;
 using Monoboy.Desktop.TuiDebugger;
@@ -11,69 +14,68 @@ using Raylib_cs;
 /// <summary>Scrollable branch/call target disassembly beside the main list.</summary>
 static class GuiAsmBranchPreviewView
 {
-    const int LineHeight = 18;
-    const int PreviewPad = 4;
     const int MaxInstructions = 512;
 
-    public static void Draw(
-        Rectangle area,
-        Emulator emulator,
-        ushort target,
-        float wheel,
-        ref int scrollRows,
-        ref ushort scrollTarget)
+    static ushort _scrollTarget;
+
+    static Vector4 C(Color color) =>
+        new(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+
+    public static void Draw(Emulator emulator, ushort target, SymSymbolMap? symbols)
     {
-        if (target != scrollTarget)
+        if (target != _scrollTarget)
         {
-            scrollTarget = target;
-            scrollRows = 0;
+            _scrollTarget = target;
+            ImGui.SetScrollY(0);
         }
 
-        int areaX = (int)area.X;
-        int areaY = (int)area.Y;
-        int areaW = Math.Max(0, (int)area.Width);
-        int areaH = Math.Max(0, (int)area.Height);
-        if (areaW <= 0 || areaH <= 0)
+        var drawList = ImGui.GetWindowDrawList();
+        Vector2 childMin = ImGui.GetWindowPos();
+        drawList.AddLine(
+            childMin,
+            new Vector2(childMin.X, childMin.Y + ImGui.GetWindowHeight()),
+            ImGui.ColorConvertFloat4ToU32(C(GuiDebuggerTheme.PanelBorder)));
+
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + 4);
+
+        List<GuiDisassemblySyntax.Line> lines = CollectLines(emulator, target, symbols, MaxInstructions);
+        float lineH = ImGui.GetTextLineHeightWithSpacing();
+
+        ImGuiListClipperPtr clipper = GuiImGuiClipper.Create();
+        try
         {
-            return;
-        }
-
-        Raylib.DrawRectangle(areaX, areaY, areaW, areaH, GuiDebuggerTheme.PanelBackground);
-        Raylib.DrawLine(areaX, areaY, areaX, areaY + areaH, GuiDebuggerTheme.PanelBorder);
-
-        var addresses = CollectInstructions(emulator, target, MaxInstructions);
-        int visibleRows = Math.Max(1, areaH / LineHeight);
-        int maxScroll = Math.Max(0, addresses.Count - visibleRows);
-        GuiScroll.ApplyWheel(area, wheel, ref scrollRows, maxScroll);
-        scrollRows = Math.Clamp(scrollRows, 0, maxScroll);
-
-        int contentW = Math.Max(1, areaW - GuiScroll.Width - PreviewPad);
-        Raylib.BeginScissorMode(areaX + PreviewPad, areaY, contentW, areaH);
-        for (int row = 0; row < visibleRows; row++)
-        {
-            int idx = scrollRows + row;
-            if (idx >= addresses.Count)
+            clipper.Begin(lines.Count, lineH);
+            while (clipper.Step())
             {
-                break;
+                for (int idx = clipper.DisplayStart; idx < clipper.DisplayEnd; idx++)
+                {
+                    GuiDisassemblySyntax.Line line = lines[idx];
+                    if (line.IsLabel)
+                    {
+                        GuiDisassemblySyntax.DrawLabel(line.Label);
+                    }
+                    else
+                    {
+                        GuiDisassemblySyntax.DrawLine(emulator, line.Address, isPcRow: false, symbols);
+                    }
+                }
             }
 
-            int y = areaY + row * LineHeight;
-            GuiDisassemblySyntax.DrawLine(areaX + PreviewPad, y, emulator, addresses[idx], isPcRow: false);
+            clipper.End();
         }
-
-        Raylib.EndScissorMode();
-
-        var bar = new Rectangle(areaX + areaW - GuiScroll.Width, areaY, GuiScroll.Width, areaH);
-        GuiScroll.Draw(2, bar, ref scrollRows, maxScroll);
+        finally
+        {
+            clipper.Destroy();
+        }
     }
 
-    static List<ushort> CollectInstructions(Emulator emulator, ushort start, int maxCount)
+    static List<GuiDisassemblySyntax.Line> CollectLines(Emulator emulator, ushort start, SymSymbolMap? symbols, int maxCount)
     {
-        var list = new List<ushort>(Math.Min(maxCount, 64));
+        var list = new List<GuiDisassemblySyntax.Line>(Math.Min(maxCount, 64));
         ushort cursor = start;
         for (int i = 0; i < maxCount; i++)
         {
-            list.Add(cursor);
+            GuiDisassemblySyntax.AppendBlock(list, emulator, cursor, symbols);
             ushort size = TuiDisassemblyFormatter.GetInstructionByteSize(emulator, cursor);
             if (size == 0)
             {

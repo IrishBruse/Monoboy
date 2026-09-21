@@ -8,6 +8,8 @@ using System.Reflection;
 using Monoboy.Constants;
 using Monoboy.Utility;
 
+using Monoboy.Desktop.GuiDebugger;
+
 using GuiDebuggerView = Monoboy.Desktop.GuiDebugger.GuiDebugger;
 
 using NativeFileDialogSharp;
@@ -93,7 +95,7 @@ public class Application
 
                 if (files.Length == 1)
                 {
-                    emulator.Open(File.ReadAllBytes(files[0]));
+                    emulator.Open(files[0]);
                 }
             }
 
@@ -101,17 +103,18 @@ public class Application
             {
                 bool running = !paused;
                 debugger.HandleInput(emulator, ref running);
-                paused = !running;
                 debugger.UpdateTextures(emulator);
 
                 Raylib.BeginDrawing();
-                debugger.Draw(emulator, running: !paused);
+                debugger.Draw(emulator, ref running);
+                paused = !running;
                 Raylib.EndDrawing();
             }
             else
             {
                 Raylib.UpdateTexture(framebuffer, emulator.Framebuffer);
 
+                GuiMouseCursor.Reset();
                 Raylib.BeginDrawing();
                 {
                     Raylib.ClearBackground(new Color(0xD0, 0xD0, 0x58, 0xFF));
@@ -160,6 +163,11 @@ public class Application
 
     void EmulatorInput()
     {
+        if (debuggerOpen && debugger != null && debugger.WantsKeyboard)
+        {
+            return;
+        }
+
         bool right = Raylib.IsKeyDown(KeyboardKey.D) || Raylib.IsKeyDown(KeyboardKey.Right);
         bool left = Raylib.IsKeyDown(KeyboardKey.A) || Raylib.IsKeyDown(KeyboardKey.Left);
         bool up = Raylib.IsKeyDown(KeyboardKey.W) || Raylib.IsKeyDown(KeyboardKey.Up);
@@ -254,7 +262,7 @@ public class Application
         DialogResult file = Dialog.FileOpen("gb,gbc");
         if (file.IsOk)
         {
-            emulator.Open(File.ReadAllBytes(file.Path));
+            emulator.Open(file.Path);
         }
     }
 

@@ -95,7 +95,16 @@ public static class FramebufferPreviewWindow
                 int mapX = x + Emulator.WindowWidth * LcdScale + Pad;
                 DrawPanelLabel("BG tilemap", mapX, 0);
                 Raylib.DrawTextureEx(bgMapTex, new(mapX, y), 0, MapScale, Color.White);
-                DrawViewportRect(mapX, y, MapScale, scx, scy, Emulator.WindowWidth, Emulator.WindowHeight);
+                DrawViewportRect(
+                    mapX,
+                    y,
+                    MapScale,
+                    PpuDebugViewRenderer.TileMapPixels,
+                    PpuDebugViewRenderer.TileMapPixels,
+                    scx,
+                    scy,
+                    Emulator.WindowWidth,
+                    Emulator.WindowHeight);
 
                 int winMapX = mapX + PpuDebugViewRenderer.TileMapPixels * MapScale + Pad;
                 DrawPanelLabel("Window tilemap", winMapX, 0);
@@ -104,7 +113,16 @@ public static class FramebufferPreviewWindow
                 {
                     int winW = Math.Max(0, Emulator.WindowWidth - Math.Max(0, wx));
                     int winH = Math.Max(0, Emulator.WindowHeight - wy);
-                    DrawViewportRect(winMapX, y, MapScale, 0, 0, winW, winH);
+                    DrawViewportRect(
+                        winMapX,
+                        y,
+                        MapScale,
+                        PpuDebugViewRenderer.TileMapPixels,
+                        PpuDebugViewRenderer.TileMapPixels,
+                        0,
+                        0,
+                        winW,
+                        winH);
                 }
 
                 int row2Y = lcdBottom + Pad + LabelH;
@@ -142,13 +160,39 @@ public static class FramebufferPreviewWindow
         Raylib.DrawText(text, x, y, 12, new Color(0x40, 0x50, 0x10, 0xFF));
     }
 
-    static void DrawViewportRect(int texX, int texY, int scale, int vx, int vy, int vw, int vh)
+    static void DrawViewportRect(int texX, int texY, int scale, int mapW, int mapH, int vx, int vy, int vw, int vh)
     {
-        Raylib.DrawRectangleLines(
-            texX + (vx * scale),
-            texY + (vy * scale),
-            vw * scale,
-            vh * scale,
-            new Color(0xE0, 0x40, 0x40, 0xFF));
+        if (mapW < 1 || mapH < 1 || vw < 1 || vh < 1)
+        {
+            return;
+        }
+
+        vx = ((vx % mapW) + mapW) % mapW;
+        vy = ((vy % mapH) + mapH) % mapH;
+
+        var color = new Color(0xE0, 0x40, 0x40, 0xFF);
+        int widthLeft = vw;
+        int mapX = vx;
+        while (widthLeft > 0)
+        {
+            int segmentW = Math.Min(widthLeft, mapW - mapX);
+            int heightLeft = vh;
+            int mapY = vy;
+            while (heightLeft > 0)
+            {
+                int segmentH = Math.Min(heightLeft, mapH - mapY);
+                Raylib.DrawRectangleLines(
+                    texX + (mapX * scale),
+                    texY + (mapY * scale),
+                    Math.Max(1, segmentW * scale),
+                    Math.Max(1, segmentH * scale),
+                    color);
+                heightLeft -= segmentH;
+                mapY = 0;
+            }
+
+            widthLeft -= segmentW;
+            mapX = 0;
+        }
     }
 }

@@ -16,34 +16,108 @@ static class GuiDebugRunCommands
 
     public static void Apply(int index, Emulator emulator, ref bool running)
     {
+        var map = GblDebugMap.ForRom(emulator.RomPath);
+        bool sourceSteps = map != null && map.PointCount > 0;
+
         switch (index)
         {
             case StepInto:
-                running = false;
+            running = false;
+            if (sourceSteps)
+            {
+                StepIntoStatement(emulator, map!);
+            }
+            else
+            {
                 emulator.Step();
-                break;
+            }
+
+            break;
             case StepOver:
-                running = false;
+            running = false;
+            if (sourceSteps)
+            {
+                StepUntil(emulator, map!, GblDebugStepping.StopOver);
+            }
+            else
+            {
                 StepOverInstruction(emulator);
-                break;
+            }
+
+            break;
             case Continue:
-                running = true;
-                break;
+            running = true;
+            break;
             case Pause:
-                running = false;
-                break;
+            running = false;
+            break;
             case Reset:
-                running = false;
+            running = false;
+            if (sourceSteps)
+            {
+                BreakAtEntry(emulator);
+            }
+            else
+            {
                 emulator.Reset();
-                break;
+            }
+
+            break;
             case NextVBlank:
-                running = false;
-                emulator.StepFrame();
-                break;
+            running = false;
+            emulator.StepFrame();
+            break;
             case StepOut:
-                running = false;
+            running = false;
+            if (sourceSteps)
+            {
+                StepOutOfStatement(emulator, map!);
+            }
+            else
+            {
                 StepOutOfFrame(emulator);
-                break;
+            }
+
+            break;
+        }
+    }
+
+    static void StepIntoStatement(Emulator emulator, GblDebugMap map)
+    {
+        StepUntil(emulator, map, GblDebugStepping.StopInto);
+    }
+
+    static void StepUntil(
+        Emulator emulator,
+        GblDebugMap map,
+        System.Func<ushort, int?, ushort, int?, bool> stop)
+    {
+        DebugState start = emulator.GetDebugState();
+        ushort startSp = start.SP;
+        int? startPoint = map.ActiveIndex(emulator.RomBank, start.PC);
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            emulator.Step();
+            DebugState now = emulator.GetDebugState();
+            int? point = map.ActiveIndex(emulator.RomBank, now.PC);
+            if (stop(startSp, startPoint, now.SP, point))
+            {
+                return;
+            }
+        }
+    }
+
+    static void StepOutOfStatement(Emulator emulator, GblDebugMap map)
+    {
+        ushort startSp = emulator.GetDebugState().SP;
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            emulator.Step();
+            DebugState now = emulator.GetDebugState();
+            if (GblDebugStepping.StopOut(startSp, now.SP, map.IsOnPoint(emulator.RomBank, now.PC)))
+            {
+                return;
+            }
         }
     }
 
@@ -92,4 +166,29 @@ static class GuiDebugRunCommands
 
     static ushort ReadU16(Emulator emulator, ushort addr) =>
         (ushort)(emulator.Read(addr) | (emulator.Read((ushort)(addr + 1)) << 8));
+
+    /// <summary>Reset and stop on the first GBL statement. No-op when the ROM has no statement map.</summary>
+    public static void BreakAtEntry(Emulator emulator)
+    {
+        var map = GblDebugMap.ForRom(emulator.RomPath);
+        if (map == null || !map.TryGetEntry(out GblSequencePoint entry))
+        {
+            return;
+        }
+
+        emulator.Reset();
+        if (emulator.GetDebugState().PC == entry.Address)
+        {
+            return;
+        }
+
+        for (int i = 0; i < 1_000_000; i++)
+        {
+            emulator.Step();
+            if (emulator.GetDebugState().PC == entry.Address)
+            {
+                return;
+            }
+        }
+    }
 }

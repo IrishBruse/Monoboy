@@ -6,15 +6,15 @@ using System.Linq;
 using System.Reflection;
 
 using Monoboy.Constants;
-using Monoboy.Utility;
-
 using Monoboy.Desktop.GuiDebugger;
-
-using GuiDebuggerView = Monoboy.Desktop.GuiDebugger.GuiDebugger;
+using Monoboy.Desktop.TuiDebugger;
+using Monoboy.Utility;
 
 using NativeFileDialogSharp;
 
 using Raylib_cs;
+
+using GuiDebuggerView = Monoboy.Desktop.GuiDebugger.GuiDebugger;
 
 public class Application
 {
@@ -147,6 +147,17 @@ public class Application
             return;
         }
 
+        if (debuggerOpen && GblSourceBreakpoints.RunFrame(emulator))
+        {
+            paused = true;
+            return;
+        }
+
+        if (debuggerOpen)
+        {
+            return;
+        }
+
         emulator.StepFrame();
 
         if (speedup)
@@ -243,6 +254,8 @@ public class Application
             playWindowW = Raylib.GetScreenWidth();
             playWindowH = Raylib.GetScreenHeight();
             debugger ??= new GuiDebuggerView();
+            paused = true;
+            GuiDebugRunCommands.BreakAtEntry(emulator);
             Raylib.SetWindowMinSize(640, 480);
             Raylib.SetWindowSize(GuiDebuggerView.DefaultWidth, GuiDebuggerView.DefaultHeight);
             Raylib.SetWindowTitle("Monoboy Debugger");

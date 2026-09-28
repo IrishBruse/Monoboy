@@ -50,6 +50,7 @@ public sealed class GuiDebugger : IDisposable
     bool _showVram = true;
     bool _showOam = true;
     bool _showDisassembly = true;
+    bool _showSource = true;
     bool _showRegisters = true;
     bool _showMemory = true;
 
@@ -279,6 +280,7 @@ public sealed class GuiDebugger : IDisposable
             ToggleViewMenuItem("WIN", ref _showWin);
             ToggleViewMenuItem("VRAM", ref _showVram);
             ToggleViewMenuItem("OAM", ref _showOam);
+            ToggleViewMenuItem("Source", ref _showSource);
             ToggleViewMenuItem("Disassembly", ref _showDisassembly);
             ToggleViewMenuItem("Registers", ref _showRegisters);
             ToggleViewMenuItem("Memory", ref _showMemory);
@@ -383,6 +385,7 @@ public sealed class GuiDebugger : IDisposable
             }
         });
 
+        DrawOptionalWindow("Source", ref _showSource, () => GuiSourceView.Draw(emulator));
         DrawOptionalWindow("Disassembly", ref _showDisassembly, () => GuiDisassemblyView.Draw(emulator, running));
         DrawOptionalWindow("Registers", ref _showRegisters, () => GuiRegisterPanels.Draw(emulator));
         DrawOptionalWindow("Memory", ref _showMemory, () => GuiMemoryDumpView.Draw(emulator));
@@ -570,7 +573,9 @@ public sealed class GuiDebugger : IDisposable
         ImGuiDockBuilder.DockWindow("WIN", dockWinId);
         ImGuiDockBuilder.DockWindow("VRAM", dockVramId);
         ImGuiDockBuilder.DockWindow("OAM", dockOamId);
-        ImGuiDockBuilder.DockWindow("Disassembly", dockLeftBottomId);
+        ImGuiDockBuilder.SplitNode(dockLeftBottomId, ImGuiDir.Up, 0.45f, out uint dockSourceId, out uint dockDisasmId);
+        ImGuiDockBuilder.DockWindow("Source", dockSourceId);
+        ImGuiDockBuilder.DockWindow("Disassembly", dockDisasmId);
         ImGuiDockBuilder.DockWindow("Registers", dockRegistersId);
         ImGuiDockBuilder.DockWindow("Memory", dockMemoryId);
 

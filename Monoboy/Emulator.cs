@@ -150,18 +150,33 @@ public class Emulator
     /// <summary>Run until the PPU enters VBlank (LY = 144). Stops after <paramref name="maxSteps"/> if LCD is off.</summary>
     public void RunUntilVBlank(int maxSteps = 2_000_000)
     {
+        RunUntil(null, maxSteps);
+    }
+
+    /// <summary>
+    /// Run until VBlank, <paramref name="stop"/> returns true after an instruction, or <paramref name="maxSteps"/>.
+    /// Returns true when <paramref name="stop"/> ends the run.
+    /// </summary>
+    public bool RunUntil(Func<bool> stop, int maxSteps = 2_000_000)
+    {
         if (cartridge == null)
         {
-            return;
+            return false;
         }
 
         EnteredVSync = false;
         for (int i = 0; i < maxSteps && !EnteredVSync; i++)
         {
             Step();
+            if (stop != null && stop())
+            {
+                EnteredVSync = false;
+                return true;
+            }
         }
 
         EnteredVSync = false;
+        return false;
     }
 
     /// <summary>Path passed to <see cref="Open(string)"/>, when the ROM was opened from a file.</summary>

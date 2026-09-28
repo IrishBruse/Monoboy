@@ -20,26 +20,24 @@ Monoboy is a Game Boy emulator. Hardware behavior is informed by [Pan Docs](http
 
 ## Desktop application
 
-The **Monoboy.Desktop** project is the main executable. With no extra arguments it opens the Raylib window (see controls below). It also supports two console modes:
+The **Monoboy.Desktop** project is the main executable. With no extra arguments it opens the Raylib window (see controls below). It also supports a headless console mode:
 
 | Mode                 | Flag        | Description                                                                                                                      |
 | -------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | Graphical            | _(default)_ | Full emulator UI with keyboard/gamepad input. Press **F12** to show or hide the GUI debugger.                                    |
-| TUI debugger         | `--debug`   | Terminal debugger: disassembly, registers, memory dump, breakpoints.                                                             |
 | Headless test runner | `--test`    | Runs the core for a fixed number of steps or frames, then prints **one JSON object** on stdout (for automated tests or tooling). |
 
 ### Common arguments
 
 - **`-h` / `--help`** — Print usage and exit.
-- **ROM path** — Optional. Give the path to a `.gb` / `.gbc` file as the first argument that does **not** start with `--`. If it is missing or the file does not exist, the core boots with an empty 64 KiB buffer (same idea as the debugger when no ROM is loaded).
-- **`--log-header`** — Print cartridge header information when opening a ROM (debugger and graphical modes).
+- **ROM path** — Optional. Give the path to a `.gb` / `.gbc` file as the first argument that does **not** start with `--`. If it is missing or the file does not exist, the core boots with an empty 64 KiB buffer.
+- **`--log-header`** — Print cartridge header information when opening a ROM (graphical mode).
 - **`--custom-boot`** — Use the embedded bootix boot ROM instead of the built-in boot (graphical mode only).
 
 Examples:
 
 ```bash
 monoboy path/to/game.gb
-monoboy --debug path/to/game.gb
 monoboy --test path/to/test.gb --steps 5000
 ```
 
@@ -59,10 +57,6 @@ In the graphical window, press **F12** to show or hide the debugger. It uses doc
 | **Shift+O** | Toggle OAM viewer window. |
 | **Shift+B** | Toggle BG and WIN viewer windows. |
 | **Shift+T** | Toggle VRAM (tiles) viewer window. |
-
-### `--debug` (TUI debugger)
-
-Terminal debugger. Common keys: **S** step, **R** run to breakpoint, **B** toggle breakpoint, **Tab** switch pane, arrows / Page Up / Page Down scroll, **Ctrl+R** reload ROM.
 
 ### `--test` (JSON snapshot)
 

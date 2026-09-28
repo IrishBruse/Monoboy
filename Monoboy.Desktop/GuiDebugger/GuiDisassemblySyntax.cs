@@ -7,7 +7,7 @@ using System.Text;
 using ImGuiNET;
 
 using Monoboy;
-using Monoboy.Desktop.TuiDebugger;
+using Monoboy.Desktop.Debugger;
 using Monoboy.Disassembler;
 
 using Raylib_cs;

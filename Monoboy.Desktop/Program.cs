@@ -3,8 +3,6 @@ namespace Monoboy.Desktop;
 using System;
 using System.Linq;
 
-using TuiDebuggerApp = Monoboy.Desktop.TuiDebugger.TuiDebugger;
-
 public class Program
 {
     public static void Main()
@@ -19,12 +17,6 @@ public class Program
         if (args.Contains("--test"))
         {
             TestDebugger.Run(args);
-            return;
-        }
-
-        if (args.Contains("--debug"))
-        {
-            TuiDebuggerApp.Run(args);
             return;
         }
 

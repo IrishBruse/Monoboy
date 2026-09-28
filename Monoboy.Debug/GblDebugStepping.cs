@@ -1,4 +1,4 @@
-namespace Monoboy.Desktop.TuiDebugger;
+namespace Monoboy.Debug;
 
 /// <summary>Stop rules for statement step over, into, and out.</summary>
 public static class GblDebugStepping

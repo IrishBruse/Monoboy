@@ -7,7 +7,7 @@ using System.Numerics;
 using ImGuiNET;
 
 using Monoboy;
-using Monoboy.Desktop.TuiDebugger;
+using Monoboy.Desktop.Debugger;
 
 using Raylib_cs;
 
@@ -76,7 +76,7 @@ static class GuiAsmBranchPreviewView
         for (int i = 0; i < maxCount; i++)
         {
             GuiDisassemblySyntax.AppendBlock(list, emulator, cursor, symbols);
-            ushort size = TuiDisassemblyFormatter.GetInstructionByteSize(emulator, cursor);
+            ushort size = DisassemblyFormatter.GetInstructionByteSize(emulator, cursor);
             if (size == 0)
             {
                 break;

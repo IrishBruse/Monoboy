@@ -15,17 +15,15 @@ static class CliHelp
 
             Usage:
               {name} [options] [rom.gb]
-              {name} --debug [options] [rom.gb]
               {name} --test [options] [rom.gb]
 
             Modes:
               (default)   Raylib window (graphical emulator)
-              --debug     Terminal (TUI) debugger
               --test      Headless run; prints one JSON object on stdout
 
             Options:
               -h, --help       Show this help and exit
-              --log-header     Print cartridge header when opening a ROM (debugger and graphical)
+              --log-header     Print cartridge header when opening a ROM (graphical mode)
               --custom-boot    Use embedded bootix boot ROM instead of built-in boot
               --stop-on-entry  Open the graphical debugger paused on the first GBL statement
 
@@ -39,7 +37,7 @@ static class CliHelp
 
             Examples:
               {name} game.gb
-              {name} --debug --log-header game.gb
+              {name} --log-header game.gb
               {name} --test game.gb --steps 5000
               {name} --test game.gb --frames 10 --memory 0xC000:256
             """);

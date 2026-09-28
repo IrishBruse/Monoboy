@@ -8,7 +8,7 @@ using System.Numerics;
 using ImGuiNET;
 
 using Monoboy;
-using Monoboy.Desktop.TuiDebugger;
+using Monoboy.Debug;
 
 using Raylib_cs;
 

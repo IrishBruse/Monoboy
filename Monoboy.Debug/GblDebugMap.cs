@@ -1,11 +1,8 @@
 #nullable enable
 
-namespace Monoboy.Desktop.TuiDebugger;
+namespace Monoboy.Debug;
 
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Text;
 
 /// <summary>
@@ -24,6 +21,8 @@ public sealed class GblDebugMap
     }
 
     public int PointCount => _points.Count;
+
+    public int FileCount => _files.Count;
 
     static string? _cachedRomPath;
     static DateTime _cachedWriteTime;
@@ -135,6 +134,42 @@ public sealed class GblDebugMap
         return best;
     }
 
+    public bool TryGetActive(byte romBank, ushort pc, out GblSequencePoint point)
+    {
+        int? index = ActiveIndex(romBank, pc);
+        if (index == null)
+        {
+            point = default;
+            return false;
+        }
+
+        point = _points[index.Value];
+        return true;
+    }
+
+    /// <summary>Last <c>func</c> point at or before <paramref name="pc"/> in this bank.</summary>
+    public bool TryGetEnclosingFunction(byte romBank, ushort pc, out GblSequencePoint point)
+    {
+        point = default;
+        bool found = false;
+        for (int i = 0; i < _points.Count; i++)
+        {
+            GblSequencePoint candidate = _points[i];
+            if (candidate.Kind != "func" || !BankMatches(candidate, romBank, pc) || candidate.Address > pc)
+            {
+                continue;
+            }
+
+            if (!found || candidate.Address >= point.Address)
+            {
+                point = candidate;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
     public bool TryGetEntry(out GblSequencePoint point)
     {
         point = default;
@@ -180,6 +215,80 @@ public sealed class GblDebugMap
                 addresses.Add(point.Address);
             }
         }
+    }
+
+    public bool TryGetFile(int fileId, out string name, out string? fullPath)
+    {
+        name = "";
+        fullPath = null;
+        if ((uint)fileId >= (uint)_files.Count)
+        {
+            return false;
+        }
+
+        SourceEntry file = _files[fileId];
+        fullPath = file.Path;
+        name = file.Path != null ? Path.GetFileName(file.Path) : file.Name;
+        return true;
+    }
+
+    /// <summary>Match an editor path to a file id. Embedded sources have no path.</summary>
+    public bool TryMatchFile(string clientPath, out int fileId)
+    {
+        fileId = -1;
+        if (string.IsNullOrWhiteSpace(clientPath))
+        {
+            return false;
+        }
+
+        string full;
+        try
+        {
+            full = Path.GetFullPath(clientPath);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < _files.Count; i++)
+        {
+            if (_files[i].Path != null && PathEquals(_files[i].Path!, full))
+            {
+                fileId = i;
+                return true;
+            }
+        }
+
+        string leaf = Path.GetFileName(full);
+        int match = -1;
+        for (int i = 0; i < _files.Count; i++)
+        {
+            if (_files[i].Path == null)
+            {
+                continue;
+            }
+
+            if (!PathEquals(Path.GetFileName(_files[i].Path!), leaf))
+            {
+                continue;
+            }
+
+            if (match >= 0)
+            {
+                return false;
+            }
+
+            match = i;
+        }
+
+        if (match < 0)
+        {
+            return false;
+        }
+
+        fileId = match;
+        return true;
     }
 
     public bool IsOnPoint(byte romBank, ushort pc)
@@ -236,6 +345,14 @@ public sealed class GblDebugMap
     {
         byte bank = pc < 0x4000 ? (byte)0 : romBank;
         return point.Bank == bank;
+    }
+
+    static bool PathEquals(string left, string right)
+    {
+        StringComparison comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        return string.Equals(left, right, comparison);
     }
 
     bool TryAddFile(Stream stream, string line)

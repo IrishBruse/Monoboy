@@ -1,8 +1,6 @@
 #nullable enable
 
-namespace Monoboy.Desktop.TuiDebugger;
-
-using System.Collections.Generic;
+namespace Monoboy.Debug;
 
 using Monoboy;
 

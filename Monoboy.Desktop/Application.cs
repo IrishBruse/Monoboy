@@ -6,8 +6,8 @@ using System.Linq;
 using System.Reflection;
 
 using Monoboy.Constants;
+using Monoboy.Debug;
 using Monoboy.Desktop.GuiDebugger;
-using Monoboy.Desktop.TuiDebugger;
 using Monoboy.Utility;
 
 using NativeFileDialogSharp;

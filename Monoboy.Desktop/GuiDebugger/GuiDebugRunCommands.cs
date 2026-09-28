@@ -1,7 +1,8 @@
 namespace Monoboy.Desktop.GuiDebugger;
 
 using Monoboy;
-using Monoboy.Desktop.TuiDebugger;
+using Monoboy.Debug;
+using Monoboy.Desktop.Debugger;
 
 /// <summary>Debugger run control (menu, toolbar, and keyboard shortcuts).</summary>
 static class GuiDebugRunCommands
@@ -37,7 +38,7 @@ static class GuiDebugRunCommands
             running = false;
             if (sourceSteps)
             {
-                StepUntil(emulator, map!, GblDebugStepping.StopOver);
+                GblStatementStepper.StepOver(emulator, map!);
             }
             else
             {
@@ -71,7 +72,7 @@ static class GuiDebugRunCommands
             running = false;
             if (sourceSteps)
             {
-                StepOutOfStatement(emulator, map!);
+                GblStatementStepper.StepOut(emulator, map!);
             }
             else
             {
@@ -84,41 +85,7 @@ static class GuiDebugRunCommands
 
     static void StepIntoStatement(Emulator emulator, GblDebugMap map)
     {
-        StepUntil(emulator, map, GblDebugStepping.StopInto);
-    }
-
-    static void StepUntil(
-        Emulator emulator,
-        GblDebugMap map,
-        System.Func<ushort, int?, ushort, int?, bool> stop)
-    {
-        DebugState start = emulator.GetDebugState();
-        ushort startSp = start.SP;
-        int? startPoint = map.ActiveIndex(emulator.RomBank, start.PC);
-        for (int i = 0; i < 1_000_000; i++)
-        {
-            emulator.Step();
-            DebugState now = emulator.GetDebugState();
-            int? point = map.ActiveIndex(emulator.RomBank, now.PC);
-            if (stop(startSp, startPoint, now.SP, point))
-            {
-                return;
-            }
-        }
-    }
-
-    static void StepOutOfStatement(Emulator emulator, GblDebugMap map)
-    {
-        ushort startSp = emulator.GetDebugState().SP;
-        for (int i = 0; i < 1_000_000; i++)
-        {
-            emulator.Step();
-            DebugState now = emulator.GetDebugState();
-            if (GblDebugStepping.StopOut(startSp, now.SP, map.IsOnPoint(emulator.RomBank, now.PC)))
-            {
-                return;
-            }
-        }
+        GblStatementStepper.StepInto(emulator, map);
     }
 
     static void StepOverInstruction(Emulator emulator)
@@ -133,7 +100,7 @@ static class GuiDebugRunCommands
             return;
         }
 
-        ushort next = (ushort)(pc + TuiDisassemblyFormatter.GetInstructionByteSize(emulator, pc));
+        ushort next = (ushort)(pc + DisassemblyFormatter.GetInstructionByteSize(emulator, pc));
         for (int i = 0; i < 1_000_000; i++)
         {
             emulator.Step();
@@ -171,24 +138,11 @@ static class GuiDebugRunCommands
     public static void BreakAtEntry(Emulator emulator)
     {
         var map = GblDebugMap.ForRom(emulator.RomPath);
-        if (map == null || !map.TryGetEntry(out GblSequencePoint entry))
+        if (map == null || map.PointCount == 0)
         {
             return;
         }
 
-        emulator.Reset();
-        if (emulator.GetDebugState().PC == entry.Address)
-        {
-            return;
-        }
-
-        for (int i = 0; i < 1_000_000; i++)
-        {
-            emulator.Step();
-            if (emulator.GetDebugState().PC == entry.Address)
-            {
-                return;
-            }
-        }
+        GblStatementStepper.BreakAtEntry(emulator, map);
     }
 }

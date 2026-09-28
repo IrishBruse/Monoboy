@@ -1,4 +1,4 @@
-namespace Monoboy.Desktop.TuiDebugger;
+namespace Monoboy.Desktop.Debugger;
 
 using System;
 using System.Collections.Generic;
@@ -58,7 +58,7 @@ sealed class DisasmAlignmentCache
             return true;
         }
 
-        return TuiDisassemblyFormatter.TryGetPreviousInstructionStartHeuristic(emulator, addr, out prevStart);
+        return DisassemblyFormatter.TryGetPreviousInstructionStartHeuristic(emulator, addr, out prevStart);
     }
 
     bool TryGetPreviousFromLastStop(byte romBank, ushort addr, out ushort prevStart)
@@ -128,7 +128,7 @@ sealed class DisasmAlignmentCache
         while (cursor < addr)
         {
             previous = cursor;
-            cursor += TuiDisassemblyFormatter.GetInstructionByteSize(emulator, cursor);
+            cursor += DisassemblyFormatter.GetInstructionByteSize(emulator, cursor);
         }
 
         if (cursor != addr || previous == null)

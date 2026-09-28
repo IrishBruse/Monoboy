@@ -7,7 +7,7 @@ using System.Numerics;
 using ImGuiNET;
 
 using Monoboy;
-using Monoboy.Desktop.TuiDebugger;
+using Monoboy.Desktop.Debugger;
 
 /// <summary>
 /// Instruction list for the GUI debugger pane, with optional branch-target asm preview.
@@ -38,10 +38,10 @@ public static class GuiDisassemblyView
 
         ushort pc = FollowPc(emulator, running);
         SyncSymbols(emulator);
-        ushort size = TuiDisassemblyFormatter.GetInstructionByteSize(emulator, pc);
+        ushort size = DisassemblyFormatter.GetInstructionByteSize(emulator, pc);
         _alignment.RecordStop(emulator.RomBank, pc, size);
 
-        bool showPreview = TuiDisassemblyFormatter.TryGetBranchTarget(emulator, pc, out ushort branchTarget);
+        bool showPreview = DisassemblyFormatter.TryGetBranchTarget(emulator, pc, out ushort branchTarget);
         int previewW = 0;
         if (showPreview)
         {
@@ -185,7 +185,7 @@ public static class GuiDisassemblyView
         ushort walk = pc;
         int walked = 0;
         while (walked < MaxWalk
-            && TuiDisassemblyFormatter.TryGetPreviousInstructionStart(
+            && DisassemblyFormatter.TryGetPreviousInstructionStart(
                 emulator,
                 emulator.RomBank,
                 walk,
@@ -210,7 +210,7 @@ public static class GuiDisassemblyView
         int forwardNeed = visibleRows + Math.Max(0, _lineSkip) + 8;
         for (int i = 0; i < forwardNeed && i < MaxWalk; i++)
         {
-            ushort step = TuiDisassemblyFormatter.GetInstructionByteSize(emulator, cursor);
+            ushort step = DisassemblyFormatter.GetInstructionByteSize(emulator, cursor);
             int next = cursor + step;
             if (step == 0 || next > 0xFFFF)
             {

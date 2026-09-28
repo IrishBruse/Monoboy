@@ -1,5 +1,5 @@
 using System.Text;
-using Monoboy.Desktop.TuiDebugger;
+using Monoboy.Debug;
 
 int failed = 0;
 

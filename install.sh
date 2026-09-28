@@ -63,7 +63,7 @@ echo
 echo "Installed: $INSTALL_PATH"
 echo "Published files kept at: $PUBLISH_DIR"
 echo "Run with:"
-echo "  monoboy --debug"
+echo "  monoboy"
 echo
 echo "If 'monoboy' is not found, add this to your shell profile:"
 echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""

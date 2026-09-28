@@ -9,10 +9,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Monoboy;
-using Monoboy.Desktop.TuiDebugger;
 
 /// <summary>
-/// Headless mode: same ROM/bootstrap setup as <see cref="TuiDebugger"/>, runs for
+/// Headless mode: loads an optional ROM (or empty 64 KiB buffer), runs for
 /// <c>--steps</c> or <c>--frames</c>, then prints JSON to stdout (<c>cpu</c> always;
 /// <c>memory</c> only with <c>--memory START:LENGTH</c> or <c>START,LENGTH</c>).
 /// </summary>

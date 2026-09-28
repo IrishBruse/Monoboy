@@ -23,6 +23,7 @@ public class Application
     bool speedup;
     bool paused;
     bool debuggerOpen;
+    bool stopOnEntry;
     int playWindowW;
     int playWindowH;
     GuiDebuggerView? debugger;
@@ -31,6 +32,7 @@ public class Application
     {
         string[] args = Environment.GetCommandLineArgs();
         bool logHeader = args.Contains("--log-header");
+        stopOnEntry = args.Contains("--stop-on-entry");
         string romPath = args.Skip(1).FirstOrDefault(x => !x.StartsWith("--", StringComparison.Ordinal));
 
         if (args.Contains("--custom-boot"))
@@ -64,16 +66,20 @@ public class Application
     {
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
 
-        int windowW = Emulator.WindowWidth * 4;
-        int windowH = Emulator.WindowHeight * 4;
+        int playW = Emulator.WindowWidth * 4;
+        int playH = Emulator.WindowHeight * 4;
+        int windowW = stopOnEntry ? GuiDebuggerView.DefaultWidth : playW;
+        int windowH = stopOnEntry ? GuiDebuggerView.DefaultHeight : playH;
         int monitor = RaylibWindowPlacement.LaunchMonitor();
 
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
-        Raylib.InitWindow(windowW, windowH, "Monoboy");
+        Raylib.InitWindow(windowW, windowH, stopOnEntry ? "Monoboy Debugger" : "Monoboy");
         RaylibWindowPlacement.CenterOnMonitor(monitor, windowW, windowH);
         byte[] icon = GetEmbeddedFile("Monoboy.Desktop/Data/Icon.png");
         Raylib.SetWindowIcon(Raylib.LoadImageFromMemory(".png", icon));
-        Raylib.SetWindowMinSize(Emulator.WindowWidth, Emulator.WindowHeight);
+        Raylib.SetWindowMinSize(
+            stopOnEntry ? 640 : Emulator.WindowWidth,
+            stopOnEntry ? 480 : Emulator.WindowHeight);
         Raylib.InitAudioDevice();
 
         var framebufferImage = Raylib.GenImageColor(Emulator.WindowWidth, Emulator.WindowHeight, Color.Red);
@@ -81,6 +87,16 @@ public class Application
 
         Raylib.SetExitKey(0);
         Raylib.SetTargetFPS(60);
+
+        if (stopOnEntry)
+        {
+            playWindowW = playW;
+            playWindowH = playH;
+            debuggerOpen = true;
+            debugger = new GuiDebuggerView();
+            paused = true;
+            GuiDebugRunCommands.BreakAtEntry(emulator);
+        }
 
         while (!Raylib.WindowShouldClose())
         {

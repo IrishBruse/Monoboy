@@ -27,6 +27,7 @@ static class CliHelp
               -h, --help       Show this help and exit
               --log-header     Print cartridge header when opening a ROM (debugger and graphical)
               --custom-boot    Use embedded bootix boot ROM instead of built-in boot
+              --stop-on-entry  Open the graphical debugger paused on the first GBL statement
 
             --test options:
               --steps N        Run N CPU steps (--frames ignored if set)

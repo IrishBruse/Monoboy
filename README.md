@@ -43,7 +43,7 @@ monoboy --test path/to/test.gb --steps 5000
 
 ### GUI debugger (F12)
 
-In the graphical window, press **F12** to show or hide the debugger. It uses dockable ImGui windows (LCD, PPU views, disassembly, registers, memory). Drag a splitter to resize panes. Drag a window title bar out to float it. Drop a window on another to tab it. Use the **View** menu to reopen a window you closed with **X**. Layout is saved in `monoboy-layout.ini` next to the executable. No extra CLI flag is required.
+In the graphical window, press **F12** to show or hide the debugger. It uses dockable ImGui windows (LCD, PPU views, disassembly, registers, memory). Drag a splitter to resize panes. Drag a window title bar out to float it. Drop a window on another to tab it. Use the **View** menu to reopen a window you closed with **X**. Layout is saved in `monoboy-layout.ini` next to the executable. No extra CLI flag is required. `.gbl` source and statement breakpoints are set in the Visual Studio Code editor, while this window steps by statement when a `.gbldbg` map is present.
 
 | Input | Action |
 | ----- | ------ |

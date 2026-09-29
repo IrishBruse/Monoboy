@@ -11,7 +11,8 @@ using Monoboy.Constants;
 using Raylib_cs;
 
 /// <summary>
-/// Four-column register mosaic. Theme: Title, Label, Value, PanelBackground, PanelBorder.
+/// Register panels scanned CPU, LCD, then the two audio columns.
+/// Theme: Title, Label, Value, PanelBackground, PanelBorder.
 /// </summary>
 public static class GuiRegisterPanels
 {
@@ -19,7 +20,7 @@ public static class GuiRegisterPanels
     const int PanelPad = 8;
     const int TitleRowHeight = 18;
     const int DataRowHeight = 16;
-    const float ValueColumnWidth = 130f;
+    const float ValueGap = 8f;
 
     static Vector4 C(Color color) =>
         new(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
@@ -44,8 +45,8 @@ public static class GuiRegisterPanels
                 return h;
             }
 
-            int c1 = Column([11, 4, 3]);
-            int c2 = Column([6, 4, 2, 4]);
+            int c1 = Column([6, 4, 2, 4]);
+            int c2 = Column([11, 4, 3]);
             int c3 = Column([5, 4, 4]);
             int c4 = Column([5, 4, 3]);
             return Math.Max(Math.Max(c1, c2), Math.Max(c3, c4));
@@ -81,10 +82,10 @@ public static class GuiRegisterPanels
             switch (i)
             {
                 case 0:
-                    DrawColumn1(emulator, s);
+                    DrawColumn2(emulator, s);
                     break;
                 case 1:
-                    DrawColumn2(emulator, s);
+                    DrawColumn1(emulator, s);
                     break;
                 case 2:
                     DrawColumn3(emulator);
@@ -256,8 +257,31 @@ public static class GuiRegisterPanels
     static void LabelValueRow(ColumnWriter w, string label, string value)
     {
         _ = w;
-        ImGui.TextColored(C(GuiDebuggerTheme.Label), $"{label}:");
-        ImGui.SameLine(ValueColumnWidth);
+        string labelText = $"{label}:";
+        float startX = ImGui.GetCursorPosX();
+        float contentRight = startX + ImGui.GetContentRegionAvail().X;
+        float labelW = ImGui.CalcTextSize(labelText).X;
+        float valueW = ImGui.CalcTextSize(value).X;
+        float rightX = contentRight - valueW;
+        float afterLabelX = startX + labelW + ValueGap;
+
+        ImGui.TextColored(C(GuiDebuggerTheme.Label), labelText);
+        float room = contentRight - afterLabelX;
+        if (room >= valueW)
+        {
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(rightX);
+        }
+        else if (room > 0f)
+        {
+            ImGui.SameLine();
+            ImGui.SetCursorPosX(afterLabelX);
+        }
+        else
+        {
+            ImGui.SameLine(0f, ValueGap);
+        }
+
         ImGui.TextColored(C(GuiDebuggerTheme.Value), value);
     }
 

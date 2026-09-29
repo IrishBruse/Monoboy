@@ -41,16 +41,14 @@ public sealed class GuiDebugger : IDisposable
     Texture2D _oamTex;
     int _oamGridH;
     bool _defaultDockAttempted;
+    bool _focusBgTab;
     bool _disposed;
-    bool _wantsKeyboard;
-
     bool _showLcd = true;
     bool _showBg = true;
     bool _showWin = true;
     bool _showVram = true;
     bool _showOam = true;
     bool _showDisassembly = true;
-    bool _showSource = true;
     bool _showRegisters = true;
     bool _showMemory = true;
 
@@ -66,7 +64,7 @@ public sealed class GuiDebugger : IDisposable
         _lcdTex = CreateTexture(Emulator.WindowWidth, Emulator.WindowHeight);
     }
 
-    public bool WantsKeyboard => _wantsKeyboard;
+    public bool WantsKeyboard { get; private set; }
 
     bool ShowPpuTextures => _showBg || _showWin || _showVram || _showOam;
 
@@ -127,16 +125,16 @@ public sealed class GuiDebugger : IDisposable
         switch (index)
         {
             case 0:
-                _showOam = !_showOam;
-                break;
+            _showOam = !_showOam;
+            break;
             case 1:
-                bool on = !_showBg;
-                _showBg = on;
-                _showWin = on;
-                break;
+            bool on = !_showBg;
+            _showBg = on;
+            _showWin = on;
+            break;
             case 2:
-                _showVram = !_showVram;
-                break;
+            _showVram = !_showVram;
+            break;
         }
     }
 
@@ -176,10 +174,12 @@ public sealed class GuiDebugger : IDisposable
     {
         Raylib.ClearBackground(GuiDebuggerTheme.Canvas);
         rlImGui.Begin();
+        // Navigation focus on a pane must not take the keyboard away from the game.
+        ImGui.GetIO().ConfigNavCaptureKeyboard = false;
         GuiDebuggerTheme.ApplyImGuiStyle();
         GuiMouseCursor.ClearTabBands();
         DrawDockAndWindows(emulator, ref running);
-        _wantsKeyboard = ImGui.GetIO().WantCaptureKeyboard;
+        WantsKeyboard = ImGui.GetIO().WantTextInput;
         GuiMouseCursor.Apply();
         rlImGui.End();
     }
@@ -215,15 +215,39 @@ public sealed class GuiDebugger : IDisposable
         if (!_defaultDockAttempted)
         {
             _defaultDockAttempted = true;
+            ApplyLayoutRevision();
             if (!File.Exists(_iniPath))
             {
                 BuildDefaultDock(dockSpaceId, viewport.WorkSize);
+                _focusBgTab = true;
             }
         }
 
         ImGui.End();
 
         DrawToolWindows(emulator, running);
+        if (_focusBgTab)
+        {
+            _focusBgTab = false;
+            ImGui.SetWindowFocus("BG");
+        }
+    }
+
+    void ApplyLayoutRevision()
+    {
+        string revPath = _iniPath + ".rev";
+        string revision = File.Exists(revPath) ? File.ReadAllText(revPath).Trim() : "";
+        if (revision == "2")
+        {
+            return;
+        }
+
+        if (File.Exists(_iniPath))
+        {
+            File.Delete(_iniPath);
+        }
+
+        File.WriteAllText(revPath, "2\n");
     }
 
     void DrawMainMenuBar(Emulator emulator, ref bool running)
@@ -280,7 +304,6 @@ public sealed class GuiDebugger : IDisposable
             ToggleViewMenuItem("WIN", ref _showWin);
             ToggleViewMenuItem("VRAM", ref _showVram);
             ToggleViewMenuItem("OAM", ref _showOam);
-            ToggleViewMenuItem("Source", ref _showSource);
             ToggleViewMenuItem("Disassembly", ref _showDisassembly);
             ToggleViewMenuItem("Registers", ref _showRegisters);
             ToggleViewMenuItem("Memory", ref _showMemory);
@@ -350,16 +373,13 @@ public sealed class GuiDebugger : IDisposable
             }
         });
 
-        DrawOptionalWindow("VRAM", ref _showVram, () =>
-        {
-            DrawFittedTexture(
+        DrawOptionalWindow("VRAM", ref _showVram, () => DrawFittedTexture(
                 _vramTex,
                 PpuDebugViewRenderer.VramTilesWidth,
                 PpuDebugViewRenderer.VramTilesHeight,
                 integerScale: false,
                 out _,
-                out _);
-        });
+                out _));
 
         DrawOptionalWindow("OAM", ref _showOam, () =>
         {
@@ -385,7 +405,6 @@ public sealed class GuiDebugger : IDisposable
             }
         });
 
-        DrawOptionalWindow("Source", ref _showSource, () => GuiSourceView.Draw(emulator));
         DrawOptionalWindow("Disassembly", ref _showDisassembly, () => GuiDisassemblyView.Draw(emulator, running));
         DrawOptionalWindow("Registers", ref _showRegisters, () => GuiRegisterPanels.Draw(emulator));
         DrawOptionalWindow("Memory", ref _showMemory, () => GuiMemoryDumpView.Draw(emulator));
@@ -559,22 +578,18 @@ public sealed class GuiDebugger : IDisposable
         ImGuiDockBuilder.AddNode(dockSpaceId, ImGuiDockNodeFlagsDockSpace);
         ImGuiDockBuilder.SetNodeSize(dockSpaceId, viewportSize);
 
-        ImGuiDockBuilder.SplitNode(dockSpaceId, ImGuiDir.Left, 0.42f, out uint dockLeftId, out uint dockRightId);
-        ImGuiDockBuilder.SplitNode(dockLeftId, ImGuiDir.Up, 0.62f, out uint dockLeftTopId, out uint dockLeftBottomId);
-        ImGuiDockBuilder.SplitNode(dockLeftTopId, ImGuiDir.Up, 0.58f, out uint dockTopBandId, out uint dockLowerBandId);
-
-        ImGuiDockBuilder.SplitNode(dockTopBandId, ImGuiDir.Left, 1f / 3f, out uint dockLcdId, out uint dockTopRestId);
-        ImGuiDockBuilder.SplitNode(dockTopRestId, ImGuiDir.Left, 0.5f, out uint dockBgId, out uint dockWinId);
-        ImGuiDockBuilder.SplitNode(dockLowerBandId, ImGuiDir.Left, 0.62f, out uint dockVramId, out uint dockOamId);
-        ImGuiDockBuilder.SplitNode(dockRightId, ImGuiDir.Up, 0.60f, out uint dockRegistersId, out uint dockMemoryId);
+        ImGuiDockBuilder.SplitNode(dockSpaceId, ImGuiDir.Down, 0.30f, out uint dockMemoryId, out uint dockMainId);
+        ImGuiDockBuilder.SplitNode(dockMainId, ImGuiDir.Left, 0.44f, out uint dockGraphicsId, out uint dockWorkId);
+        ImGuiDockBuilder.SplitNode(dockWorkId, ImGuiDir.Right, 0.42f, out uint dockRegistersId, out uint dockDisasmId);
+        ImGuiDockBuilder.SplitNode(dockGraphicsId, ImGuiDir.Up, 0.60f, out uint dockTopBandId, out uint dockBottomBandId);
+        ImGuiDockBuilder.SplitNode(dockTopBandId, ImGuiDir.Left, 0.56f, out uint dockLcdId, out uint dockMapsId);
+        ImGuiDockBuilder.SplitNode(dockBottomBandId, ImGuiDir.Left, 0.64f, out uint dockVramId, out uint dockOamId);
 
         ImGuiDockBuilder.DockWindow("LCD", dockLcdId);
-        ImGuiDockBuilder.DockWindow("BG", dockBgId);
-        ImGuiDockBuilder.DockWindow("WIN", dockWinId);
+        ImGuiDockBuilder.DockWindow("BG", dockMapsId);
+        ImGuiDockBuilder.DockWindow("WIN", dockMapsId);
         ImGuiDockBuilder.DockWindow("VRAM", dockVramId);
         ImGuiDockBuilder.DockWindow("OAM", dockOamId);
-        ImGuiDockBuilder.SplitNode(dockLeftBottomId, ImGuiDir.Up, 0.45f, out uint dockSourceId, out uint dockDisasmId);
-        ImGuiDockBuilder.DockWindow("Source", dockSourceId);
         ImGuiDockBuilder.DockWindow("Disassembly", dockDisasmId);
         ImGuiDockBuilder.DockWindow("Registers", dockRegistersId);
         ImGuiDockBuilder.DockWindow("Memory", dockMemoryId);

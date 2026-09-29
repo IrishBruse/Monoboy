@@ -9,11 +9,11 @@ public sealed class DebugSession
 
     readonly Dictionary<int, HashSet<ushort>> _byFile = new();
     readonly HashSet<ushort> _addresses = new();
-
-    Emulator? _emulator;
     GblDebugMap? _map;
 
-    public bool IsLaunched => _emulator != null;
+    public bool IsLaunched => Emulator != null;
+
+    public Emulator? Emulator { get; private set; }
 
     public bool StopOnEntry { get; private set; }
 
@@ -22,7 +22,7 @@ public sealed class DebugSession
     public bool Launch(string program, string? cwd, bool stopOnEntry, out string error)
     {
         Log = "";
-        _emulator = null;
+        Emulator = null;
         _map = null;
         _byFile.Clear();
         _addresses.Clear();
@@ -44,7 +44,7 @@ public sealed class DebugSession
             return false;
         }
 
-        _emulator = emulator;
+        Emulator = emulator;
         _map = GblDebugMap.TryLoadForRom(romPath);
         if (stopOnEntry && _map != null && _map.PointCount > 0)
         {
@@ -86,12 +86,12 @@ public sealed class DebugSession
 
     public StopReason Continue(Func<bool>? interrupt = null, int maxSteps = int.MaxValue)
     {
-        if (_emulator == null)
+        if (Emulator == null)
         {
             return StopReason.Pause;
         }
 
-        ushort startPc = _emulator.GetDebugState().PC;
+        ushort startPc = Emulator.GetDebugState().PC;
         bool left = false;
         for (int i = 0; i < maxSteps; i++)
         {
@@ -100,8 +100,8 @@ public sealed class DebugSession
                 return StopReason.Pause;
             }
 
-            _emulator.Step();
-            ushort pc = _emulator.GetDebugState().PC;
+            Emulator.Step();
+            ushort pc = Emulator.GetDebugState().PC;
             if (pc != startPc)
             {
                 left = true;
@@ -124,19 +124,19 @@ public sealed class DebugSession
 
     public SourceFrame CurrentFrame()
     {
-        if (_emulator == null)
+        if (Emulator == null)
         {
             return new SourceFrame("$0000", null, 0, 1, 0);
         }
 
-        DebugState state = _emulator.GetDebugState();
-        if (_map == null || !_map.TryGetActive(_emulator.RomBank, state.PC, out GblSequencePoint point))
+        DebugState state = Emulator.GetDebugState();
+        if (_map == null || !_map.TryGetActive(Emulator.RomBank, state.PC, out GblSequencePoint point))
         {
             return new SourceFrame($"${state.PC:X4}", null, 0, 1, state.PC);
         }
 
         string name = "$" + state.PC.ToString("X4");
-        if (_map.TryGetEnclosingFunction(_emulator.RomBank, state.PC, out GblSequencePoint function))
+        if (_map.TryGetEnclosingFunction(Emulator.RomBank, state.PC, out GblSequencePoint function))
         {
             name = FunctionLabel(_map, function);
         }
@@ -156,12 +156,12 @@ public sealed class DebugSession
 
     public IReadOnlyList<DebugVariable> Registers()
     {
-        if (_emulator == null)
+        if (Emulator == null)
         {
             return [];
         }
 
-        DebugState state = _emulator.GetDebugState();
+        DebugState state = Emulator.GetDebugState();
         return
         [
             new DebugVariable("A", Hex(state.A)),
@@ -188,18 +188,18 @@ public sealed class DebugSession
         width = Emulator.WindowWidth;
         height = Emulator.WindowHeight;
         rgbaBase64 = "";
-        if (_emulator == null)
+        if (Emulator == null)
         {
             return false;
         }
 
-        rgbaBase64 = Convert.ToBase64String(_emulator.Framebuffer);
+        rgbaBase64 = Convert.ToBase64String(Emulator.Framebuffer);
         return true;
     }
 
     public void SetButton(string? name, bool pressed)
     {
-        if (_emulator == null || string.IsNullOrEmpty(name))
+        if (Emulator == null || string.IsNullOrEmpty(name))
         {
             return;
         }
@@ -209,7 +209,7 @@ public sealed class DebugSession
             return;
         }
 
-        _emulator.SetButtonState(button, pressed);
+        Emulator.SetButtonState(button, pressed);
     }
 
     public bool TryReadSource(int sourceReference, out string name, out string text)
@@ -226,7 +226,7 @@ public sealed class DebugSession
 
     StopReason Step(Func<Emulator, GblDebugMap, Func<bool>?, bool> step, Func<bool>? interrupt)
     {
-        if (_emulator == null)
+        if (Emulator == null)
         {
             return StopReason.Pause;
         }
@@ -238,11 +238,11 @@ public sealed class DebugSession
                 return StopReason.Pause;
             }
 
-            _emulator.Step();
+            Emulator.Step();
             return StopReason.Step;
         }
 
-        return step(_emulator, _map, interrupt) ? StopReason.Step : StopReason.Pause;
+        return step(Emulator, _map, interrupt) ? StopReason.Step : StopReason.Pause;
     }
 
     bool TryResolveFile(string? path, int sourceReference, out int fileId)
